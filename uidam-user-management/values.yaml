@@ -1,0 +1,183 @@
+# Default values for uidam-user-management.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: docker.io/eclipseecsp/uidam-user-management
+  pullPolicy: IfNotPresent
+  tag: 1.0.0
+
+nameOverride: ""
+fullnameOverride: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 8080
+
+ingress:
+  enabled: false
+  className: alb
+  groupName: ic
+  scheme: internal
+  targetType: ip
+  inboundCidrs: []
+  tls:
+    enabled: true
+    sslRedirect: false
+  additionalAnnotations: {}
+  hosts:
+  - hostPrefix: uidam-user-management
+    paths:
+    - /
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+distributedTracing:
+  enabled: false
+
+userManagementUrl: uidam-user-management:8080
+environmentDomainName: TO-BE-UPDATED
+
+javaOpts: -Xms128m -Xmx512m -XX:+UseG1GC -XX:+UseStringDeduplication -XX:MaxMetaspaceSize=256m
+
+logging:
+  level: INFO
+
+postgres:
+  host: postgresql # change this to your database host
+  port: 5432 # change this to your database port
+  secretName: uidam-user-management-credentials
+  userName: TO-BE-UPDATED
+  password: TO-BE-UPDATED
+  schemaName: "uidam"
+  databaseName: eclipseecsp
+  max_idle_time: "0"
+  data_source_properties:
+    cachePrepStmts: "true"
+    prepStmtCacheSize: "250"
+    prepStmtCacheSqlLimit: "2048"
+  connecion_timeout_ms: "60000"
+  expected99thPercentileMs: "60000"
+  max_pool_size: "30"
+  liquibase:
+    clientsecret: TO-BE-UPDATED
+    userpwd: TO-BE-UPDATED
+    usersalt: TO-BE-UPDATED
+
+
+
+health:
+  postgresdb:
+    monitor:
+      enabled: "true"
+      restart_on_failure: "true"
+metrics:
+  prometheus:
+    enabled: "false"
+    agent:
+      port: "9100"
+      port_exposed: "9100"
+  postgresdb:
+    enabled: "false"
+    executor_shutdown_buffer_ms: "2000"
+    thread:
+      freq_ms: "5000"
+      intial_delay_ms: "2000"
+    
+auth:
+  server:
+    host: "https://uidam-authorization-server"
+    token_url: "/oauth2/token"
+    revoke_token_url: "/revoke/revokeByAdmin"
+
+user_status_life_cycle_enabled: "false"
+revoke_token_client_id: "token-mgmt"
+revokeTokenClientSecret: TO-BE-UPDATED
+clientsecretkey: TO-BE-UPDATED
+clientsecretsalt: TO-BE-UPDATED
+userDefaultAccountName: "userdefaultaccount"
+external_user_permitted_roles: "VEHICLE_OWNER"
+external_user_default_status: ""
+maxAllowedLoginAttempts: "3"
+minPasswordLength: "10"
+maxPasswordLength: "15"
+passwordUpdateTimeInterval: "1"
+additional_attr_check_enabled_for_sign_up: false
+userDefaultAccountName: "userdefaultaccount"
+uidam:
+  account_id: "TO-BE-UPDATED"
+  account_name: "TO-BE-UPDATED"
+  account_type: "TO-BE-UPDATED"
+  auth:
+    admin_scope: "UIDAMSystem"
+  openapi_path_include: "/v1/users/self, /v1/users/filter, /v1/users, /v1/users/{id}, /v1/users/details/{id}, /v1/users/delete/{id}, /v1/users/update/{id}, /v1/users/self/settings, /v1/users/self/settings/**, /v1/emailVerification/{userId}/isEmailVerified, /v1/emailVerification/{token}, /v1/oauth2/client/**, /v1/oauth2/client/{clientId}, /v1/oauth2/client, /v1/roles/**, /v1/roles/filter, /v1/roles/{name}, /v1/roles/rolesById, /v1/roles, /v1/scopes/**, /v1/scopes/{name}, /v1/scopes/filter,/v1/accounts,/v1/accounts/{id},/v1/accounts/filter,/v1/accounts/**, /v1/users/status, /v1/users/external/{id}"
+
+api_gateway:
+  uri: "https://api-gateway.example.com"
+  serviceUrl: "api-gateway-int-svc:7000" # change this to your api gateway uri
+
+notification:
+  # email_provider "internal" for spring mail
+  # email_provider "ignite" for notification center
+  email:
+    provider: "internal"
+    host: "TO-BE-UPDATED" # this will override the email host
+    port: "587" # this will override the email port
+    username: "TO-BE-UPDATED" # this will override the email username
+    passwd: "TO-BE-UPDATED" # this will override the email password
+    smptAuth: "true"
+    smptStartTls: "true"
+    smptStartTlsRequired: "true"
+    smptSSLEnabled: "false"
+    smtpDebug: "false"
+    overrideSender: "admin@example.com" # this will override the from email available in notification config
+    mailingService:
+    # if enabled will overrride the email host, port in the template
+      enabled: false
+      url: mailing-service
+      port: "587"
+  secretName: uidam-user-management-credentials
+  config:
+    createDefault: true
+    configName: "uidam-user-management-notification-config"
+    resolver: "internal"
+    path: "file:/notification/uidam-user-management-notification-config.json"
+  # notification template configuration
+  template:
+     # thymeleaf and mustache template engines are supported
+    engine: "thymeleaf"
+    format: "HTML" # HTML, TEXT
+    prefix: "/notification/" # path prefix for template
+    resolver: "CLASSPATH" # valid values: CLASSPATH, FILE, URL
+    suffix: ".html"

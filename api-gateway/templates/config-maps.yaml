@@ -1,0 +1,139 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "api-gateway.fullname" . }}-config
+  labels:
+    app: {{ include "api-gateway.fullname" . }}
+    group: api
+data:
+  JAVA_OPTS: {{ .Values.api_gateway.jvmOpts | quote }}
+  NEVER_BLOCK_FOR_GRAYLOG: "true"
+  LOG_APPENDER: {{ .Values.logging.logAppender| quote }}
+  GRAYLOG_HOST: {{ .Values.logging.graylogHost | quote }}
+  GRAYLOG_PORT: {{ .Values.logging.graylogPort | quote }}
+  api_userId_field: {{ .Values.api_gateway.userIdField | quote }}
+  api_gateway_port: {{ .Values.api_gateway.gateway_port | quote }}
+  api_gateway_service_name: {{ .Values.api_gateway.gateway_service_name | quote }}
+  api_registry_port: {{ .Values.api_gateway.registry_port | quote }}
+  api_registry_enabled: {{ .Values.api_gateway.apiRegistryEnabled | quote }}
+  api_registry_service_name: {{ .Values.api_gateway.registry_service_name | quote }}
+  api_isFilterOverrideEnabled: {{ .Values.api_gateway.isFilterOverrideEnabled | quote }}
+  api_caching_enabled: {{ .Values.api_gateway.cachingEnabled | quote }}
+  spring.cloud.gateway.filter.local-response-cache.enabled: {{ .Values.api_gateway.localCachingEnabled | quote }}
+  spring.cloud.gateway.filter.redis.cache.enabled: {{ .Values.api_gateway.redisCachingEnabled | quote }}
+  spring.cloud.gateway.httpserver.max-header-size: "16384"
+  api_userId_field: {{ .Values.api_gateway.userIdField | quote }}
+  api_overrideFilterConfig_JwtAuthValidator_filterName: {{ .Values.api_gateway.overrideFilterConfig.JwtAuthValidator.filterName | quote }}
+  plugin_path: {{ .Values.api_gateway.customPlugins.libraryPath | quote }}
+  plugin_classes: {{ .Values.api_gateway.customPlugins.pluginClasses | quote }}
+  plugin_enabled: {{ .Values.api_gateway.customPlugins.enabled | quote }}
+  spring_main_allow-circular-references: "true"
+  jwt_publicKeyFiles: {{ .Values.api_gateway.jwt_publicKeyFiles | quote }}
+  jwt_publicKeyFilePath: {{ .Values.api_gateway.jwt_publicKeyFilePath | quote }}
+  jwt_tokenHeaderValidationConfig_tenantId_required: {{ .Values.api_gateway.tokenHeaderConfig.tenantIdRequired | quote }}
+  jwt_tokenHeaderValidationConfig_tenantId_regex: {{ .Values.api_gateway.tokenHeaderConfig.tenantIdRegex | quote }}
+  jwt_tokenHeaderValidationConfig_accountId_required: {{ .Values.api_gateway.tokenHeaderConfig.accountIdRequired | quote }}
+  jwt_tokenHeaderValidationConfig_accountId_regex: {{ .Values.api_gateway.tokenHeaderConfig.accountIdRegex | quote }}
+  springdoc_swagger-ui_oauth2RedirectUrl: "https://{{ .Values.ingress.host }}.{{ .Values.api_gateway.environmentDomainName }}"
+  spring_cloud_kubernetes_discovery_discovery-server-url: "http://api-registry-int-svc:7000"
+  spring_cloud_gateway_globalcors_corsConfigurations_config_allowedOriginPatterns: {{ .Values.api_gateway.globalCorsConfigurations.allowedOriginPatterns | quote }}
+  spring_cloud_gateway_globalcors_corsConfigurations_config_maxAge: {{ .Values.api_gateway.globalCorsConfigurations.maxAge | quote }}
+  spring_cloud_gateway_globalcors_corsConfigurations_config_allowedMethods: {{ .Values.api_gateway.globalCorsConfigurations.allowedMethods | quote }}
+  spring_cloud_gateway_globalcors_corsConfigurations_config_allowedHeaders: {{ .Values.api_gateway.globalCorsConfigurations.allowedHeaders | quote }}
+  api_caching_enabled: {{ .Values.api_gateway.cachingEnabled | quote }}
+  api_caching_ttl: {{ .Values.api_gateway.cacheTtl | quote }}
+  api_caching_type: {{ .Values.api_gateway.cachingType | quote }}
+{{- if eq .Values.api_gateway.cachingType "redis"}}
+  spring.cloud.gateway.filter.local-response-cache.enabled: "false"
+  spring.cloud.gateway.filter.redis.cache.enabled: {{ .Values.api_gateway.cachingEnabled | quote }}
+{{- end }}
+{{- if eq .Values.api_gateway.cachingType "local"}}
+  spring.cloud.gateway.filter.redis.cache.enabled: "false"
+  spring.cloud.gateway.filter.local-response-cache.enabled: {{ .Values.api_gateway.cachingEnabled | quote }}
+{{- end }}
+  spring_data_redis_cluster_nodes:  {{ .Values.api_gateway.redis.clusterNodes | quote }}
+  RATE_LIMIT_REPLENISH_RATE: {{ .Values.api_gateway.rate_limit_replenish_rate | quote }}
+  RATE_LIMIT_BURST_CAPACITY: {{ .Values.api_gateway.rate_limit_burst_capacity | quote }}
+  api_dynamic_routes_enabled: "true"
+  api_registered_services: ""
+  requestbody_validation: "true"
+  health_service_failure_retry_thrshold: '1'
+  health_service_failure_retry_interval_millis: '10000'
+  LOG_LEVEL: {{ .Values.logging.logLevel | quote }}
+  API_GATEWAY_LOG_LEVEL : {{ .Values.logging.gatewayLogLevel | quote }}
+  SVC_LOG_LEVEL: {{ .Values.logging.svcLogLevel | quote }}
+  SVC_CONSOLE_LOG_LEVEL: {{ .Values.logging.svcConsoleLogLevel | quote }}
+  IGNITE_LOG_LEVEL: {{ .Values.logging.igniteLogLevel | quote }}
+  STORAGE_LOG_LEVEL: {{ .Values.logging.storageLogLevel | quote }}
+  SPRING_LOG_LEVEL: {{ .Values.logging.springLogLevel | quote }}
+  CACHE_LOG_LEVEL: {{ .Values.logging.cacheLogLevel | quote }}
+  KAFKA_LOG_LEVEL: {{ .Values.logging.kafkaLogLevel | quote }}
+  STREAM_BASE_LOG_LEVEL: {{ .Values.logging.streamBaseLogLevel | quote }}
+  api_gateway_request-header-filter_remove_unknown_headers: {{ .Values.api_gateway.requestHeaderFilterConfig.removeUnknownHeaders | quote }}
+  api_gateway_request-header-filter_skip_validation_for_apis: {{ .Values.api_gateway.requestHeaderFilterConfig.skipValidationForApis }}
+  api_gateway_request-header-filter_allow_headers: {{ .Values.api_gateway.requestHeaderFilterConfig.allowHeaders }}
+  api_gateway_request-header-filter_append_headers_if_missing: {{ .Values.api_gateway.requestHeaderFilterConfig.appendHeadersIfMissing }}
+{{- range $i, $header :=  .Values.api_gateway.requestHeaderFilterConfig.globalHeaders }}
+  api_gateway_request-header-filter_global-headers_{{$i}}_name : {{ $header.name }}
+  api_gateway_request-header-filter_global-headers_{{$i}}_required : {{ $header.required | quote }}
+  api_gateway_request-header-filter_global-headers_{{$i}}_regex : {{ $header.regex }}
+{{- end }}
+  api_gateway_metrics_enabled: {{ .Values.api_gateway.metrics.enabled | quote }}
+  api_gateway_metrics_port: {{ .Values.api_gateway.metrics.port | quote }}
+  api_gateway_metrics_base-path: {{ .Values.api_gateway.metrics.basePath | quote }}
+  api_gateway_metrics_prometheus_enabled: {{ .Values.api_gateway.metrics.prometheus.enabled | quote }}
+  api_gateway_metrics_prometheus_path: {{ .Values.api_gateway.metrics.prometheus.path | quote }}
+  api_gateway_metrics_health_enabled: {{ .Values.api_gateway.metrics.health.enabled | quote }}
+  api_gateway_metrics_health_path: {{ .Values.api_gateway.metrics.health.path | quote }}
+  api_gateway_metrics_security-metrics_enabled: {{ .Values.api_gateway.metrics.securityMetrics.enabled | quote }}
+  api_gateway_metrics_security-metrics_prefix: {{ .Values.api_gateway.metrics.securityMetrics.prefix | quote }}
+  api_gateway_metrics_security-metrics_ignoreTags: {{ .Values.api_gateway.metrics.securityMetrics.ignoreTags | quote }}
+  api_gateway_metrics_security-metrics_security-filter-name: {{ .Values.api_gateway.metrics.securityMetrics.securityFilterName | quote }}
+  api_gateway_metrics_gateway-requests_enabled: {{ .Values.api_gateway.metrics.gatewayRequests.enabled | quote }}
+  api_gateway_metrics_gateway-requests_prefix: {{ .Values.api_gateway.metrics.gatewayRequests.prefix | quote }}
+  api_gateway_metrics_gateway-requests_ignoreTags: {{ .Values.api_gateway.metrics.gatewayRequests.ignoreTags | quote }}
+  api_gateway_metrics_gateway-requests_distribution_enabled: {{ .Values.api_gateway.metrics.gatewayRequests.distribution.enabled | quote }}
+  api_gateway_metrics_gateway-requests_distribution_buckets: {{ .Values.api_gateway.metrics.gatewayRequests.distribution.buckets | quote }}
+  api_gateway_metrics_gateway-requests_distribution_expiry: {{ .Values.api_gateway.metrics.gatewayRequests.distribution.expiry | quote }}
+  api_gateway_metrics_gateway-requests_distribution_bufferLength: {{ .Values.api_gateway.metrics.gatewayRequests.distribution.bufferLength | quote }}
+  api_gateway_metrics_backend-requests_prefix: {{ .Values.api_gateway.metrics.backendRequests.prefix | quote }}
+  api_gateway_metrics_backend-requests_enabled: {{ .Values.api_gateway.metrics.backendRequests.enabled | quote }}
+  api_gateway_metrics_backend-requests_ignoreTags: {{ .Values.api_gateway.metrics.backendRequests.ignoreTags | quote }}
+  api_gateway_metrics_backend-requests_distribution_enabled: {{ .Values.api_gateway.metrics.backendRequests.distribution.enabled | quote }}
+  api_gateway_metrics_backend-requests_distribution_buckets: {{ .Values.api_gateway.metrics.backendRequests.distribution.buckets | quote }}
+  api_gateway_metrics_backend-requests_distribution_expiry: {{ .Values.api_gateway.metrics.backendRequests.distribution.expiry | quote }}
+  api_gateway_metrics_backend-requests_distribution_bufferLength: {{ .Values.api_gateway.metrics.backendRequests.distribution.bufferLength | quote }}
+  api_gateway_metrics_server-requests_prefix: {{ .Values.api_gateway.metrics.serverRequests.prefix | quote }}
+  api_gateway_metrics_server-requests_enabled: {{ .Values.api_gateway.metrics.serverRequests.enabled | quote }}
+  api_gateway_metrics_server-requests_ignoreTags: {{ .Values.api_gateway.metrics.serverRequests.ignoreTags | quote }}
+  api_gateway_metrics_server-requests_distribution_enabled: {{ .Values.api_gateway.metrics.serverRequests.distribution.enabled | quote }}
+  api_gateway_metrics_server-requests_distribution_buckets: {{ .Values.api_gateway.metrics.serverRequests.distribution.buckets | quote }}
+  api_gateway_metrics_server-requests_distribution_expiry: {{ .Values.api_gateway.metrics.serverRequests.distribution.expiry | quote }}
+  api_gateway_metrics_server-requests_distribution_bufferLength: {{ .Values.api_gateway.metrics.serverRequests.distribution.bufferLength | quote }}
+  api_gateway_metrics_http-client-requests_prefix: {{ .Values.api_gateway.metrics.httpClientRequests.prefix | quote }}
+  api_gateway_metrics_http-client-requests_enabled: {{ .Values.api_gateway.metrics.httpClientRequests.enabled | quote }}
+  api_gateway_metrics_http-client-requests_ignoreTags: {{ .Values.api_gateway.metrics.httpClientRequests.ignoreTags | quote }}
+  api_gateway_metrics_http-client-requests_distribution_enabled: {{ .Values.api_gateway.metrics.httpClientRequests.distribution.enabled | quote }}
+  api_gateway_metrics_http-client-requests_distribution_buckets: {{ .Values.api_gateway.metrics.httpClientRequests.distribution.buckets | quote }}
+  api_gateway_metrics_http-client-requests_distribution_expiry: {{ .Values.api_gateway.metrics.httpClientRequests.distribution.expiry | quote }}
+  api_gateway_metrics_http-client-requests_distribution_bufferLength: {{ .Values.api_gateway.metrics.httpClientRequests.distribution.bufferLength | quote }}
+  spring_cloud_gateway_metrics_enabled: {{ .Values.api_gateway.metrics.gatewayRequests.enabled | quote }}
+  spring_cloud_gateway_metrics_prefix: {{ .Values.api_gateway.metrics.gatewayRequests.prefix | quote }}
+  management_server_port: {{ .Values.api_gateway.metrics.port | quote }}
+  management_endpoint_prometheus_enabled: {{ .Values.api_gateway.metrics.prometheus.enabled | quote }}
+  management_endpoint_health_enabled: {{ .Values.api_gateway.metrics.health.enabled | quote }}
+  management_endpoint_health_show-components: "ALWAYS"
+  management_endpoints_enabled-by-default: "false"
+  management_endpoints_web_exposure_include: "health, prometheus"
+  management_endpoints_web_exposure_exclude: "gateway, beans, cache, conditions, configprops, auditevents, env, flyway, httpexchanges, info, integrationgraph, loggers, liquibase, metrics, mappings, quartz, scheduledtasks, sessions, shutdown, startup, threaddump, heapdump, logfile"
+  management_endpoints_web_base-path: {{ .Values.api_gateway.metrics.basePath | quote }}
+  management_endpoints_web_path-mapping_prometheus: {{ .Values.api_gateway.metrics.prometheus.path | quote }}
+  management_endpoints_web_path-mapping_health: {{ .Values.api_gateway.metrics.health.path | quote }}
+  management_endpoints_jmx_exposure_exclude: "*"
+  management_metrics_enabled: {{ .Values.api_gateway.metrics.enabled | quote }}
+  management_metrics_tags_application: "api-gateway"
+  management_metrics_export_prometheus_enabled: {{ .Values.api_gateway.metrics.prometheus.enabled | quote }}
+  management_health_probes_enabled: {{ .Values.api_gateway.metrics.health.enabled | quote }}
+{{- if .Values.api_gateway.extraParams }}
+{{ toYaml .Values.api_gateway.extraParams | indent 2 }}
+{{- end }}

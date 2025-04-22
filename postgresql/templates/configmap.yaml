@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: db-scripts 
+data:
+  database.port: {{ .Values.postgres.port | quote }}
+  database.default.dbname: {{ .Values.postgres.default_dbname }}
+  database.wso2.dbname: {{ .Values.postgres.wso2_dbname }}
+  database.dm.dbname: {{ .Values.postgres.dm_dbname }}

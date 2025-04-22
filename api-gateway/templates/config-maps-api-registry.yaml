@@ -1,0 +1,89 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "api-registry.fullname" . }}-config
+  labels:
+    app: {{ include "api-registry.fullname" . }}
+    group: api
+data:
+  JAVA_OPTS: {{ .Values.api_registry.jvmOpts | quote }}
+  NEVER_BLOCK_FOR_GRAYLOG: "true"
+  LOG_APPENDER: {{ .Values.logging.logAppender| quote }}
+  GRAYLOG_HOST: {{ .Values.logging.graylogHost | quote }}
+  GRAYLOG_PORT: {{ .Values.logging.graylogPort | quote }}
+  api_security_enabled: "true"
+  api_gatewayUrls: "https://{{ .Values.ingress.host }}.{{ .Values.api_gateway.environmentDomainName }}"
+  api_health_monitor: "0 */1 * ? * *"
+  health_service_failure_retry_thrshold: "2"
+  health_service_failure_retry_interval_millis: "2000"
+  LOG_LEVEL: {{ .Values.logging.logLevel | quote }}
+  SVC_LOG_LEVEL: {{ .Values.logging.svcLogLevel | quote }}
+  SVC_CONSOLE_LOG_LEVEL: {{ .Values.logging.svcConsoleLogLevel | quote }}
+  IGNITE_LOG_LEVEL: {{ .Values.logging.igniteLogLevel | quote }}
+  STORAGE_LOG_LEVEL: {{ .Values.logging.storageLogLevel | quote }}
+  SPRING_LOG_LEVEL: {{ .Values.logging.springLogLevel | quote }}
+  CACHE_LOG_LEVEL: {{ .Values.logging.cacheLogLevel | quote }}
+  KAFKA_LOG_LEVEL: {{ .Values.logging.kafkaLogLevel | quote }}
+  STREAM_BASE_LOG_LEVEL: {{ .Values.logging.streamBaseLogLevel | quote }}
+  #database config
+  api_registry_database_type: {{ .Values.api_registry.database.type | quote }}
+  api_registry_database_provider: {{ .Values.api_registry.database.provider | quote }}
+  service_name: {{ .Values.api_registry.serviceName | quote }}
+{{- if eq .Values.api_registry.database.type "sql" }}
+  # postgres configs
+  postgres_driver_class_name: org.postgresql.Driver
+  postgres_jdbc_url: jdbc:postgresql://{{ .Values.api_registry.database.host }}:{{ .Values.api_registry.database.port }}/{{ .Values.api_registry.database.databaseName }}
+  spring_jpa_hibernate_ddl_auto: {{ .Values.api_registry.database.config.ddlAuto | quote }}
+  spring_jpa_hibernate_show_sql: {{ .Values.api_registry.database.config.showSql | quote }}
+  postgresdb_metrics_enabled: {{ .Values.api_registry.metrics.databaseMetricsEnabled | quote }}
+  postgres_health_monitor_enabled: {{ .Values.api_registry.health.databaseMonitorEnabled | quote }}
+  postgres_health_monitor_restart_on_failure: {{ .Values.api_registry.health.restartOnDBFailure | quote }}
+  health_postgresdb_monitor_enabled: {{ .Values.api_registry.health.databaseMonitorEnabled | quote }}
+  health_postgresdb_monitor_restart_on_failure: {{ .Values.api_registry.health.restartOnDBFailure | quote }}
+  sp_restart_on_failure: {{ .Values.api_registry.health.restartOnDBFailure | quote }}
+{{- end }}
+# mongo configs
+{{- if eq .Values.api_registry.database.type "nosql" }}
+  mongodb_hosts: {{ .Values.api_registry.database.host | quote }}
+  mongodb_port: {{ .Values.api_registry.database.port | quote }}
+  mongodb_database: {{ .Values.api_registry.database.databaseName | quote }}
+  mongodb_auth_db: {{ .Values.api_registry.database.config.authDb | quote }}
+  mongodb_read_preference: {{ .Values.api_registry.database.config.readPreference | quote }}
+  mongodb_health_monitor_enabled: {{ .Values.api_registry.health.databaseMonitorEnabled | quote }}
+  mongodb_health_restart_on_failure: {{ .Values.api_registry.health.restartOnDBFailure | quote }}
+  mongodb_metrics_enabled: {{ .Values.api_registry.metrics.databaseMetricsEnabled | quote }}
+{{- end }}
+  api-registry_metrics_enabled: {{ .Values.api_registry.metrics.enabled | quote }}
+  api-registry_metrics_base-path: {{ .Values.api_registry.metrics.basePath | quote }}
+  api-registry_metrics_port: {{ .Values.api_registry.metrics.port | quote }}
+  api-registry_metrics_prometheus_enabled: {{ .Values.api_registry.metrics.prometheus.enabled | quote }}
+  api-registry_metrics_prometheus_path: {{ .Values.api_registry.metrics.prometheus.path | quote }}
+  api-registry_metrics_health_enabled: {{ .Values.api_registry.metrics.health.enabled | quote }}
+  api-registry_metrics_health_path: {{ .Values.api_registry.metrics.health.path | quote }}
+  api-registry_metrics_http-server-requests_prefix: {{ .Values.api_registry.metrics.httpServerRequests.prefix | quote }}
+  api-registry_metrics_http-client-requests_prefix: {{ .Values.api_registry.metrics.httpClientRequests.prefix | quote }}
+  api-registry_metrics_service-health_prefix: {{ .Values.api_registry.metrics.serviceHealth.prefix | quote }}
+  api-registry_metrics_service-routes_prefix: {{ .Values.api_registry.metrics.serviceRoutes.prefix | quote }}
+  management_server_port: {{ .Values.api_registry.metrics.port | quote }}
+  management_endpoint_prometheus_enabled: {{ .Values.api_registry.metrics.prometheus.enabled | quote }}
+  management_endpoint_health_enabled: {{ .Values.api_registry.metrics.health.enabled | quote }}
+  management_endpoint_health_show-components: "ALWAYS"
+  management_endpoints_enabled-by-default: "false"
+  management_endpoints_web_exposure_include: "health, prometheus"
+  management_endpoints_web_exposure_exclude: "gateway, beans, cache, conditions, configprops, auditevents, env, flyway, httpexchanges, info, integrationgraph, loggers, liquibase, metrics, mappings, quartz, scheduledtasks, sessions, shutdown, startup, threaddump, heapdump, logfile"
+  management_endpoints_web_base-path: {{ .Values.api_registry.metrics.basePath | quote }}
+  management_endpoints_web_path-mapping_prometheus: {{ .Values.api_registry.metrics.prometheus.path | quote }}
+  management_endpoints_web_path-mapping_health: {{ .Values.api_registry.metrics.health.path | quote }}
+  management_endpoints_jmx_exposure_exclude: "*"
+  management_metrics_enabled: {{ .Values.api_registry.metrics.enabled | quote }}
+  management_metrics_tags_application: {{ .Values.api_registry.serviceName | quote }}
+  management_metrics_export_prometheus_enabled: {{ .Values.api_registry.metrics.prometheus.enabled | quote }}
+  management_observations_http_client_requests_name: {{ .Values.api_registry.metrics.httpClientRequests.prefix | quote }}
+  management_observations_http_server_requests_name: {{ .Values.api_registry.metrics.httpServerRequests.prefix | quote }}
+  management_health_probes_enabled: {{ .Values.api_registry.metrics.health.enabled | quote }}
+  server_tomcat_mbeanregistry_enabled: {{ .Values.api_registry.metrics.prometheus.enabled | quote }}
+  metrics_prometheus_enabled: "false"
+  management_health_db_enabled: "false"
+{{- if .Values.api_registry.extraParams }}
+{{ toYaml .Values.api_registry.extraParams | indent 2 }}
+{{- end }}

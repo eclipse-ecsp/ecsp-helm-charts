@@ -1,0 +1,58 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-scripts-job
+  annotations:
+    "helm.sh/hook": post-install
+    "helm.sh/hook-weight": "1"
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  template:
+    spec:
+      serviceAccountName: {{ include "postgresql.fullname" . }}
+      containers:
+      - name: wait-for-db
+        image: giantswarm/tiny-tools:0.2.0
+        command: ['sh', '-c', 'until nc -vz postgresql $PGPORT; do echo waiting for postgresql; sleep 2; done;']
+        env:
+        - name: PGPORT
+          valueFrom:
+            configMapKeyRef:
+              name: db-scripts
+              key: database.port
+      - name: create-db-for-ignite
+        image: crunchydata/crunchy-postgres:centos7-9.6.16-4.2.0
+        command: [ "bash" ]
+        args: [
+            "-c",
+            "echo $PGPASSWORD > ~/.pgpass && psql --no-password --host=postgresql -d ignite --username=$PGUSER -p $PGPORT --command=\"SELECT 1 FROM pg_database WHERE datname = 'ignite'\" | grep -q 1 || psql --dbname $PGDATABASE --host=postgresql --username=$PGUSER -p $PGPORT --no-password --command=\"CREATE DATABASE ignite\""
+        ]
+        env:
+        - name: PGHOST
+          value: postgresql
+        - name: PGDATABASE
+          valueFrom:
+            configMapKeyRef:
+              name: db-scripts
+              key: database.default.dbname
+        - name: PGPORT
+          valueFrom:
+            configMapKeyRef:
+              name: db-scripts
+              key: database.port
+        - name: PGUSER
+          valueFrom:
+            secretKeyRef:
+              name: "{{ .Values.postgres.secretName }}"
+              key: username
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: "{{ .Values.postgres.secretName }}"
+              key: password 
+      restartPolicy: Never
+      volumes:
+      - name: config-volume
+        configMap:
+          name: db-scripts            
+  backoffLimit: 3

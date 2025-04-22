@@ -1,0 +1,201 @@
+# Default values for api-gateway.
+ms: "api-gateway"
+image:
+  repository: docker.io/eclipseecsp
+  pullPolicy: Always
+
+fullnameOverride: api-gateway
+registryFullnameOverride: api-registry
+
+api_gateway:
+  jvmOpts: "-Xmx2g -Xms2g -XX:+UseG1GC -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35 -XX:+DisableExplicitGC -XX:MetaspaceSize=96m -XX:G1HeapRegionSize=16M -XX:MinMetaspaceFreeRatio=50 -XX:MaxMetaspaceFreeRatio=80 -Dlogback.configurationFile=/api-gateway/conf/logback.xml -DLOG_LEVEL=INFO"
+  nodeType: "default"
+  replicas: 1
+  imageTag: 1.1.0
+  tokenHeaderConfig:
+    tenantIdRequired: "false"
+    tenantIdRegex: "^[a-zA-Z0-9]+$"
+    accountIdRequired: "false"
+    accountIdRegex: "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+  requestHeaderFilterConfig:
+    removeUnknownHeaders: "true"
+    allowHeaders: host, connection, content-type, content-length, accept, user-agent, origin, referer, accept-encoding, accept-language, X-Forwarded-Proto, X-Forwarded-For, X-Forwarded-Port, X-Amzn-Trace-Id, requestId, user-id, scope, override-scope
+    skipValidationForApis: /api-docs/**,^(\/[a-zA-Z0-9-]+)?\/v3/api-docs/**
+    appendHeadersIfMissing: correlationId
+    globalHeaders:
+      - name: correlationId
+        required: true
+        regex: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+      - name: requestId
+        required: false
+        regex: "^[a-zA-Z0-9_]{5,10}$"
+      - name: account-id
+        required: false
+        regex: "^[a-zA-Z0-9_]{10}$"
+      - name: tenant-id
+        required: false
+        regex: "^[a-zA-Z0-9_]{10}$"
+  customPlugins:
+    enabled: false
+    libraryPath: "/external-libs"
+    pluginClasses: "TO-BE-UPDATED" # Change this to your plugin fully qualified class name
+    artifactoryUsername: TO-BE-UPDATED
+    artifactoryPassword: TO-BE-UPDATED
+    plugins:
+    - name: <TO-BE-UPDATED> # Change this to your plugin name
+      url: <TO-BE-UPDATED> # Change this to your plugin jar URL
+  isFilterOverrideEnabled: "false"
+  overrideFilterConfig:
+    JwtAuthValidator:
+      filterName: "<TO-BE-UPDATED>"
+  resources:
+    limits:
+      memory: "2Gi"
+      cpu: "500m"
+    requests:
+      memory: "2Gi"
+      cpu: "500m"
+  jwt_publicKeyFiles: "uidam-public-key.pem"
+  jwt_publicKeyFilePath: "/opt/api-gateway/pem_files/"
+  gateway_port: "7000"
+  gateway_service_name: "http://api-gateway-int-svc"
+  registry_service_name: "http://api-registry-int-svc"
+  registry_port: "7000"
+  rate_limit_replenish_rate: "50"
+  rate_limit_burst_capacity: "100"
+  environmentDomainName: "TO-BE-UPDATED" # Change this to your domain name
+  userIdField: "user_id"
+  springdoc_swagger_ui_oauth2RedirectUrl: "http://api-gateway-int-svc:7000/"
+  nodeAffinityKey: "TO-BE-UPDATED" #  Change this to your node affinity key
+  cachingType: "redis"
+  cachingEnabled: "false"
+  cacheName: "DefaultCache"
+  cacheTtl: "5"
+  springdoc_swagger_ui_enable: "true"
+  apiRegistryEnabled: "true"
+  appender: "STDOUT"
+  serviceLogLevel: info
+  accessLogLevel: info
+  globalCorsConfigurations:
+    allowedOriginPatterns: "https://*.example.com" # TO-BE-UPDATED, Change this to your domain name
+    maxAge: "3600"
+    allowedMethods: "*"
+    allowedHeaders: "*"
+  redis:
+    clusterNodes: "redis:6379" # TO-BE-UPDATED, Change this to your Redis cluster nodes
+  uidam_public_key: |-
+    <TO-BE-UPDATED>
+  metrics:
+    enabled: true
+    basePath: /gateway
+    port: 9100
+    prometheus:
+      enabled: true
+      path: /metrics
+    health:
+      enabled: true
+      path: /health
+    securityMetrics:
+      enabled: true
+      prefix: api.gateway
+      ignoreTags: [ "exception" ]
+      securityFilterName: JwtAuthFilter
+    gatewayRequests:
+      enabled: true
+      prefix: api.gateway
+      ignoreTags: [ "exception" ]
+      distribution:
+        enabled: false # if enabled meter registry publishes 276 predetermined histogram buckets
+        buckets: 100ms, 500ms, 1000ms, 3000ms, 5000ms, 8000ms, 10000ms, 15000ms  # slo thresholds in milliseconds
+        expiry: 5m
+        bufferLength: 10
+    backendRequests:
+      prefix: http.backend.requests
+      enabled: true
+      ignoreTags: [ "exception" ]
+      distribution:
+        enabled: false
+        buckets: 100ms, 500ms, 1000ms, 3000ms, 5000ms, 8000ms, 10000ms, 15000ms  # slo thresholds in milliseconds
+        expiry: 5m
+        bufferLength: 10
+    serverRequests:
+      prefix: http.server.requests
+      enabled: true
+      ignoreTags: [ "exception" ]
+      distribution:
+        enabled: false
+        buckets: 100ms, 500ms, 1s, 3s, 5s, 8s, 10s, 15s  # slo thresholds in milliseconds
+        expiry: 5m
+        bufferLength: 10
+    httpClientRequests:
+      prefix: http.client.requests
+      enabled: true
+      ignoreTags: [ "outcome" ]
+      distribution:
+        enabled: false
+        buckets: 100ms, 500ms, 1000ms, 3000ms, 5000ms, 8000ms, 10000ms, 15000ms  # slo thresholds in milliseconds
+        expiry: 5m
+        bufferLength: 10
+
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-ssl-cert: arn:aws:acm:<TO-BE-UPDATED>:<TO-BE-UPDATED>:certificate/<TO-BE-UPDATED> # Change this to your certificate ARN
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: http
+    service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443"
+    service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: "20"
+
+api_registry:
+  jvmOpts: "-Xmx2g -Xms2g -XX:+UseG1GC -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35 -XX:+DisableExplicitGC -XX:MetaspaceSize=96m -XX:G1HeapRegionSize=16M -XX:MinMetaspaceFreeRatio=50 -XX:MaxMetaspaceFreeRatio=80 -Dlogback.configurationFile=/opt/api-registry/conf/logback.xml -DLOG_LEVEL=INFO"
+  nodeType: "default"
+  replicas: 1
+  imageTag: 1.1.0
+  serviceName: api-registry
+  database:
+    ## supported types - sql, nosql
+    type: sql
+    ## supported db - mongoDB, postgres
+    provider: "postgres"
+    host: TO-BE-UPDATED # change this to your database host
+    port: 5432 # change this to your database port
+    databaseName: eclipseecsp # change this to your database name
+    username: TO-BE-UPDATED # change this to your database username
+    password: TO-BE-UPDATED # change this to your database password
+    secretName: api-registry-database-credentials
+    config:
+      authDb: admin
+      ddlAuto: 'update'
+      showSql: 'false'
+      readPreference: primary
+  health:
+    databaseMonitorEnabled: true
+    restartOnDBFailure: true
+  metrics:
+    databaseMetricsEnabled: true
+  storageLogLevel: "ERROR"
+  springLogLevel: "ERROR"
+  svcLogLevel: "ERROR"
+  svcConsoleLogLevel: "ERROR"
+  cacheLogLevel: "ERROR"
+  logAppender: "ASYNC-GELF"
+  graylogHost: "TO-BE-UPDATED" # Change this to your Graylog host
+  graylogPort: "TO-BE-UPDATED" # Change this to your Graylog port
+
+
+
+# Ingress configuration to configure the ingress resource
+ingress:
+  enabled: true
+  additionalAnnotations: {}
+  annotations:
+    alb.ingress.kubernetes.io/healthcheck-path: /v1/sys/health
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/group.name: api-gateway
+    alb.ingress.kubernetes.io/backend-protocol: HTTP
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
+    alb.ingress.kubernetes.io/target-type: ip
+  host: "api-gateway"
+  port: 443
+  groupName: "api-gateway"
+  scheme: internet-facing
+  targetType: ip
+  inboundCidrs: TO-BE-UPDATED

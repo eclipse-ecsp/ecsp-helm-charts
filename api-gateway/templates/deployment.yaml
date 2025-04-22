@@ -1,0 +1,122 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "api-gateway.fullname" . }}
+  labels:
+   app: {{ include "api-gateway.fullname" . }}
+   group: api
+spec:
+  selector:
+    matchLabels:
+      app: {{ include "api-gateway.fullname" . }}
+  replicas: {{ .Values.api_gateway.replicas }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "api-gateway.fullname" . }}
+        group: api
+      name: {{ include "api-gateway.fullname" . }}
+      annotations:
+       checksum/config: {{ include (print $.Template.BasePath "/config-maps.yaml") . | sha256sum }}
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: {{ .Values.api_gateway.nodeAffinityKey }}
+                operator: In
+                values: [{{ .Values.api_gateway.nodeType | quote }}]
+      containers:
+      - name: api-gateway
+        image: {{ .Values.image.repository }}/api-gateway:{{ .Values.api_gateway.imageTag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: 7000
+          name: tcp
+        livenessProbe:
+          httpGet:
+            path: "{{ .Values.api_gateway.metrics.basePath }}{{ .Values.api_gateway.metrics.health.path }}/liveness"
+            port: {{ .Values.api_gateway.metrics.port }}
+          initialDelaySeconds: 200
+          periodSeconds: 10
+          failureThreshold: 10
+          successThreshold: 1
+          timeoutSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: "{{ .Values.api_gateway.metrics.basePath }}{{ .Values.api_gateway.metrics.health.path }}/readiness"
+            port: {{ .Values.api_gateway.metrics.port }}
+          initialDelaySeconds: 200
+          periodSeconds: 10
+          failureThreshold: 10
+          successThreshold: 1
+          timeoutSeconds: 5
+        resources:
+{{ toYaml .Values.api_gateway.resources | indent 10 }}
+        env:
+        - name: app
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['app']
+        - name: msCtype
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['group']
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: CATALINA_OPTS
+          value : "{{ .Values.api_gateway.jvmOpts }} {{ .Values.api_gateway.javaOpts }}"
+        envFrom:
+        - configMapRef:
+            name: api-gateway-config
+        volumeMounts:
+          - mountPath: /opt/api-gateway/logs
+            name: logs
+          - mountPath: /opt/api-gateway/pem_files
+            name: public-keys
+          - mountPath: "{{ .Values.api_gateway.customPlugins.libraryPath }}"
+            name: custom-plugins
+      serviceAccountName: {{ include "api-gateway.fullname" . }}
+      volumes:
+        - name: logs
+          emptyDir: {}
+        - name: config
+          emptyDir: {}
+        - name: custom-plugins
+          emptyDir: {}
+        - name: public-keys
+          secret:
+            optional: true
+            secretName: api-gateway-public-key
+{{- if .Values.api_gateway.customPlugins.enabled }}            
+      initContainers:
+      - name: custom-plugins
+        image: curlimages/curl:7.85.0
+        command: ["sh", "-c"]
+        args: 
+        - |-
+          {{- $values := .Values }}
+          echo "Downloading Plugins"
+          {{- range $plugin := .Values.api_gateway.customPlugins.plugins }}
+          curl -v -X GET "{{- $plugin.url -}}" -u $ARTIFACTORY_USERNAME:$ARTIFACTORY_PASSWORD -o {{- $values.api_gateway.customPlugins.libraryPath -}}/{{- $plugin.name -}}.jar
+          {{- end }}
+          ls -ltr {{ $values.api_gateway.customPlugins.libraryPath }}
+          echo "All Plugins are downloaded"
+        env:
+        - name: ARTIFACTORY_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: artifactory-credentials
+              key: artifactory-username
+        - name: ARTIFACTORY_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: artifactory-credentials
+              key: artifactory-password
+        volumeMounts:
+          - name: custom-plugins
+            mountPath: "{{ .Values.api_gateway.customPlugins.libraryPath }}"
+{{- end }}

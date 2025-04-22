@@ -1,0 +1,119 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "uidam-authorization-server.fullname" . }}
+  labels: {{- include "uidam-authorization-server.labels" . | nindent 4 }}
+data:
+  SPRING_AUTH_PROXY_PORT_HTTPS: "9443"
+  SPRING_AUTH_PROXY_PORT: "9000"
+  POSTGRES_DATASOURCE: "jdbc:postgresql://{{ .Values.postgres.host }}:{{ .Values.postgres.port}}/{{ .Values.postgres.databaseName }}"
+  SPRING_AUTH_PROXY_HOSTNAME: {{ (first .Values.ingress.hosts).hostPrefix }}.{{ .Values.environmentDomainName }}
+  UI_TEMPLATE_PATH: {{ .Values.uiTemplatePath  | quote}}
+  UI_STATIC_PATH: {{ .Values.uiStaticPath  | quote}}
+  GRAYLOG_ENABLED: {{ .Values.logging.GRAYLOG_ENABLED | quote }}
+  GRAYLOG_HOST: {{ .Values.logging.GRAYLOG_HOST | quote }}
+  GRAYLOG_PORT: {{ .Values.logging.GRAYLOG_PORT | quote }}
+  NEVER_BLOCK_FOR_GRAYLOG: {{ .Values.logging.NEVER_BLOCK_FOR_GRAYLOG | quote }}
+  LOG_FOLDER: {{ .Values.logging.LOG_FOLDER | quote }}
+  LOG_LEVEL: {{ .Values.logging.LOG_LEVEL | quote }}
+  IGNITE_LOG_LEVEL: {{ .Values.logging.IGNITE_LOG_LEVEL | quote }}
+  SVC_LOG_LEVEL: {{ .Values.logging.SVC_LOG_LEVEL | quote }}
+  STORAGE_LOG_LEVEL: {{ .Values.logging.STORAGE_LOG_LEVEL | quote }}
+  SPRING_LOG_LEVEL: {{ .Values.logging.SPRING_LOG_LEVEL | quote }}
+  LOG_APPENDER: {{ .Values.logging.LOG_APPENDER | quote }}
+
+  CACHE_EXPIRE_MINS: {{ .Values.tenant.cache.expiration | quote }}
+  CACHE_MAX_SIZE: {{ .Values.tenant.cache.maxsize | quote }}
+  CACHE_CLIENT_IDS: {{ .Values.tenant.cache.clientids | quote }}                                                                 
+  ###Tenant Configuration###
+  TENANT_ID: {{ .Values.tenant.tenantId | quote }}
+  TENANT_NAME: {{ .Values.tenant.tenantName | quote }}
+  JKS_ENABLED: {{ .Values.tenant.jksEnabled | quote }}
+  TENANT_ALIAS: {{ .Values.tenant.alias | quote }}
+  TENANT_ACCOUNT_ID: {{ .Values.tenant.account.accountId | quote }}
+  TENANT_ACCOUNT_NAME: {{ .Values.tenant.account.accountName | quote }}
+  TENANT_ACCOUNT_TYPE: {{ .Values.tenant.account.accountType | quote }}
+  ACCOUNT_FIELD_ENABLED: {{ .Values.tenant.account.accountFieldEnabled | quote }}
+  TENANT_CLIENT_ACCESS_TOKEN_TTL: {{ .Values.tenant.client.accessTokenTtl | quote }}
+  TENANT_CLIENT_ID_TOKEN_TTL: {{ .Values.tenant.client.idTokenTtl | quote }}
+  TENANT_CLIENT_REFRESH_TOKEN_TTL: {{ .Values.tenant.client.refreshTokenTtl | quote }}
+  TENANT_CLIENT_AUTH_CODE_TTL: {{ .Values.tenant.client.authCodeTtl | quote }}
+  TENANT_OAUTH_SCOPE_CUSTOMIZATION: {{ .Values.tenant.client.oauthScopeCustomization | quote }}
+  TENANT_USER_CAPTCHA_AFTER_INVALID_FAILURES: {{ .Values.tenant.user.captchaAfterInvalidFailures | quote }}
+  TENANT_USER_CAPTCHA_REQUIRED: {{ .Values.tenant.user.captchaRequired | quote }}
+  TENANT_USER_MAX_ALLOWED_LOGIN_ATTEMPTS: {{ .Values.tenant.user.maxAllowedLoginAttempts | quote }}
+  TENANT_CAPTCHA_RECAPTCHA_VERIFY_URL: {{ .Values.tenant.captcha.recaptchaVerifyUrl | quote }}
+  TENANT_CAPTCHA_RECAPTCHA_KEY_SITE: {{ .Values.tenant.captcha.recaptchaKeySite | quote }}
+  TENANT_PASSWORD_RECOVERY_URL: https://{{ (first .Values.ingress.hosts).hostPrefix }}.{{ .Values.environmentDomainName }}/recovery
+
+  # External IDP Configuration
+  # External IDP Registered Clients
+  {{- if .Values.tenant.externalIdpEnabled }}
+  {{- if .Values.tenant.externalIdpRegisteredClients }}
+  {{- range $index, $client := .Values.tenant.externalIdpRegisteredClients }}
+  TENANT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_CLIENT_NAME: {{ $client.clientName | quote }}
+  TENANT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_REGISTRATION_ID: {{ $client.registrationId | quote }}
+  TENANT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_CLIENT_ID: {{ $client.clientId | quote }}
+  TENANT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_CLIENT_SECRET: {{ $client.clientSecret | quote }}
+  TENANT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_CLIENT_AUTHENTICATION_METHOD: {{ $client.clientAuthenticationMethod | quote }}
+  TENANT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_SCOPE: {{ $client.scope | quote }}
+  TENANT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_AUTHORIZATION_URI: {{ $client.authorizationUri | quote }}
+  TENANT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_TOKEN_URI: {{ $client.tokenUri | quote }}
+  TENANT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_USER_INFO_URI: {{ $client.userInfoUri | quote }}
+  TENANT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_USER_NAME_ATTRIBUTE_NAME: {{ $client.userNameAttributeName | quote }}
+  TENANT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_JWK_SET_URI: {{ $client.jwkSetUri | quote }}
+  TENANT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_TOKEN_INFO_SOURCE: {{ $client.tokenInfoSource | quote }}
+  TENANT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_CREATE_USER_MODE: {{ $client.createUserMode | quote }}
+  TENANT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_DEFAULT_USER_ROLES: {{ $client.defaultUserRoles | quote }}
+
+  {{- if $client.claimMappings }}
+  TENANT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_CLAIM_MAPPINGS: {{ $client.claimMappings | quote }}
+  {{- end }}
+
+  {{- if $client.conditions }}
+  TENANT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_CONDITIONS_CLAIM_KEY: {{ $client.conditions.claimKey | quote }}
+  TENANT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_CONDITIONS_EXPECTED_VALUE: {{ $client.conditions.expectedValue | quote }}
+  TENANT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_CONDITIONS_OPERATOR: {{ $client.conditions.operator | quote }}
+  {{- end }}
+
+  {{- end }}
+  {{- end }}
+  {{- end }}
+  
+  TENANT_EXTERNAL_IDP_ENABLED: {{ .Values.tenant.externalIdpEnabled | quote}}
+  CREATE_FEDRATED_USER_ENDPOINT: {{ .Values.tenant.externalUrls.createFedratedUserEndpoint | quote }}
+  TENANT_INTERNAL_LOGIN_ENABLED: {{ .Values.tenant.internalLoginEnabled | quote}}
+  USER_MANAGEMENT_ENV: {{ .Values.tenant.externalUrls.userManagementUrl | quote}}
+  CLIENT_BY_CLIENT_ID_ENDPOINT: {{ .Values.tenant.externalUrls.clientByClientIdEndpoint | quote}}
+  USER_BY_USERNAME_ENDPOINT: {{ .Values.tenant.externalUrls.userByUsernameEndpoint | quote}}
+  KEYSTORE_FILE_NAME: {{ .Values.tenant.keyStore.keyStoreFilename | quote}}
+  KEYSTORE_ALIAS: {{ .Values.tenant.keyStore.keyAlias | quote }}
+  KEYSTORE_TYPE: {{ .Values.tenant.keyStore.keyType | quote}}
+  JWT_PUBLIC_KEY: {{ .Values.tenant.cert.jwtPublicKey | quote }}
+  JWT_PRIVATE_KEY: {{ .Values.tenant.cert.jwtPrivateKey | quote }}
+  JWT_KEY_ID: {{ .Values.tenant.cert.jwtKeyId | quote }}
+  
+  JWT_ADDITIONAL_CLAIM_ATTRIBUTES: {{ .Values.tenant.user.jwtAdditionalClaimAttributes | quote }}
+
+  ###Fixed Session Timeout###
+  server_servlet_session_timeout: {{ .Values.server_servlet_session_timeout | quote }}
+  ###Force user to login always in Auth Code/PKCE flow###
+  user_session_force_login: {{ .Values.user_session_force_login | quote }}
+
+  ###DAO Configuration###
+  health_postgresdb_monitor_enabled: {{ .Values.health.postgresdb.monitor.enabled | quote }}
+  health_postgresdb_monitor_restart_on_failure: {{ .Values.health.postgresdb.monitor.restart_on_failure | quote}}
+  postgres_max_pool_size: {{ .Values.max_pool_size | quote }}
+  metrics_prometheus_enabled: {{ .Values.metrics.prometheus.enabled | quote}}
+  postgres_max_idle_time: {{ .Values.postgres.max_idle_time | quote }}
+  postgres_data_source_properties_cachePrepStmts: {{ .Values.postgres.data_source_properties.cachePrepStmts | quote }}
+  postgres_data_source_properties_prepStmtCacheSize: {{ .Values.postgres.data_source_properties.prepStmtCacheSize | quote }}
+  postgres_data_source_properties_prepStmtCacheSqlLimit: {{ .Values.postgres.data_source_properties.prepStmtCacheSqlLimit | quote }}
+  prometheus_agent_port: {{ .Values.metrics.prometheus.agent.port | quote }}
+  prometheus_agent_port_exposed: {{ .Values.metrics.prometheus.agent.port_exposed | quote }}
+  postgres_connection_timeout_ms: {{ .Values.postgres.connecion_timeout_ms | quote }}
+  postgres_expected99thPercentileMs: {{ .Values.postgres.expected99thPercentileMs | quote }}
+  postgresdb_metrics_enabled: {{ .Values.metrics.postgresdb.enabled | quote}}
+  postgresdb_metrics_executor_shutdown_buffer_ms: {{ .Values.metrics.postgresdb.executor_shutdown_buffer_ms | quote }}
+  postgresdb_metrics_thread_freq_ms: {{ .Values.metrics.postgresdb.thread.freq_ms | quote }}
+  postgresdb_metrics_thread_initial_delay_ms: {{ .Values.metrics.postgresdb.thread.intial_delay_ms | quote }}

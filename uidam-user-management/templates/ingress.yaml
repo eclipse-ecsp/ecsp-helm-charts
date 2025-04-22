@@ -1,0 +1,46 @@
+{{- if .Values.ingress.enabled -}}
+{{- $fullName := include "uidam-user-management.fullname" . -}}
+{{- $root := . -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $fullName }}
+  labels: {{- include "uidam-user-management.labels" . | nindent 4 }}
+  annotations:
+    alb.ingress.kubernetes.io/backend-protocol: HTTP
+    alb.ingress.kubernetes.io/scheme: {{ .Values.ingress.scheme }}
+    alb.ingress.kubernetes.io/target-type: {{ .Values.ingress.targetType }}
+    alb.ingress.kubernetes.io/healthcheck-path: /actuator/health
+    {{- if .Values.ingress.tls.enabled }}
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+    {{- if .Values.ingress.tls.sslRedirect }}
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
+    {{- end }}
+    {{- end }}
+    {{- if .Values.ingress.groupName }}
+    alb.ingress.kubernetes.io/group.name: {{ .Values.ingress.groupName }}
+    {{- end }}
+    {{- if .Values.ingress.inboundCidrs }}
+    alb.ingress.kubernetes.io/inbound-cidrs: {{ join "," .Values.ingress.inboundCidrs }}
+    {{- end }}
+    {{- with .Values.ingress.additionalAnnotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  rules:
+  {{- range .Values.ingress.hosts }}
+  - host: {{ printf "%s.%s" .hostPrefix $root.Values.environmentDomainName | quote }}
+    http:
+      paths:
+      {{- range .paths }}
+      - path: {{ . }}
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ $fullName }}
+            port:
+              number: {{ $root.Values.service.port }}
+      {{- end }}
+  {{- end }}
+{{- end }}

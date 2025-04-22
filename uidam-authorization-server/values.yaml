@@ -1,0 +1,251 @@
+# Default values for uidam-authorization-server.
+replicaCount: 1
+
+image:
+  repository: docker.io/eclipseecsp/uidam-authorization-server
+  pullPolicy: IfNotPresent
+  tag: 1.0.0
+
+nameOverride: ""
+fullnameOverride: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+tenant:
+  tenantId: "TO-BE-UPDATED"
+  tenantName: "TO-BE-UPDATED"
+  jksEnabled: "true"
+  alias: "TO-BE-UPDATED"
+  cache:
+    expiration: "60"
+    maxsize: "100"
+    clientids: "token-mgmt,device-mgmt"
+  account:
+    accountId: "TO-BE-UPDATED"
+    accountName: "TO-BE-UPDATED"
+    accountType: "TO-BE-UPDATED"
+    accountFieldEnabled: "true"
+  client:
+    accessTokenTtl: "3600"
+    idTokenTtl: "3600"
+    refreshTokenTtl: "3600"
+    authCodeTtl: "300"
+    oauthScopeCustomization: "false"
+  user:
+    captchaAfterInvalidFailures: "1"
+    captchaRequired: "false"
+    maxAllowedLoginAttempts: "3"
+    jwtAdditionalClaimAttributes: "accountType, accountName"
+  externalUrls:
+    userManagementUrl: "http://uidam-user-management:8080"
+    clientByClientIdEndpoint: "/v1/oauth2/client/{clientId}"
+    userByUsernameEndpoint: "/v1/users/{userName}/byUserName"
+    recoveryNotificationEndpoint: "/v1/users/{userName}/recovery/forgotpassword"
+    updatePasswordUsingSecretEndpoint: "/v1/users/recovery/set-password"
+  keyStore:
+    keyStoreFilename: "uidamauthserver.jks"
+    keyAlias: "uidamauthserver"
+    keyType: "JKS"
+  cert:
+    jwtPublicKey: "app.pub"
+    jwtPrivateKey: "app.key"
+    jwtKeyId: "TO-BE-UPDATED"
+  # Please register site over google to enable google recaptcha services and update details below
+  captcha:
+    recaptchaVerifyUrl: "https://www.google.com/recaptcha/api/siteverify"
+    recaptchaKeySite: "xxx"
+  externalIdpEnabled: false
+  internalLoginEnabled: true
+  externalIdpClientName: federated-user-client
+  # Please update the below details by creating clients in respective IDPs as per the client to be configured
+  externalIdpRegisteredClients:
+    - clientName: Google
+      registrationId: google
+      clientId: xxx
+      clientSecret: xxx
+      clientAuthenticationMethod: client_secret_basic
+      scope: openid, profile, email, address, phone
+      authorizationUri: https://accounts.google.com/o/oauth2/v2/auth
+      tokenUri: https://www.googleapis.com/oauth2/v4/token
+      userInfoUri: https://www.googleapis.com/oauth2/v3/userinfo
+      userNameAttributeName: sub
+      jwkSetUri: https://www.googleapis.com/oauth2/v3/certs
+      tokenInfoSource: FETCH_INTERNAL_USER
+      createUserMode: CREATE_INTERNAL_USER
+      defaultUserRoles: VEHICLE_OWNER
+      claimMappings: firstName#given_name,lastName#family_name,email#email
+    - clientName: Github
+      registrationId: github
+      clientId: xxx
+      clientSecret: xxx
+      clientAuthenticationMethod: client_secret_basic
+      scope: read:user
+      authorizationUri: https://github.com/login/oauth/authorize
+      tokenUri: https://github.com/login/oauth/access_token
+      userInfoUri: https://api.github.com/user
+      userNameAttributeName: id
+      jwkSetUri: https://www.googleapis.com/oauth2/v3/certs
+      tokenInfoSource: FETCH_INTERNAL_USER
+      createUserMode: CREATE_INTERNAL_USER
+      defaultUserRoles: VEHICLE_OWNER
+      claimMappings: firstName#name,email#email
+    - clientName: Cognito
+      registrationId: cognito
+      clientId: xxx
+      clientSecret: xxx
+      clientAuthenticationMethod: client_secret_basic
+      scope: openid,profile
+      authorizationUri: xxx
+      tokenUri: https:xxx
+      userInfoUri: xxx
+      userNameAttributeName: sub
+      jwkSetUri: xxx
+      tokenInfoSource: FETCH_INTERNAL_USER
+      createUserMode: CREATE_INTERNAL_USER
+      defaultUserRoles: VEHICLE_OWNER
+      claimMappings: firstName#given_name,lastName#family_name,email#email
+    - clientName: Azure
+      registrationId: azureidp
+      clientId: xxx
+      clientSecret: xxx
+      clientAuthenticationMethod: client_secret_post
+      scope: openid
+      authorizationUri: https://login.microsoftonline.com/common/oauth2/v2.0/authorize
+      tokenUri: https://login.microsoftonline.com/common/oauth2/v2.0/token
+      userInfoUri: https://graph.microsoft.com/oidc/userinfo
+      userNameAttributeName: sub
+      jwkSetUri: https://login.microsoftonline.com/common/discovery/v2.0/keys
+      tokenInfoSource: FETCH_INTERNAL_USER
+      createUserMode: CREATE_INTERNAL_USER
+      defaultUserRoles: VEHICLE_OWNER
+      claimMappings: firstName#given_name,lastName#family_name,email#email
+
+service:
+  type: ClusterIP
+  port: 9443
+
+ingress:
+  enabled: true
+  className: alb
+  groupName: external
+  scheme: internet-facing
+  targetType: ip
+  inboundCidrs: ["0.0.0.0/0"]
+  tls:
+    enabled: true
+    sslRedirect: false
+  additionalAnnotations: {}
+  hosts:
+  - hostPrefix: auth-server
+    paths:
+    - /
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+distributedTracing:
+  enabled: false
+
+environmentDomainName: ecsp.example.com # Change this to your domain name
+
+uiTemplatePath: "file:///tmp/customui/templates/"
+uiStaticPath: "file:///tmp/customui/static"
+javaOpts: -Xms128m -Xmx512m -XX:+UseG1GC -XX:+UseStringDeduplication -XX:MaxMetaspaceSize=256m
+
+logging:
+  GRAYLOG_ENABLED: "false"
+  GRAYLOG_HOST: graylog3-tcp.graylog.svc.cluster.local
+  GRAYLOG_PORT: "12201"
+  NEVER_BLOCK_FOR_GRAYLOG: "false"
+  LOG_FOLDER: logs/
+  LOG_LEVEL: ERROR
+  IGNITE_LOG_LEVEL: ERROR
+  SVC_LOG_LEVEL: INFO
+  STORAGE_LOG_LEVEL: ERROR
+  SPRING_LOG_LEVEL: ERROR
+  LOG_APPENDER: "STDOUT"
+
+postgres:
+  host: postgresql
+  port: 5432
+  secretName: uidam-authorization-server-credentials
+  userName: TO-BE-UPDATED
+  password: TO-BE-UPDATED
+  port: 5432
+  databaseName: postgresql
+  schemaName: eclipseecsp
+  max_idle_time: "0"
+  data_source_properties:
+    cachePrepStmts: "true"
+    prepStmtCacheSize: "250"
+    prepStmtCacheSqlLimit: "2048"
+  connecion_timeout_ms: "60000"
+  expected99thPercentileMs: "60000"
+  max_pool_size: "30"
+
+server_servlet_session_timeout: "5m"
+user_session_force_login: "true"  
+
+
+
+health:
+  postgresdb:
+    monitor:
+      enabled: "false"
+      restart_on_failure: "true"
+metrics:
+  prometheus:
+    enabled: "false"
+    agent:
+      port: "9100"
+      port_exposed: "9100"
+  postgresdb:
+    enabled: "false"
+    executor_shutdown_buffer_ms: "2000"
+    thread:
+      freq_ms: "5000"
+      intial_delay_ms: "2000"
+
+jks_file: TO-BE-UPDATED
+nfsServerUrl:
+sharedStoragePvcName: uidam-shared-storage
+app_key: |
+  TO-BE-UPDATED
+app_pub: |
+  TO-BE-UPDATED
+uidam_pub: |
+  TO-BE-UPDATED
+
+secrets:
+  keystorePassword: "TO-BE-UPDATED"
+  igniteRecaptchaKeySecret: "TO-BE-UPDATED"
+  clientsecretkey: "TO-BE-UPDATED"
+  clientsecretsalt: "TO-BE-UPDATED"
+  clientSecret: "TO-BE-UPDATED"

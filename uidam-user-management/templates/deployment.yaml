@@ -1,0 +1,109 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "uidam-user-management.fullname" . }}
+  labels: {{- include "uidam-user-management.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels: {{- include "uidam-user-management.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+      {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels: {{- include "uidam-user-management.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets: {{- toYaml . | nindent 6 }}
+      {{- end }}
+      serviceAccountName: {{ include "uidam-user-management.fullname" . }}
+      securityContext: {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+      - name: {{ .Chart.Name }}
+        securityContext: {{- toYaml .Values.securityContext | nindent 10 }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - name: http
+          containerPort: {{ .Values.service.port }}
+          protocol: TCP
+        envFrom:
+        - configMapRef:
+            name: {{ include "uidam-user-management.fullname" . }}
+        resources: {{- toYaml .Values.resources | nindent 10 }}
+        volumeMounts:
+        - mountPath: /notification
+          name: {{ .Values.notification.config.configName }}
+        env:
+          - name: LOGLEVEL
+            value: DEBUG
+          - name: POSTGRESQL_HOST
+            value: "{{ .Values.postgres.host }}"
+          - name: POSTGRESQL_PORT
+            value: "{{ .Values.postgres.port }}"
+          - name: POSTGRES_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: "{{ .Values.postgres.secretName }}"
+                key: username
+          - name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: "{{ .Values.postgres.secretName }}"
+                key: password
+          - name: CLIENT_REGISTRATION_SECRET_KEY
+            valueFrom:
+              secretKeyRef:
+                name: "{{ .Values.postgres.secretName }}"
+                key: clientsecretkey
+          - name: CLIENT_REGISTRATION_SECRET_SALT
+            valueFrom:
+              secretKeyRef:
+                name: "{{ .Values.postgres.secretName }}"
+                key: clientsecretsalt    
+          - name: CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: "{{ .Values.postgres.secretName }}"
+                key: revokeTokenClientSecret
+          - name: notification_email_provider_username
+            valueFrom:
+              secretKeyRef:
+                name: "{{ .Values.postgres.secretName }}"
+                key: smtp_username
+          - name: notification_email_provider_passwd
+            valueFrom:
+              secretKeyRef:
+                name: "{{ .Values.postgres.secretName }}"
+                key: smtp_passwd
+          - name: INTITIAL_DATA_CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: "{{ .Values.postgres.secretName }}"
+                key: liquibase_clientsecret
+          - name: INTITIAL_DATA_USER_SALT
+            valueFrom:
+              secretKeyRef:
+                name: "{{ .Values.postgres.secretName }}"
+                key: liquibase_usersalt
+          - name: INTITIAL_DATA_USER_PWD
+            valueFrom:
+              secretKeyRef:
+                name: "{{ .Values.postgres.secretName }}"
+                key: liquibase_userpwd
+      {{- with .Values.nodeSelector }}
+      nodeSelector: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: {{ .Values.notification.config.configName }}
+          configMap:
+            name: uidam-user-management-notification-config
+            optional: true

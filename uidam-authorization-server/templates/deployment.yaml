@@ -1,0 +1,134 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "uidam-authorization-server.fullname" . }}
+  labels: {{- include "uidam-authorization-server.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels: {{- include "uidam-authorization-server.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+      {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels: {{- include "uidam-authorization-server.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets: {{- toYaml . | nindent 6 }}
+      {{- end }}
+      serviceAccountName: {{ include "uidam-authorization-server.fullname" . }}
+      securityContext: {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+      - name: {{ .Chart.Name }}
+        securityContext: {{- toYaml .Values.securityContext | nindent 10 }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - name: http
+          containerPort: {{ .Values.service.port }}
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: 9443       
+            scheme: HTTPS   
+          initialDelaySeconds: 30    
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3  
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 9443       
+            scheme: HTTPS   
+          initialDelaySeconds: 30    
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3            
+        envFrom:
+        - configMapRef:
+            name: {{ include "uidam-authorization-server.fullname" . }}
+        volumeMounts:
+          - name: uidam-jks
+            mountPath: /etc/uidam/keystore
+          - name: app-keys
+            mountPath: /etc/uidam/cert
+        resources: {{- toYaml .Values.resources | nindent 10 }}
+        env:
+          - name: LOGLEVEL
+            value: DEBUG
+          - name: POSTGRESQL_CONFIG_FILE
+            value: /data/uidam-authorization-server-postgres-config.yml
+          - name: POSTGRESQL_HOST
+            value: "{{ .Values.postgres.host }}"
+          - name: POSTGRESQL_PORT
+            value: "{{ .Values.postgres.port }}"
+          - name: POSTGRES_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: "{{ .Values.postgres.secretName }}"
+                key: username
+          - name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: "{{ .Values.postgres.secretName }}"
+                key: password
+          - name: TENANT_CLIENT_SECRET_ENCRYPTION_KEY
+            valueFrom:
+              secretKeyRef:
+                name: "{{ .Values.postgres.secretName }}"
+                key: clientsecretkey
+          - name: TENANT_CAPTCHA_RECAPTCHA_KEY_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: "{{ .Values.postgres.secretName }}"
+                key: ignite.recaptcha.key.secret   
+          - name: TENANT_CLIENT_SECRET_ENCRYPTION_SALT
+            valueFrom:
+              secretKeyRef:
+                name: "{{ .Values.postgres.secretName }}"
+                key: clientsecretsalt
+          - name: KEYSTORE_PASS
+            valueFrom:
+              secretKeyRef:
+                name: "{{ .Values.postgres.secretName }}"
+                key: keystorePassword       
+          - name: TENANT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_0_CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: "{{ .Values.postgres.secretName }}"
+                key: clientSecret 
+          - name: TENANT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_1_CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: "{{ .Values.postgres.secretName }}"
+                key: clientSecret    
+          - name: TENANT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_2_CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: "{{ .Values.postgres.secretName }}"
+                key: clientSecret       
+          - name: TENANT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_3_CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: "{{ .Values.postgres.secretName }}"
+                key: clientSecret             
+      {{- with .Values.nodeSelector }}
+      nodeSelector: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: uidam-jks
+          configMap:
+            name: {{ include "uidam-authorization-server.fullname" . }}-jks
+        - name: app-keys
+          configMap:
+            name: {{ include "uidam-authorization-server.fullname" . }}-app
+          

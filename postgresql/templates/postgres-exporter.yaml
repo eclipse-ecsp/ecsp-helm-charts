@@ -1,0 +1,68 @@
+{{- if .Values.metrics.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels: 
+      app: postgres-exporter
+  template:
+    metadata:
+      annotations:
+      {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels: 
+        app: postgres-exporter
+    spec:
+      serviceAccountName: {{ include "postgresql.fullname" . }}
+      containers:
+      - name: postgres-exporter
+        image: wrouesnel/postgres_exporter
+        ports:
+        - containerPort: 9187
+        env:
+        - name: DATA_SOURCE_NAME
+          value: postgresql://postgresql:postgresql@postgresql:5432/?sslmode=disable
+{{- end }}
+
+---
+{{- if .Values.metrics.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-exporter
+  labels:
+    app: postgres-exporter
+spec:
+  selector:
+    app: postgres-exporter
+  ports:
+  - name: postgres-exporter
+    port: 9187
+{{- end }}
+
+---
+{{- if .Values.metrics.enabled -}}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app: postgres-exporter
+  name: postgres-exporter
+spec:
+  endpoints:
+  - honorLabels: true
+    interval: 10s
+    path: /metrics
+    port: postgres-exporter
+  namespaceSelector:
+    matchNames:
+    - ignite-core
+  selector:
+    matchLabels:
+      app: postgres-exporter
+{{- end }}
+---

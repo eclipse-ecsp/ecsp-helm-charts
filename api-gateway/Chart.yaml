@@ -1,0 +1,10 @@
+apiVersion: v1
+appVersion: "1.0.0"
+description: API-Gateway helm chart that deploys API-Gateway and API-Registry
+name: api-gateway
+version: 1.0.0
+maintainers:
+  - name: Gowrav Kumar
+    email: Gowrav.Kumar@harman.com
+  - name: Abhishek Kumar  
+    email: Abhishek.Kumar87@harman.com

@@ -1,0 +1,12 @@
+{{- if .Values.notification.email.mailingService.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: mailing-external
+  name: mailing-service
+spec:
+  externalName: email-smtp.us-east-1.amazonaws.com
+  sessionAffinity: None
+  type: ExternalName
+{{- end }}

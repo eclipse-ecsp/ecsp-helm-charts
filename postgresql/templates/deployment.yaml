@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "postgresql.fullname" . }}
+  labels: {{- include "postgresql.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels: {{- include "postgresql.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+      {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels: {{- include "postgresql.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets: {{- toYaml . | nindent 6 }}
+      {{- end }}
+      securityContext: {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      serviceAccountName: {{ include "postgresql.fullname" . }}
+      initContainers:
+      - name: prepare-db-directory
+        image: "{{ .Values.prepareDbDirectory.image.repository }}:{{ .Values.prepareDbDirectory.image.tag }}"
+        imagePullPolicy: {{ .Values.prepareDbDirectory.image.pullPolicy }}
+        volumeMounts:
+        - mountPath: /var/lib/postgresql/data
+          name: data
+        command: ["/bin/sh"]
+        args: ["-c","rm -rf /var/lib/postgresql/data/lost+found"]
+      containers:
+      - name: {{ .Chart.Name }}
+        securityContext: {{- toYaml .Values.securityContext | nindent 10 }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        env:
+        - name: IS_AUDIT_LOG_ENABLED
+          value: "true"
+        - name: MAX_CONNECTIONS
+          value: {{ .Values.postgresqlMaxConnections | quote}}
+        - name: SHARED_BUFFERS
+          value: {{ .Values.postgresqlSharedBuffers }}
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: "{{ .Values.postgres.secretName }}"
+              key: username
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: "{{ .Values.postgres.secretName }}"
+              key: password          
+        ports:
+        - containerPort: {{ .Values.service.port }}
+        livenessProbe:
+          tcpSocket:
+            port: {{ .Values.service.port }}
+          initialDelaySeconds: 600
+        readinessProbe:
+          tcpSocket:
+            port: {{ .Values.service.port }}
+          initialDelaySeconds: 20
+        resources: {{- toYaml .Values.resources | nindent 10 }}
+        volumeMounts:
+        - mountPath: /var/lib/postgresql/data
+          name: data
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: {{ include "postgresql.fullname" . }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations: {{- toYaml . | nindent 8 }}
+      {{- end }}

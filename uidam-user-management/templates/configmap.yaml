@@ -1,0 +1,125 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "uidam-user-management.fullname" . }}
+  labels: {{- include "uidam-user-management.labels" . | nindent 4 }}
+data:
+  JAVA_OPTS: {{ .Values.javaOpts }}
+  PORT_HTTP: {{ .Values.service.port | quote }}
+
+  POSTGRES_DATASOURCE: "jdbc:postgresql://{{ .Values.postgres.host }}:{{ .Values.postgres.port }}/{{ .Values.postgres.databaseName }}"
+  SHOW_SQL: "false"
+  GRAYLOG_ENABLE: "false"
+  GRAYLOG_ENABLED: "false"
+  GRAYLOG_HOST: graylog3-tcp.graylog.svc.cluster.local
+  GRAYLOG_PORT: "12201"
+  NEVER_BLOCK_FOR_GRAYLOG: "false"
+  LOG_FOLDER: "logs/"
+  LOG_LEVEL: "ERROR"
+  IGNITE_LOG_LEVEL: "ERROR"
+  SVC_LOG_LEVEL: ERROR
+  STORAGE_LOG_LEVEL: ERROR
+  SPRING_LOG_LEVEL: ERROR
+  REGISTRY_COMMON_LOG_LEVEL: ERROR
+  LOG_APPENDER: "STDOUT"
+
+  ###AUTHORIZATION_SERVER_SERVICE_CONF
+  CLIENT_ID: {{ .Values.revoke_token_client_id | quote }}
+  AUTH_SERVER_TOKEN_URL: {{ .Values.auth.server.host }}.{{ .Values.environmentDomainName }}{{ .Values.auth.server.token_url }}
+  AUTH_SERVER_REVOKE_TOKEN_URL: {{ .Values.auth.server.host }}.{{ .Values.environmentDomainName }}{{ .Values.auth.server.revoke_token_url }}
+  AUTHORIZATION_SERVER_URL: {{ .Values.auth.server.host }}.{{ .Values.environmentDomainName }}
+
+  ###API_GATEWAY_PROPERTIES###
+  api_registry_enabled: "true"
+  api_security_enabled: "false"
+  api_gatewayUrls: {{ .Values.api_gateway.uri | quote }}
+  spring_application_version: "1.0"
+  spring_application_name: "uidam-user-management"
+  spring_application_servicename: "uidam-user-management"
+  openapi_path_include: {{ .Values.uidam.openapi_path_include | quote }}
+  api_registry_service_name: "http://api-registry-int-svc"
+  api_gateway_service_name: {{ .Values.api_gateway.serviceUrl | quote }}
+  api_gateway_caching_ttl: "10"
+  api_gateway_cachesize: "50"
+  
+  ####Users Domain Configuration####
+  account_id: {{ .Values.uidam.account_id | quote }}
+  account_name: {{ .Values.uidam.account_name | quote }}
+  account_type: {{ .Values.uidam.account_type | quote }}
+  password_encoder: "SHA-256"
+  recovery_secret_expires_in_minutes: "15"
+  max_allowed_login_attempts: {{ .Values.maxAllowedLoginAttempts | quote }}
+  min_password_length: {{ .Values.minPasswordLength | quote }}
+  max_password_length: {{ .Values.maxPasswordLength | quote }}
+  password_update_time_interval: {{ .Values.passwordUpdateTimeInterval | quote }}  
+  is_user_status_life_cycle_enabled: {{ .Values.user_status_life_cycle_enabled | quote }}
+  user_default_account_name: {{ .Values.userDefaultAccountName | quote }}
+  EXTERNAL_USER_PERMITTED_ROLES: {{ .Values.external_user_permitted_roles | quote }}
+  EXTERNAL_USER_DEFAULT_STATUS: {{ .Values.external_user_default_status | quote }}
+  
+  ###Notification Configs###
+  notification_api_url: "http://notification-api-int-svc:8080/v1/notifications/nonRegisteredUsers"
+  notification_id: "uidamCustomEmailTemplate6"
+
+  ####Email Verification Configuration ####
+  is_email_verification_enabled: "false"
+  email_verification_url: {{ .Values.api_gateway.uri}}/v1/emailVerification/%s
+  email_regex_pattern_exclude: ""
+  email_verification_subject: "UIDAM Email Verification"
+  email_verification_content: "Please verify your UIDAM account that is associated with 
+  this email address.<br/><a href=%s>Verify My Email</a><br/>If clicking the button doesn't seem to work, you can copy 
+  and paste the following link into your browser.<br/>%s"
+  email_verification_exp_days: "7"
+  auth_server_email_verification_response_url: "{{ .Values.auth.server.host }}.{{ .Values.environmentDomainName }}/emailVerification/verify"
+  auth_server_reset_response_url: "{{ .Values.auth.server.host }}.{{ .Values.environmentDomainName }}/recovery/reset/"
+
+  ### Configuration###
+  USER_MANAGEMENT_FILTER_URL: http://{{ include "uidam-user-management.fullname" . }}:8080
+  API_GATEWAY_SERVER_URI: {{ .Values.api_gateway.uri | quote }}
+  APPLICATION_SERVICENAME: uidam-user-management
+  database.port: {{ .Values.postgres.port | quote }}
+  database.default.dbname: {{ .Values.postgres.databaseName | quote }}
+  database.uidam.dbname: {{ .Values.postgres.databaseName }}
+
+  ###Password Policy Configuration
+  additional_attr_check_enabled_for_sign_up: {{ .Values.additional_attr_check_enabled_for_sign_up | quote }}
+                       
+  ###DAO Configuration###
+  health_postgresdb_monitor_enabled: {{ .Values.health.postgresdb.monitor.enabled | quote }}
+  health_postgresdb_monitor_restart_on_failure: {{ .Values.health.postgresdb.monitor.restart_on_failure | quote}}
+  postgres_max_pool_size: {{ .Values.max_pool_size | quote }}
+  metrics_prometheus_enabled: {{ .Values.metrics.prometheus.enabled | quote}}
+  postgres_max_idle_time: {{ .Values.postgres.max_idle_time | quote }}
+  postgres_data_source_properties_cachePrepStmts: {{ .Values.postgres.data_source_properties.cachePrepStmts | quote }}
+  postgres_data_source_properties_prepStmtCacheSize: {{ .Values.postgres.data_source_properties.prepStmtCacheSize | quote }}
+  postgres_data_source_properties_prepStmtCacheSqlLimit: {{ .Values.postgres.data_source_properties.prepStmtCacheSqlLimit | quote }}
+  prometheus_agent_port: {{ .Values.metrics.prometheus.agent.port | quote }}
+  prometheus_agent_port_exposed: {{ .Values.metrics.prometheus.agent.port_exposed | quote }}
+  postgres_connection_timeout_ms: {{ .Values.postgres.connecion_timeout_ms | quote }}
+  postgres_expected99thPercentileMs: {{ .Values.postgres.expected99thPercentileMs | quote }}
+  postgresdb_metrics_enabled: {{ .Values.metrics.postgresdb.enabled | quote}}
+  postgresdb_metrics_executor_shutdown_buffer_ms: {{ .Values.metrics.postgresdb.executor_shutdown_buffer_ms | quote }}
+  postgresdb_metrics_thread_freq_ms: {{ .Values.metrics.postgresdb.thread.freq_ms | quote }}
+  postgresdb_metrics_thread_initial_delay_ms: {{ .Values.metrics.postgresdb.thread.intial_delay_ms | quote }}
+
+  UIDAM_AUTH_ADMIN_SCOPE: {{ .Values.uidam.auth.admin_scope }}
+  UIDAM_DEFAULT_DB_SCHEMA: {{ .Values.uidam.db_schema }}                                                            
+  ### notification configuration
+  notification_email_provider: {{ .Values.notification.email.provider | quote }}
+  notification_email_provider_host: {{- if .Values.notification.email.mailingService.enabled }} {{ .Values.notification.email.mailingService.url | quote }} {{- else }} {{ .Values.notification.email.host | quote }}  {{- end }}
+  notification_email_provider_port: {{- if .Values.notification.email.mailingService.enabled }} {{ .Values.notification.email.mailingService.port | quote }} {{- else }} {{ .Values.notification.email.port | quote }}  {{- end }}
+  notification_email_provider_properties_mail_smtp_auth: {{ .Values.notification.email.smptAuth | quote }}
+  notification_email_provider_properties_mail_smtp_starttls_enable: {{ .Values.notification.email.smptStartTls | quote }}
+  notification_email_provider_properties_mail_smtp_ssl_enable: {{ .Values.notification.email.smptSSLEnabled | quote }}
+  notification_email_provider_properties_mail_smtp_starttls_required: {{ .Values.notification.email.smptStartTlsRequired | quote }}
+  notification_email_provider_properties_mail_debug: {{ .Values.notification.email.smtpDebug | quote }}
+  notification_email_provider_override_sender: {{ .Values.notification.email.overrideSender | quote }}
+  notification_config_resolver: {{ .Values.notification.config.resolver | quote }}
+  notification_config_path: {{ .Values.notification.config.path | quote }}
+  notification_template_engine: {{ .Values.notification.template.engine | quote }}
+  notification_template_format: {{ .Values.notification.template.format | quote }}
+  notification_template_resolver: {{ .Values.notification.template.resolver | quote }}
+  notification_template_prefix: {{ .Values.notification.template.prefix | quote }}
+  notification_template_suffix: {{ .Values.notification.template.suffix | quote }}
+
+

@@ -1,0 +1,100 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    {{- if not .Values.api_gateway.springdoc_swagger_ui_enable }}
+    alb.ingress.kubernetes.io/actions.block-page: |
+      {"Type": "fixed-response", "FixedResponseConfig": {"ContentType":
+      "text/plain", "StatusCode": "403", "MessageBody": "Access Denied"}}
+    {{- end }}
+    alb.ingress.kubernetes.io/actions.forward-rule: |
+      {"type": "forward", "forwardConfig": {"targetGroups": [{"serviceName": "{{ include "api-gateway.fullname" . }}-int-svc", "servicePort": 7000}]}}
+    alb.ingress.kubernetes.io/backend-protocol: HTTP
+    alb.ingress.kubernetes.io/group.name: {{ .Values.ingress.groupName }}
+    alb.ingress.kubernetes.io/healthcheck-path: /api-docs/index.html
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
+    alb.ingress.kubernetes.io/scheme: {{ .Values.ingress.scheme }}
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":{{.Values.ingress.port }}}]'
+    alb.ingress.kubernetes.io/inbound-cidrs: {{ join ",/" .Values.ingress.inboundCidrs }}
+    alb.ingress.kubernetes.io/target-type: {{ .Values.ingress.targetType }}
+    alb.ingress.kubernetes.io/actions.response-404: |-
+      {
+        "type": "fixed-response",
+        "fixedResponseConfig": {
+          "contentType": "text/html",
+          "statusCode": "404",
+          "messageBody": ""
+        }
+      }   
+    {{- with .Values.ingress.additionalAnnotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  labels:
+    app: {{ include "api-gateway.fullname" . }}
+    group: api
+    ms: {{ .Values.ms | quote }}
+  name: {{ include "api-gateway.fullname" . }}
+spec:
+  ingressClassName: alb
+  rules:
+  - host: {{ printf "%s.%s" .Values.ingress.host .Values.api_gateway.environmentDomainName | quote }}
+    http:
+      paths:
+        - backend:
+            service:
+              name: forward-rule
+              port:
+                name: use-annotation
+          path: /
+          pathType: Prefix
+        - path: /actuator
+          pathType: Prefix        
+          backend:
+            service:
+              name: response-404
+              port: 
+                name: use-annotation
+        - path: /actuator/
+          pathType: Prefix        
+          backend:
+            service:
+              name: response-404
+              port: 
+                name: use-annotation
+        - path: /metrics
+          pathType: Prefix        
+          backend:
+            service:
+              name: response-404
+              port:
+                name: use-annotation
+        - path: "{{ .Values.api_gateway.metrics.basePath }}"
+          pathType: Prefix
+          backend:
+            service:
+              name: response-404
+              port: 
+                name: use-annotation
+        - path: "{{ .Values.api_gateway.metrics.basePath }}/"
+          pathType: Prefix
+          backend:
+            service:
+              name: response-404
+              port: 
+                name: use-annotation
+        {{- if not .Values.api_gateway.springdoc_swagger_ui_enable}}
+        - backend:
+            service:
+              name: block-page
+              port:
+                name: use-annotation
+          path: /api-docs/index.html
+          pathType: Prefix
+        - backend:
+            service:
+              name: block-page
+              port:
+                name: use-annotation
+          path: /v3/api-docs/
+          pathType: Prefix
+        {{- end }}

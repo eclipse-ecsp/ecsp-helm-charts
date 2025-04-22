@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "api-registry.fullname" . }}-int-svc
+  labels:
+    app: {{ include "api-registry.fullname" . }}
+    group: api
+    facing: internal
+    impl: internal
+    ms: {{ .Values.ms | quote }}
+spec:
+  ports:
+  - protocol: TCP
+    port: 7000
+    targetPort: 8090
+    name: tcp
+  - protocol: TCP
+    port: {{ .Values.api_registry.metrics.port }}
+    targetPort: {{ .Values.api_registry.metrics.port }}
+    name: metrics
+  type: ClusterIP
+  selector:
+    app: {{ include "api-registry.fullname" . }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app: {{ include "api-registry.fullname" . }}
+    ms: {{ .Values.ms | quote }}
+  name: {{ include "api-registry.fullname" . }}
+spec:
+  endpoints:
+  - honorLabels: true
+    port: metrics
+    path: "{{ .Values.api_registry.metrics.basePath }}{{ .Values.api_registry.metrics.prometheus.path }}"
+  namespaceSelector:
+    matchNames:
+    - {{ .Release.Namespace }}  
+  selector:
+    matchLabels:
+      app: {{ include "api-registry.fullname" . }}

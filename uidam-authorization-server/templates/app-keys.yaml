@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "uidam-authorization-server.fullname" . }}-app
+  labels: {{- include "uidam-authorization-server.labels" . | nindent 4 }}
+data:
+  app-pub: {{ .Values.app_pub | quote }}
+  app-key: {{ .Values.app_key | quote }}
+  uidam-pub-key-pem: {{ .Values.uidam_pub | quote }}

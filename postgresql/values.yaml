@@ -1,0 +1,51 @@
+# Default values for postgresql.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+affinity: {}
+fullnameOverride: ""
+image:
+  pullPolicy: IfNotPresent
+  repository: postgres
+  tag: 13.13-alpine3.19
+
+nameOverride: ""
+nodeSelector: {}
+persistence:
+  #  # Persistent Volume Storage Class
+  #  #
+  #  storageClass: standard
+  ## Persistent Volume Access Mode
+  accessModes:
+  - ReadWriteOnce
+  ## Persistent Volume size, IMPORTANT: use binary bytes units like Gi, Ki
+  size: 10Gi
+podAnnotations: {}
+podSecurityContext: {}
+postgresqlMaxConnections: 2000
+postgresqlSharedBuffers: 4096MB
+
+prepareDbDirectory:
+  image:
+    pullPolicy: IfNotPresent
+    repository: busybox
+    tag: 1.33.0
+replicaCount: 1
+resources: {}
+securityContext: {}
+service:
+  port: 5432
+  type: ClusterIP
+tolerations: []
+
+postgres:
+  port: 5432
+  secretName: postgresql
+  default_dbname: postgresql #Name of the default DB that will be used to create other logical databases for Ignite microservices
+  wso2_dbname: wso2
+  dm_dbname: ignite
+
+dataPlatform:
+  enabled: true
+
+metrics:
+  enabled: false  
