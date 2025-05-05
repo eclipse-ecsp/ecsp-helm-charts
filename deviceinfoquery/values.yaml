@@ -1,0 +1,79 @@
+image:
+  repository: docker.io/eclipseecsp/device-factory-management-api
+  pullPolicy: IfNotPresent
+  
+deviceinfoquery_api:
+  ms: "deviceinfoquery"
+  jvmOpts: "-server -Xmx2G -Xms2G -XX:+UseG1GC -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35 -XX:+DisableExplicitGC -Djava.awt.headless=true"
+  nodeType: "default"
+  replicas: 1
+  environment: "dev"
+  s3BucketName: "TO-BE-UPDATED"
+  secretName: TO-BE-UPDATED
+  allowedDeviceTypes: "dongle,dashcam,tcu,hu"
+  allowedRegion: "TH,AU,ID"
+  device_configmgmt_base_url_version: "v1"
+  enable_device_subscription_details: "false"
+  device_creation_type: "swmIntegration"
+  customer: "TO-BE-UPDATED"
+  client_id: "TO-BE-UPDATED"
+  client_secret: "TO-BE-UPDATED"
+  swm_password: "TO-BE-UPDATED"
+  ## Below properties belong to create guest user
+  admin_username: "TO-BE-UPDATED"
+  hcp_client_id: "TO-BE-UPDATED"
+  spring_auth_service_url: "TO-BE-UPDATED" #"<uidam-auth-server url>/oauth2/token"
+  user_create_url_spring_auth: "TO-BE-UPDATED" #"<uidam-user-management url:port>/v1/oauth2/client"
+  isSpringAuthEnabled: "false"
+  ## Below properties belong to SWM Integration
+  swm_base_url: "TO-BE-UPDATED"
+  saas_api_base_url: "TO-BE-UPDATED"
+  saas_api_base_url_version: "TO-BE-UPDATED"
+  swm_username: "TO-BE-UPDATED"
+  swm_domain_id: "TO-BE-UPDATED"
+  swm_vehicle_model_id: "TO-BE-UPDATED"
+  swm_integration_enabled: "false"
+  ## Below properties belong to connection pooling
+  initialPoolSize: 3
+  minPoolSize: 3
+  maxPoolSize: 50
+  maxIdleTime: 1
+  acquireIncrement: 5
+  idleConnectionTestPeriod: 300
+  
+  resources: {}
+    # We usually recommend not to specify default resources and to leave this as a conscious
+    # choice for the user. This also increases chances charts run on environments with little
+    # resources, such as Minikube. If you do want to specify resources, uncomment the following
+    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
+  imageTag: 1.0.0
+  logging:
+    level: "INFO"
+    logAppender: "TO-BE-UPDATED"
+    graylogHost: "TO-BE-UPDATED"
+    graylogPort: "TO-BE-UPDATED"
+
+postgresql:
+  host: TO-BE-UPDATED
+  connection: TO-BE-UPDATED
+  port: TO-BE-UPDATED
+  defaultDatabase: TO-BE-UPDATED
+  databasename: TO-BE-UPDATED
+  sharedRegistryDatabase: TO-BE-UPDATED
+  userName: TO-BE-UPDATED
+  password: TO-BE-UPDATED
+
+api_gateway:
+  api_registry_enabled: true
+  api_security_enabled: false
+  spring_application_version: 1.0
+  openapi_path_include: "/v1/**, /v2/**, /v3/**, /v4/**, /v5/**"
+  openapi_path_exclude: ""
+  api_gatewayUrls: "TO-BE-UPDATED" #"https://api-gateway.example.com"
+  api_contextPath: "/hcp-deviceinfoquery-webapp"

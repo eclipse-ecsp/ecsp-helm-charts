@@ -1,0 +1,68 @@
+
+image:
+  repository: docker.io/eclipseecsp/device-activation
+  pullPolicy: IfNotPresent
+
+##Device Auth Values
+device_auth_api:
+  ms: "device-auth"
+  springAuthServiceUrl: "TO-BE-UPDATED" #"<uidam-auth-server url>/oauth2/token"
+  springAuthBaseUrl: "TO-BE-UPDATED" #"<uidam-user-management url:port>/v1/oauth2/client"
+  vinEnableFlag: "false"
+  secretName: TO-BE-UPDATED
+  allowedDeviceTypes: "dongle,dashcam,tcu,hu"
+  activationFailureEventEnabled: "false"
+  allowedDeviceTypesForActFail: "dongle"
+  jvmOpts: "-server -Xmx2G -Xms2G -XX:+UseG1GC -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35 -XX:+DisableExplicitGC -Djava.awt.headless=true"
+  nodeType: "default"
+  replicas: 1
+  client_id: "TO-BE-UPDATED"
+  client_secret: "TO-BE-UPDATED"
+  hcp_auth_qualifier_secret_key: "TO-BE-UPDATED"
+  hcp_activation_preSharedKey: "TO-BE-UPDATED="
+  ## Below properties belong to connection pooling
+  initialPoolSize: 3
+  minPoolSize: 3
+  maxPoolSize: 50
+  maxIdleTime: 1
+  acquireIncrement: 5
+  idleConnectionTestPeriod: 300
+  #Resources like memory and cpu is fit for QA/Dev env. For PROD env, it needs to be change by Ops according to the pervolume.
+  #Kubernetes allows control of CPU at millis level. 1 core is 1000 milli CPU. So 0.1 core means 0.1*1000 = 100m CPU. Similary 0.01 core means 10m CPU.
+  resources: {}
+    # We usually recommend not to specify default resources and to leave this as a conscious
+    # choice for the user. This also increases chances charts run on environments with little
+    # resources, such as Minikube. If you do want to specify resources, uncomment the following
+    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
+  imageTag: 1.0.0
+  logging:
+    level: INFO
+    logAppender: "TO-BE-UPDATED"
+    graylogHost: "TO-BE-UPDATED"
+    graylogPort: "TO-BE-UPDATED"
+  affinity: {}
+
+postgresql:
+  host: TO-BE-UPDATED
+  connection: TO-BE-UPDATED
+  port: TO-BE-UPDATED
+  defaultDatabase: TO-BE-UPDATED
+  databasename: TO-BE-UPDATED
+  sharedRegistryDatabase: TO-BE-UPDATED
+  userName: TO-BE-UPDATED
+  password: TO-BE-UPDATED
+
+api_gateway:
+  api_registry_enabled: true
+  api_security_enabled: false
+  spring_application_version: 1.0
+  openapi_path_include: "/device/**, /v2/**, /v3/**, /v4/**, /v5/**"
+  openapi_path_exclude: ""
+  api_gatewayUrls: "TO-BE-UPDATED" #"https://api-gateway.example.com"
+  api_contextPath: "/hcp-auth-webapp"

@@ -1,0 +1,268 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: association-api-topics
+  labels:
+    app: association-api
+    group: api
+    ms: {{ .Values.association_api.ms | quote }}
+data:
+  topics.txt: |+
+    notification|25|2|1|1000012|0,1,2
+    vin-events|25|2
+    events|25|2
+    activation|25|2
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: association-api-config
+  labels:
+    app: association-api
+    group: api
+    ms: {{ .Values.association_api.ms | quote }}
+data:
+  ## Postgres properties
+  postgres_url: jdbc:postgresql://{{ .Values.postgresql.host }}:{{ .Values.postgresql.port }}/{{ .Values.postgresql.databasename }}
+  postgres_driver_class_name: "org.postgresql.Driver"
+  #Connection pool properties
+  initial_pool_size: {{ .Values.association_api.initialPoolSize | quote }}
+  min_pool_size: {{ .Values.association_api.minPoolSize | quote }}
+  max_pool_size: {{ .Values.association_api.maxPoolSize | quote }}
+  max_idle_time: {{ .Values.association_api.maxIdleTime | quote }}
+  acquire_increment: {{ .Values.association_api.acquireIncrement | quote }}
+  idle_connection_test_period: {{ .Values.association_api.idleConnectionTestPeriod | quote }}
+  send_reset_device_enabled: "false"
+  service_sdp_user_for_state_change: "TO-BE-UPDATED"
+  service_notification_kafka_host: "TO-BE-UPDATED" #kafka url
+  env_profile: "ENV_CLOUD"
+  # SpringAuth properties
+  #client_id: "*****"
+  #client_secret: "*****"
+  spring_auth_service_url: {{ .Values.association_api.springAuthServiceUrl | quote }}
+  spring_auth_base_url: {{ .Values.association_api.springAuthBaseUrl | quote }}
+  users_base_url_spring_auth: {{ .Values.association_api.userBaseUrlSpringAuth | quote }}
+  ## Url Properties
+  service_auth_rest_url_base: "TO-BE-UPDATED" #"<device-auth-api url>:<port>/hcp-auth-webapp"
+  device_mqtt_message_base_url: "TO-BE-UPDATED" #"<device-message url>:<port>/device-message"
+  service_deviceinfo_rest_url_base: "TO-BE-UPDATED" #"<deviceinfoquery url>:<port>/hcp-deviceinfoquery-webapp"
+  base_service_api_url: "TO-BE-UPDATED" #"<device-conf-management url>:<port>/hcp-swm-service"
+  saas_api_base_url: "TO-BE-UPDATED" #"<saas-api url>:<port>/saas-api/"
+  saas_api_base_url_version: "v1.0"
+  vehicle_profile_base_url: "TO-BE-UPDATED" #"<vehicle-profile url>:<port>"
+  vehicle_profile_base_url_version: "v1"
+  vehicle_profile_terminate_base_url_version: "v1.0"
+  vehicle_profile_terminate: "/vehicleProfiles/terminate/device"
+  deviceauth_activateurl: v2/device/activate
+  deviceauth_baseurl: TO-BE-UPDATED #<device-auth-api url>:<port>/hcp-auth-webapp/
+  association_type_base_url: "TO-BE-UPDATED" #"<associationType url>:<port>"
+  association_type_base_url_version: "v1"
+  default_association_type: {{ .Values.association_api.default_association_type | default "defaultOwner" | quote  }}
+  user_id_type: {{ .Values.association_api.userIdType | default "internal" | quote  }}
+  supported_device_info_params: {{ .Values.association_api.supportedDeviceInfoParams | default "userVehicleAuthStatus" | quote  }}
+  ## NC Properties
+  notification_center_base_url: "TO-BE-UPDATED" #"<notification-api url>:<port>"
+  user_profile_get_url: "/v1/users/profile"
+  non_registered_user_send_notification_url: "/v1/notifications/nonRegisteredUsers"
+  terminate_notification_id: "Terminate"
+  ## IVI Flag
+  replace_ivi_device_enabled : {{ .Values.association_api.replace_ivi_device_enabled | quote  }}
+  ## SWM properties
+  swm_base_url: {{ .Values.association_api.swm_base_url | quote  }}
+  swm_username: {{ .Values.association_api.swm_username | quote  }}
+  #swm_password: "******"
+  swm_domain_id: {{ .Values.association_api.swm_domain_id | quote  }}
+  swm_vehicle_model_id: {{ .Values.association_api.swm_vehicle_model_id | quote  }}
+  swm_integration_enabled: {{ .Values.association_api.swm_integration_enabled | quote  }}
+  ## Flag properties
+  service_notification_kafka_ssl_enable: "false"
+  device_message_enabled: "true"
+  vin_association_enabled: {{ .Values.association_api.vinAssocEnable | quote }}
+  sim_suspend_check: {{ .Values.association_api.simSuspendCheck | quote }}
+  wam_enabled: {{ .Values.association_api.wamEnabled | quote }}
+  real_vehicle_profile_creation_for: {{ .Values.association_api.realVehicleProfileCreationFor | quote }}
+  code_value_vin_decode_check: {{ .Values.association_api.codeValueVinDecodeCheck | quote }}
+  forbid_assoc_after_terminate: {{ .Values.association_api.forbidAssocAfterTerminate | quote }}
+  #api-gateway properties
+  api_registry_enabled: {{ .Values.api_gateway.api_registry_enabled | quote }}
+  api_security_enabled: {{ .Values.api_gateway.api_security_enabled | quote }}
+  spring_application_version: {{ .Values.api_gateway.spring_application_version | quote }}
+  spring_application_servicename: "association-api-int-svc.csp-services"
+  spring_application_name: "association-api"
+  server_port: "8080"
+  openapi_path_include: {{ .Values.api_gateway.openapi_path_include | quote }}
+  api_gatewayUrls: {{ .Values.api_gateway.api_gatewayUrls | quote }}
+  api_context-path: {{ .Values.api_gateway.api_contextPath | quote }}
+  api_registry_service_name: "TO-BE-UPDATED" #"<api-registry url>"
+  openapi_path_exclude: {{ .Values.api_gateway.openapi_path_exclude | quote }}
+  ## Other properties
+  service_notification_kafka_topicname: "notification"
+  JAVA_OPTS: {{ .Values.association_api.jvmOpts | quote }}
+  
+  kafka_event_topic: "events"
+  kafka_vin_topic: "vin-events"
+  white_list_users: {{ .Values.association_api.whiteListUsers | quote }}
+  wam_base_url: {{ .Values.association_api.wamBaseUrl | quote }}
+  wam_base_url_version: {{ .Values.association_api.wamBaseUrlVersion | quote }}
+  users_base_url: {{ .Values.association_api.userBaseUrl | quote }}
+  user_filter_url: {{ .Values.association_api.userFilterUrl | quote }}
+  NEVER_BLOCK_FOR_GRAYLOG: "true"
+  LOG_LEVEL: {{ .Values.association_api.logging.level | quote }}
+  LOG_APPENDER: {{ .Values.association_api.logging.logAppender | quote }}
+  GRAYLOG_HOST: {{ .Values.association_api.logging.graylogHost | quote }}
+  GRAYLOG_PORT: {{ .Values.association_api.logging.graylogPort | quote }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: association-api-int-svc
+  labels:
+    app: association-api
+    group: api
+    ms: {{ .Values.association_api.ms | quote }}
+    facing: internal
+    impl: native
+spec:
+  ports:
+  - protocol: TCP
+    port: 8080
+    targetPort: 8080
+    name: tcp
+  selector:
+    app: association-api
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: association-api
+  labels:
+    app: association-api
+    group: api
+    ms: {{ .Values.association_api.ms | quote }}
+spec:
+  selector:
+    matchLabels:
+      app: association-api
+  replicas: {{ .Values.association_api.replicas }}
+  template:
+    metadata:
+      annotations:
+      {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        app: association-api
+        group: api
+        ms: {{ .Values.association_api.ms | quote }}
+        redeploy-timestamp: "123456789"
+      name: association-api
+    spec:
+{{- if .Values.association_api.affinity }}
+      affinity: {{ toYaml .Values.association_api.affinity | nindent 8 }}
+{{- end }}
+      containers:
+      - name: device-asociation-api
+        image: {{ .Values.image.repository }}:{{ .Values.association_api.imageTag }}
+        command:
+        - sh
+        - -c
+        - "env mongodb_hosts=$NODE_NAME:${mongodb_port} /bin/sh /usr/local/tomcat/bin/catalina.sh run"
+        resources:
+{{ toYaml .Values.association_api.resources | indent 10 }}
+        ports:
+        - containerPort: 8080
+          name: tcp
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: app
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['app']
+        - name: ms
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['ms']
+        - name: msCtype
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['group']
+        envFrom:
+        - configMapRef:
+            name: association-api-config
+        env:
+        - name: postgres_username
+          valueFrom:
+            secretKeyRef:
+              name: "{{ .Values.association_api.secretName }}"
+              key: postgres_username
+        - name: postgres_password
+          valueFrom:
+            secretKeyRef:
+              name: "{{ .Values.association_api.secretName }}"
+              key: postgres_password
+        - name: client_id
+          valueFrom:
+            secretKeyRef:
+              name: "{{ .Values.association_api.secretName }}"
+              key: client_id
+        - name: client_secret
+          valueFrom:
+            secretKeyRef:
+              name: "{{ .Values.association_api.secretName }}"
+              key: client_secret
+        - name: service_notification_kafka_client_key_password
+          valueFrom:
+            secretKeyRef:
+              name: "{{ .Values.association_api.secretName }}"
+              key: service_notification_kafka_client_key_password
+        - name: service_notification_kafka_client_keystore_password
+          valueFrom:
+            secretKeyRef:
+              name: "{{ .Values.association_api.secretName }}"
+              key: service_notification_kafka_client_keystore_password
+        - name: service_notification_kafka_client_truststore_password
+          valueFrom:
+            secretKeyRef:
+              name: "{{ .Values.association_api.secretName }}"
+              key: service_notification_kafka_client_truststore_password
+        - name: service_user_auth_password
+          valueFrom:
+            secretKeyRef:
+              name: "{{ .Values.association_api.secretName }}"
+              key: service_user_auth_password
+        - name: swm_password
+          valueFrom:
+            secretKeyRef:
+              name: "{{ .Values.association_api.secretName }}"
+              key: swm_password
+        volumeMounts:
+          - mountPath: /usr/local/tomcat/logs
+            name: logs
+      initContainers:
+        - name: kafka-topics-creation
+          image: {{ .Values.image.kafka_repository }}/kafka-utils:{{ .Values.kafka_utils.imageTag }}
+          imagePullPolicy: Always
+          command: ["/etc/confluent/docker/launch"]
+          env:
+            - name: action
+              value : "createTopics"
+            - name: ZOOKEEPER_URL
+              value: {{ .Values.association_api.zookeeper_connect }}
+          volumeMounts:
+            - mountPath: /data
+              name: topics-config
+      imagePullSecrets:
+      - name: ghcr-secret
+      volumes:
+      - name: logs
+        emptyDir: {}
+      - name: association-postgresql-config
+        configMap:
+          name: association-postgresql-config
+      - name: topics-config
+        configMap:
+          name: association-api-topics
+      serviceAccountName: association-api

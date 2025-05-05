@@ -1,0 +1,184 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: deviceinfoquery-api-config
+  labels:
+    app: deviceinfoquery-api
+    group: api
+    ms: {{ .Values.deviceinfoquery_api.ms | quote }}
+data:
+  ## Postgres properties
+  postgres_url: jdbc:postgresql://{{ .Values.postgresql.host }}:{{ .Values.postgresql.port }}/{{ .Values.postgresql.databasename }}
+  postgres_driver_class_name: "org.postgresql.Driver"
+  #Connection pool properties
+  initial_pool_size: {{ .Values.deviceinfoquery_api.initialPoolSize | quote }}
+  min_pool_size: {{ .Values.deviceinfoquery_api.minPoolSize | quote }}
+  max_pool_size: {{ .Values.deviceinfoquery_api.maxPoolSize | quote }}
+  max_idle_time: {{ .Values.deviceinfoquery_api.maxIdleTime | quote }}
+  acquire_increment: {{ .Values.deviceinfoquery_api.acquireIncrement | quote }}
+  idle_connection_test_period: {{ .Values.deviceinfoquery_api.idleConnectionTestPeriod | quote }}
+  ## Device Properties
+  device_creation_type: {{ .Values.deviceinfoquery_api.device_creation_type | quote  }}
+  ## SWM properties
+  swm_base_url: {{ .Values.deviceinfoquery_api.swm_base_url | quote  }}
+  swm_username: {{ .Values.deviceinfoquery_api.swm_username | quote  }}
+  #swm_password: "******"
+  swm_domain_id: {{ .Values.deviceinfoquery_api.swm_domain_id | quote  }}
+  swm_vehicle_model_id: {{ .Values.deviceinfoquery_api.swm_vehicle_model_id | quote  }}
+  swm_integration_enabled: {{ .Values.deviceinfoquery_api.swm_integration_enabled | quote  }}
+  ## Guest user properties
+  admin_username: {{ .Values.deviceinfoquery_api.admin_username | quote  }}
+  #admin_password: "******"
+  hcp_client_id: {{ .Values.deviceinfoquery_api.hcp_client_id | quote  }}
+  spring_auth_service_url: {{ .Values.deviceinfoquery_api.spring_auth_service_url | quote }}
+  spring_auth_enabled: {{ .Values.deviceinfoquery_api.isSpringAuthEnabled | default "false" | quote }}
+  user_create_url_spring_auth: {{ .Values.deviceinfoquery_api.user_create_url_spring_auth | quote }}
+  #api-gateway properties
+  api_registry_enabled: {{ .Values.api_gateway.api_registry_enabled | quote }}
+  api_security_enabled: {{ .Values.api_gateway.api_security_enabled | quote }}
+  spring_application_version: {{ .Values.api_gateway.spring_application_version | quote }}
+  spring_application_servicename: "TO-BE-UPDATED" #"deviceinfoquery-api"
+  spring_application_name: "deviceinfoquery-api"
+  server_port: "8080"
+  openapi_path_include: {{ .Values.api_gateway.openapi_path_include | quote }}
+  api_gatewayUrls: {{ .Values.api_gateway.api_gatewayUrls | quote }}
+  api_context-path: {{ .Values.api_gateway.api_contextPath | quote }}
+  api_registry_service_name: "TO-BE-UPDATED" #"<api-registry url>"
+  openapi_path_exclude: {{ .Values.api_gateway.openapi_path_exclude | quote }}
+  ## Other properties
+  customer: {{ .Values.deviceinfoquery_api.customer | quote  }}
+  device_configmgmt_base_url_version: {{ .Values.deviceinfoquery_api.device_configmgmt_base_url_version | quote  }}
+  enable_device_subscription_details: {{ .Values.deviceinfoquery_api.enable_device_subscription_details | quote  }}
+  environment: {{ .Values.deviceinfoquery_api.environment | quote  }}
+  s3_bucket_name: {{ .Values.deviceinfoquery_api.s3BucketName | quote  }}
+  allowed_device_types: {{ .Values.deviceinfoquery_api.allowedDeviceTypes | quote  }}
+  allowed_region: {{ .Values.deviceinfoquery_api.allowedRegion | quote  }}
+  NEVER_BLOCK_FOR_GRAYLOG: "true"
+  LOG_LEVEL: {{ .Values.deviceinfoquery_api.logging.level | quote }}
+  LOG_APPENDER: {{ .Values.deviceinfoquery_api.logging.logAppender | quote }}
+  GRAYLOG_HOST: {{ .Values.deviceinfoquery_api.logging.graylogHost | quote }}
+  GRAYLOG_PORT: {{ .Values.deviceinfoquery_api.logging.graylogPort | quote }}
+  saas_api_base_url: {{ .Values.deviceinfoquery_api.saas_api_base_url | quote }}
+  saas_api_base_url_version: {{ .Values.deviceinfoquery_api.saas_api_base_url_version | quote }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: deviceinfoquery-api-int-svc
+  labels:
+    app: deviceinfoquery-api
+    group: api
+    ms: {{ .Values.deviceinfoquery_api.ms | quote }}
+    facing: internal
+    impl: native
+spec:
+  ports:
+  - protocol: TCP
+    port: 8080
+    targetPort: 8080
+    name: tcp
+  selector:
+    app: deviceinfoquery-api
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deviceinfoquery-api
+  labels:
+    app: deviceinfoquery-api
+    group: api
+    ms: {{ .Values.deviceinfoquery_api.ms | quote }}
+spec:
+  selector:
+    matchLabels:
+      app: deviceinfoquery-api
+  replicas: {{ .Values.deviceinfoquery_api.replicas }}
+  template:
+    metadata:
+      annotations:
+      {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        app: deviceinfoquery-api
+        group: api
+        ms: {{ .Values.deviceinfoquery_api.ms | quote }}
+        redeploy-timestamp: "123456789"
+      name: deviceinfoquery-api
+    spec:
+      {{- with .Values.deviceinfoquery_api.affinity }}
+      affinity: {{- toYaml .Values.deviceinfoquery_api.affinity | nindent 8 }}
+      {{- end }}
+      containers:
+      - name: deviceinfoquery-api
+        image: {{ .Values.image.repository }}:{{ .Values.deviceinfoquery_api.imageTag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command:
+        - sh
+        - -c
+        - "env mongodb_hosts=${mongodb_port} /bin/sh /opt/hcp-deviceinfoquery-webapp/bin/start.sh"
+        resources:
+{{ toYaml .Values.deviceinfoquery_api.resources | indent 10 }}
+        ports:
+        - containerPort: 8080
+          name: tcp
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: app
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['app']
+        - name: ms
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['ms']
+        - name: msCtype
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['group']
+        - name: CATALINA_OPTS
+          value : {{ .Values.deviceinfoquery_api.jvmOpts | quote }}
+        envFrom:
+        - configMapRef:
+            name: deviceinfoquery-api-config
+        env:
+        - name: postgres_username
+          valueFrom:
+            secretKeyRef:
+              name: "{{ .Values.deviceinfoquery_api.secretName }}"
+              key: postgres_username
+        - name: postgres_password
+          valueFrom:
+            secretKeyRef:
+              name: "{{ .Values.deviceinfoquery_api.secretName }}"
+              key: postgres_password
+        - name: client_id
+          valueFrom:
+            secretKeyRef:
+              name: "{{ .Values.deviceinfoquery_api.secretName }}"
+              key: client_id
+        - name: client_secret
+          valueFrom:
+            secretKeyRef:
+              name: "{{ .Values.deviceinfoquery_api.secretName }}"
+              key: client_secret
+        - name: swm_password
+          valueFrom:
+            secretKeyRef:
+              name: "{{ .Values.deviceinfoquery_api.secretName }}"
+              key: swm_password
+        volumeMounts:
+          - mountPath: /usr/local/tomcat/logs
+            name: logs
+      imagePullSecrets:
+      - name: ghcr-secret
+      volumes:
+      - name: logs
+        emptyDir: {}
+      - name: deviceinfoquery-postgresql-config
+        configMap:
+          name: deviceinfoquery-postgresql-config
+      serviceAccountName: deviceinfoquery-api

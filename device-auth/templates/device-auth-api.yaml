@@ -1,0 +1,180 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: device-auth-api-config
+  labels:
+    app: device-auth-api
+    group: api
+    ms: {{ .Values.device_auth_api.ms | quote }}
+data:
+  ## Postgres properties
+  postgres_url: jdbc:postgresql://{{ .Values.postgresql.host }}:{{ .Values.postgresql.port }}/{{ .Values.postgresql.databasename }}
+
+  #Connection pool properties
+  initial_pool_size: {{ .Values.device_auth_api.initialPoolSize | quote }}
+  min_pool_size: {{ .Values.device_auth_api.minPoolSize | quote }}
+  max_pool_size: {{ .Values.device_auth_api.maxPoolSize | quote }}
+  max_idle_time: {{ .Values.device_auth_api.maxIdleTime | quote }}
+  acquire_increment: {{ .Values.device_auth_api.acquireIncrement | quote }}
+  idle_connection_test_period: {{ .Values.device_auth_api.idleConnectionTestPeriod | quote }}
+  # VIN Properties
+  vin_enabled_flag: {{ .Values.device_auth_api.vinEnableFlag | quote }}
+  ## NC Properties
+  notification_center_base_url: "TO-BE-UPDATED" #"<notification-api url>:<port>"
+  user_profile_get_url: "/v1/users/profile"
+  non_registered_user_send_notification_url: "/v1/notifications/nonRegisteredUsers"
+  activate_notification_id: "Activate"
+  allowed_device_types: {{ .Values.device_auth_api.allowedDeviceTypes | quote  }}
+  activation_failure_event_enabled: {{ .Values.device_auth_api.activationFailureEventEnabled | quote  }}
+  allowed_device_types_for_act_failure: {{ .Values.device_auth_api.allowedDeviceTypesForActFail | quote  }}
+  activate_failure_event_topic: "activation-error"
+  # SpringAuth properties
+  #client_id: "*****"
+  #client_secret: "*****"
+  spring_auth_service_url: {{ .Values.device_auth_api.springAuthServiceUrl | quote }}
+  spring_auth_base_url: {{ .Values.device_auth_api.springAuthBaseUrl | quote }}
+
+  #api-gateway properties
+  api_registry_enabled: {{ .Values.api_gateway.api_registry_enabled | quote }}
+  api_security_enabled: {{ .Values.api_gateway.api_security_enabled | quote }}
+  spring_application_version: {{ .Values.api_gateway.spring_application_version | quote }}
+  spring_application_servicename: "TO-BE-UPDATED" #"device-auth-api"
+  spring_application_name: "device-auth-api"
+  server_port: "8080"
+  openapi_path_include: {{ .Values.api_gateway.openapi_path_include | quote }}
+  api_gatewayUrls: {{ .Values.api_gateway.api_gatewayUrls | quote }}
+  api_context-path: {{ .Values.api_gateway.api_contextPath | quote }}
+  api_registry_service_name: "TO-BE-UPDATED" #"<api-registry url>"
+  openapi_path_exclude: {{ .Values.api_gateway.openapi_path_exclude | quote }}
+  # Others properties
+  device_association_base_url: "TO-BE-UPDATED" #"<association-api>:<port>/vehicle-association-service/"
+  CATALINA_OPTS: {{ .Values.device_auth_api.jvmOpts | quote }}
+  NEVER_BLOCK_FOR_GRAYLOG: "true"
+  LOG_LEVEL: {{ .Values.device_auth_api.logging.level | quote }}
+  LOG_APPENDER: {{ .Values.device_auth_api.logging.logAppender | quote }}
+  GRAYLOG_HOST: {{ .Values.device_auth_api.logging.graylogHost | quote }}
+  GRAYLOG_PORT: {{ .Values.device_auth_api.logging.graylogPort | quote }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: device-auth-api-int-svc
+  labels:
+    app: device-auth-api
+    group: api
+    ms: {{ .Values.device_auth_api.ms | quote }}
+    facing: internal
+    impl: native
+spec:
+  ports:
+  - protocol: TCP
+    port: 8080
+    targetPort: 8080
+    name: tcp
+  selector:
+    app: device-auth-api
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: device-auth-api
+  labels:
+    app: device-auth-api
+    group: api
+    ms: {{ .Values.device_auth_api.ms | quote }}
+spec:
+  selector:
+    matchLabels:
+      app: device-auth-api
+  replicas: {{ .Values.device_auth_api.replicas }}
+  template:
+    metadata:
+      annotations:
+      {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        app: device-auth-api
+        group: api
+        ms: {{ .Values.device_auth_api.ms | quote }}
+        redeploy-timestamp: "123456789"
+      name: device-auth-api
+    spec:
+      {{- with .Values.device_auth_api.affinity }}
+      affinity: {{- toYaml .Values.device_auth_api.affinity | nindent 8 }}
+      {{- end }}
+      containers:
+      - name: device-auth-api
+        image: {{ .Values.image.repository }}:{{ .Values.device_auth_api.imageTag }}
+        command:
+        - sh
+        - -c
+        - "/bin/sh /usr/local/tomcat/bin/catalina.sh run"
+        resources:
+{{ toYaml .Values.device_auth_api.resources | indent 10 }}
+        ports:
+        - containerPort: 8080
+          name: tcp
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: app
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['app']
+        - name: ms
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['ms']
+        - name: msCtype
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['group']
+        envFrom:
+        - configMapRef:
+            name: device-auth-api-config
+        env:
+        - name: postgres_username
+          valueFrom:
+            secretKeyRef:
+              name: "{{ .Values.device_auth_api.secretName }}"
+              key: postgres_username
+        - name: postgres_password
+          valueFrom:
+            secretKeyRef:
+              name: "{{ .Values.device_auth_api.secretName }}"
+              key: postgres_password
+        - name: client_id
+          valueFrom:
+            secretKeyRef:
+              name: "{{ .Values.device_auth_api.secretName }}"
+              key: client_id
+        - name: client_secret
+          valueFrom:
+            secretKeyRef:
+              name: "{{ .Values.device_auth_api.secretName }}"
+              key: client_secret
+        - name: hcp_auth_qualifier_secret_key
+          valueFrom:
+            secretKeyRef:
+              name: "{{ .Values.device_auth_api.secretName }}"
+              key: hcp_auth_qualifier_secret_key
+        - name: hcp_activation_preSharedKey
+          valueFrom:
+            secretKeyRef:
+              name: "{{ .Values.device_auth_api.secretName }}"
+              key: hcp_activation_preSharedKey
+        volumeMounts:
+          - mountPath: /usr/local/tomcat/logs
+            name: logs
+      imagePullSecrets:
+      - name: ghcr-secret
+      volumes:
+      - name: logs
+        emptyDir: {}
+      - name: device-auth-postgresql-config
+        configMap:
+          name: device-auth-postgresql-config
+      serviceAccountName: device-auth-api
