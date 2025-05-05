@@ -53,8 +53,7 @@ postgresql:
   connection: TO-BE-UPDATED
   port: TO-BE-UPDATED
   defaultDatabase: TO-BE-UPDATED
-  wso2Database: wso2
-  igniteDatabase: TO-BE-UPDATED
+  databasename: TO-BE-UPDATED
   sharedRegistryDatabase: TO-BE-UPDATED
   userName: TO-BE-UPDATED
   password: TO-BE-UPDATED

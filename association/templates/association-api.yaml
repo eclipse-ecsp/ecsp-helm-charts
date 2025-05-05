@@ -1,112 +1,6 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: association-postgresql-config
-  labels:
-    app: association-api
-    group: api
-    ms: {{ .Values.association_api.ms | quote }}
-data:
-  association-postgres-config.yml: |
-    roles:
-      - role: "vehicle_association_service_postgres_role"
-        databases:
-          - database: ignite
-            privileges:
-              - resource:
-                  schema: "public"
-                  type: "table"
-                  name: "DeviceInfoFactoryData"
-                actions: ["select","insert","delete","update"]
-              - resource:
-                  schema: "public"
-                  type: "table"
-                  name: "HCPInfo"
-                actions: ["select","insert","delete","update"]
-              - resource:
-                  schema: "public"
-                  type: "table"
-                  name: "Device"
-                actions: ["select","insert","delete","update"]
-              - resource:
-                  schema: "public"
-                  type: "table"
-                  name: "DeviceInfo"
-                actions: ["select","insert","delete","update"]
-              - resource:
-                  schema: "public"
-                  type: "table"
-                  name: "device_association"
-                actions: ["select","insert","delete","update"]
-              - resource:
-                  schema: "public"
-                  type: "table"
-                  name: "device_activation_state"
-                actions: ["select","insert","delete","update"]
-              - resource:
-                  schema: "public"
-                  type: "table"
-                  name: "DeviceInfoFactoryDataHistory"
-                actions: ["select","insert","delete","update"]
-              - resource:
-                  schema: "public"
-                  type: "sequence"
-                  name: "device_association_id_seq"
-                actions: ["select","update","usage"]
-              - resource:
-                  schema: "public"
-                  type: "sequence"
-                  name: "device_activation_state_id_seq"
-                actions: ["select","update","usage"]
-              - resource:
-                  schema: "public"
-                  type: "sequence"
-                  name: "DeviceInfoFactoryDataHistory_ID_seq"
-                actions: ["select","update","usage"]
-              - resource:
-                  schema: "public"
-                  type: "sequence"
-                  name: "DeviceInfoFactoryDataHistory_factory_id_seq"
-                actions: ["select","update","usage"]
-              - resource:
-                  schema: "public"
-                  type: "sequence"
-                  name: "DeviceInfoFactoryData_ID_seq"
-                actions: ["select","update","usage"]
-              - resource:
-                  schema: "public"
-                  type: "sequence"
-                  name: "HCPInfo_ID_seq"
-                actions: ["select","update","usage"]
-              - resource:
-                  schema: "public"
-                  type: "sequence"
-                  name: "Device_ID_seq"
-                actions: ["select","update","usage"]
-              - resource:
-                  schema: "public"
-                  type: "table"
-                  name: "vin_details"
-                actions: ["select","insert","delete","update"]
-              - resource:
-                  schema: "public"
-                  type: "sequence"
-                  name: "vin_details_id_seq"
-                actions: ["select","update","usage"]
-              - resource:
-                  schema: "public"
-                  type: "table"
-                  name: "sim_details"
-                actions: ["select","insert","delete","update"]
-              - resource:
-                  schema: "public"
-                  type: "sequence"
-                  name: "sim_details_id_seq"
-                actions: ["select","update","usage"]
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
   name: association-api-topics
   labels:
     app: association-api
@@ -129,7 +23,7 @@ metadata:
     ms: {{ .Values.association_api.ms | quote }}
 data:
   ## Postgres properties
-  postgres_url: jdbc:postgresql://{{ .Values.postgresql.host }}:{{ .Values.postgresql.port }}/{{ .Values.postgresql.igniteDatabase }}
+  postgres_url: jdbc:postgresql://{{ .Values.postgresql.host }}:{{ .Values.postgresql.port }}/{{ .Values.postgresql.databasename }}
   postgres_driver_class_name: "org.postgresql.Driver"
   #Connection pool properties
   initial_pool_size: {{ .Values.association_api.initialPoolSize | quote }}
@@ -149,25 +43,25 @@ data:
   spring_auth_base_url: {{ .Values.association_api.springAuthBaseUrl | quote }}
   users_base_url_spring_auth: {{ .Values.association_api.userBaseUrlSpringAuth | quote }}
   ## Url Properties
-  service_auth_rest_url_base: "TO-BE-UPDATED" #"http://device-auth-api-int-svc:8080/hcp-auth-webapp"
-  device_mqtt_message_base_url: "TO-BE-UPDATED" #"http://device-message-api-int-svc:8080/device-message"
-  service_deviceinfo_rest_url_base: "TO-BE-UPDATED" #"http://deviceinfoquery-api-int-svc:8080/hcp-deviceinfoquery-webapp"
-  base_service_api_url: "TO-BE-UPDATED" #"http://device-conf-mgmt-api-int-svc:8080/hcp-swm-service"
-  saas_api_base_url: "TO-BE-UPDATED" #"http://saas-api-int-svc.ignite-auto-services:8080/saas-api/"
+  service_auth_rest_url_base: "TO-BE-UPDATED" #"<device-auth-api url>:<port>/hcp-auth-webapp"
+  device_mqtt_message_base_url: "TO-BE-UPDATED" #"<device-message url>:<port>/device-message"
+  service_deviceinfo_rest_url_base: "TO-BE-UPDATED" #"<deviceinfoquery url>:<port>/hcp-deviceinfoquery-webapp"
+  base_service_api_url: "TO-BE-UPDATED" #"<device-conf-management url>:<port>/hcp-swm-service"
+  saas_api_base_url: "TO-BE-UPDATED" #"<saas-api url>:<port>/saas-api/"
   saas_api_base_url_version: "v1.0"
-  vehicle_profile_base_url: "TO-BE-UPDATED" #"http://vehicle-profile-api-int-svc:8080"
+  vehicle_profile_base_url: "TO-BE-UPDATED" #"<vehicle-profile url>:<port>"
   vehicle_profile_base_url_version: "v1"
   vehicle_profile_terminate_base_url_version: "v1.0"
   vehicle_profile_terminate: "/vehicleProfiles/terminate/device"
   deviceauth_activateurl: v2/device/activate
-  deviceauth_baseurl: TO-BE-UPDATED #http://device-auth-api-int-svc:8080/hcp-auth-webapp/
-  association_type_base_url: "TO-BE-UPDATED" #"http://association-type-api-int-svc:8080"
+  deviceauth_baseurl: TO-BE-UPDATED #<device-auth-api url>:<port>/hcp-auth-webapp/
+  association_type_base_url: "TO-BE-UPDATED" #"<associationType url>:<port>"
   association_type_base_url_version: "v1"
   default_association_type: {{ .Values.association_api.default_association_type | default "defaultOwner" | quote  }}
   user_id_type: {{ .Values.association_api.userIdType | default "internal" | quote  }}
   supported_device_info_params: {{ .Values.association_api.supportedDeviceInfoParams | default "userVehicleAuthStatus" | quote  }}
   ## NC Properties
-  notification_center_base_url: "TO-BE-UPDATED" #"http://notification-api-int-svc:8080"
+  notification_center_base_url: "TO-BE-UPDATED" #"<notification-api url>:<port>"
   user_profile_get_url: "/v1/users/profile"
   non_registered_user_send_notification_url: "/v1/notifications/nonRegisteredUsers"
   terminate_notification_id: "Terminate"
@@ -199,7 +93,7 @@ data:
   openapi_path_include: {{ .Values.api_gateway.openapi_path_include | quote }}
   api_gatewayUrls: {{ .Values.api_gateway.api_gatewayUrls | quote }}
   api_context-path: {{ .Values.api_gateway.api_contextPath | quote }}
-  api_registry_service_name: "TO-BE-UPDATED" #"http://api-registry-int-svc.opensource-idam"
+  api_registry_service_name: "TO-BE-UPDATED" #"<api-registry url>"
   openapi_path_exclude: {{ .Values.api_gateway.openapi_path_exclude | quote }}
   ## Other properties
   service_notification_kafka_topicname: "notification"
