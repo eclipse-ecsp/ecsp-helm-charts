@@ -1,0 +1,103 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: oss-device-shadow-api-health-config
+  labels:
+    app: device-shadow-api
+    group: api
+    ms: {{ .Values.ms | quote }}
+data:
+  api_readiness.sh: |+
+    #!/bin/sh
+    wget -O /usr/local/tomcat/metrics-readiness http://localhost:8080/device-shadow/metrics
+    file="/usr/local/tomcat/metrics-readiness"
+    if [ -f "$file" ]
+    then
+      echo "$file found."
+      serviceHealth=$(grep SERVICE_HEALTH $file | cut -d' ' -f2)
+      if [ "$serviceHealth" == "1.0" ]; then
+        echo "Service is unhealthy during readiness check"
+        rm "$file"
+        exit 1
+      else
+        echo "Service is healthy during readiness check"
+      fi
+        rm "$file"
+    else
+      echo "$file not found."
+    fi
+  api_liveness.sh: |+
+    #!/bin/sh
+    wget -O /usr/local/tomcat/metrics-liveness http://localhost:8080/device-shadow/metrics
+    file="/usr/local/tomcat/metrics-liveness"
+    if [ -f "$file" ]
+    then
+      echo "$file found."
+      serviceHealth=$(grep SERVICE_HEALTH $file | cut -d' ' -f2)
+      if [ "$serviceHealth" == "1.0" ]; then
+        echo "Service is unhealthy during liveness check"
+        rm "$file"
+        exit 1
+      else
+        echo "Service is healthy during liveness check"
+      fi
+        rm "$file"
+    else
+      echo "$file not found."
+    fi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: oss-device-shadow-config
+  labels:
+    app: device-shadow-api
+    group: api
+    ms: {{ .Values.ms | quote }}
+data:
+  REGISTRY_COMMON_LOG_LEVEL: {{ .Values.logging.registryCommonLogLevel | quote }}
+  api_registry_enabled: {{ .Values.api_gateway.api_registry_enabled | quote }}
+  api_registry_service_name: {{ .Values.api_gateway.api_registry_service_name | quote }}
+  api_gateway_service_name: {{ .Values.api_gateway.api_gateway_service_name | quote }}
+  api_security_enabled: {{ .Values.api_gateway.api_security_enabled | quote }}
+  api_context-path: "/device-shadow"
+  scopes_override_enabled: {{ .Values.api_gateway.scopes_override_enabled | quote }}
+  spring_application_version: "1.0"
+  spring_application_name: "device-shadow-api"
+  spring_application_servicename: "oss-device-shadow-api-int-svc"
+  openapi_path_include: "/{apiVersion}/devices/**"
+
+  mongodb_auth_db: "TO-BE-UPDATED"
+  mongodb_name: {{ .Values.mongodb.databaseName | quote }}
+  mongodb_port: {{ .Values.mongodb.port | quote }}
+  mongodb_hosts: {{ .Values.mongodb.host | quote }}
+  mongodb_qr_global_svc: {{ .Values.mongodb.host | quote }}
+  mongodb_read_preference: "primaryPreferred"
+  mongodb_readConcernLevel: "local"
+  fetch_data_by_timestamp_greaterThan: "false"
+  CATALINA_OPTS: {{ .Values.device_shadow_api.jvmOpts | quote }}
+  NEVER_BLOCK_FOR_GRAYLOG: "true"
+  LOG_LEVEL: {{ .Values.logging.logLevel | quote }}
+  IGNITE_LOG_LEVEL: {{ .Values.logging.igniteLogLevel | quote }}
+  STORAGE_LOG_LEVEL: {{ .Values.logging.storageLogLevel | quote }}
+  SPRING_LOG_LEVEL: {{ .Values.logging.springLogLevel | quote }}
+  SVC_LOG_LEVEL: {{ .Values.logging.svcLogLevel | quote }}
+  CACHE_LOG_LEVEL: {{ .Values.logging.cacheLogLevel | quote }}
+  KAFKA_LOG_LEVEL: {{ .Values.logging.kafkaLogLevel | quote }}
+  STREAM_BASE_LOG_LEVEL: {{ .Values.logging.streamBaseLogLevel | quote }}
+  LOG_APPENDER: {{ .Values.logging.logAppender | quote }}
+  GRAYLOG_HOST: {{ .Values.logging.graylogHost | quote }}
+  GRAYLOG_PORT: {{ .Values.logging.graylogPort | quote }}
+  health_mqtt_monitor_enabled: {{ .Values.device_shadow_api.health.healthMqtt | quote }}
+  health_mongo_monitor_enabled : {{ .Values.device_shadow_api.health.healthMongo | quote }}
+  health_kafka_consumer_group_monitor_enabled : {{ .Values.device_shadow_api.health.healthKafkaConsumer | quote }}
+  health_device_status_backdoor_monitor_enabled : {{ .Values.device_shadow_api.health.healthDMA | quote }}
+  health_dff_feed_backdoor_monitor_enabled : {{ .Values.device_shadow_api.health.healthDFF | quote }}
+  health_kafka_topics_monitor_enabled : {{ .Values.device_shadow_api.health.healthKafkaTopics | quote }}
+  health_redis_monitor_enabled : {{ .Values.device_shadow_api.health.healthRedis | quote }}
+  health_service_failure_retry_thrshold: "2"
+  health_service_failure_retry_interval_millis: "2000"
+{{- if .Values.device_shadow_api.extraParams }}
+{{ toYaml .Values.device_shadow_api.extraParams | indent 2 }}
+{{- end }}
+---

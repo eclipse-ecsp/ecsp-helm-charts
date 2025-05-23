@@ -1,0 +1,151 @@
+# Default values for vehicle-profile.
+ms: "vehicle-profile"
+image:
+  repository: "docker.io/eclipseecsp"
+  pullPolicy: Always
+  kafka_repository: TO-BE-UPDATED
+
+kafka_utils:
+  imageTag: TO-BE-UPDATED
+
+vehicle_profile_api:
+  jvmOpts: "-Xmx2g -Xms2g -XX:+UseG1GC -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35 -XX:+DisableExplicitGC -XX:MetaspaceSize=96m -XX:G1HeapRegionSize=16M -XX:MinMetaspaceFreeRatio=50 -XX:MaxMetaspaceFreeRatio=80 -Dlogback.configurationFile=/vehicle-profile-api/conf/logback.xml -DLOG_LEVEL=INFO"
+  nodeAffinityKey: "TO-BE-UPDATED" #  Change this to your node affinity key
+  nodeType: "default"
+  podAntiAffinityEnabled: true
+  replicas: 1
+  resources:
+    requests:
+      memory: "1Gi"
+      cpu: "20m"
+  imageTag: 1.0.0
+  mongodb_collection_shardkey_map: "VehicleProfile:vehicleId,dmOfflineBufferEntriesvehicle-profile-sp:vehicleId"
+  mongoHost: "TO-BE-UPDATED" #  Change this to your mongo host
+  mongoPort: "TO-BE-UPDATED"
+  kafka_acks: "all"
+  vehicleprofile_auto_generate_vehicleId: "false"
+  vinDecodeEnabled: "true"
+  redisSentinels: ""
+  redisCluster: "TO-BE-UPDATED"
+  vinDecoder: "default"
+  defaultVinDecoderUrl: "TO-BE-UPDATED"
+  vehicleProfileBlockEnrollment: "false"
+  vehicleProfile_kafka_enabled: "true"
+  disableDevAssocCheck: "false"
+  vsAuthBaseUrl: "TO-BE-UPDATED"
+  vsAuthTokenAudience: "TO-BE-UPDATED"
+  VinDecodeBaseUrl: "TO-BE-UPDATED"
+  vehicle_specification_vin_decode_url: "/v2/vehicles/specifications"
+  vehicle_association_base_url: "http://oss-association-api-int-svc:8080/vehicle-association-service"
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 120
+    periodSeconds: 10
+    timeoutSeconds: 120
+    successThreshold: 1
+    failureThreshold: 30
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 120
+    successThreshold: 1
+    failureThreshold: 30
+  health:
+    healthMongo: "true"
+    healthKafkaConsumer: "false"
+    healthKafkaTopics: "false"
+    healthDMA: "false"
+    healthDFF: "false"
+    healthRedis: "true"
+    healthMqtt: "false"
+  extraParams:
+
+vehicle_profile_sp:
+  jvmOpts: "-Xmx4g -Xms4g -XX:MetaspaceSize=96m -XX:G1HeapRegionSize=16M -XX:MinMetaspaceFreeRatio=50 -XX:MaxMetaspaceFreeRatio=80 -server -XX:+UseG1GC -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35 -XX:+DisableExplicitGC -Djava.awt.headless=true -Dlogback.configurationFile=/vehicle-profile-sp/conf/logback.xml -DLOG_LEVEL=INFO"
+  nodeAffinityKey: "TO-BE-UPDATED" #  Change this to your node affinity key
+  nodeType: "default"
+  podAntiAffinityEnabled: true
+  replicas: 1
+  resources:
+    requests:
+      memory: "2Gi"
+      cpu: "50m"
+  applicationId: "vehicle-profile-sp"
+  mongodb_collection_shardkey_map: "VehicleProfile:vehicleId,dmOfflineBufferEntriesvehicle-profile-sp:vehicleId"
+  numStreamThreads: "1"
+  vinDecode: "true"
+  vinDecoder: "default"
+  imageTag: 1.0.0
+  vehicleProfile_kafka_enabled: "true"
+  mongoHost: "TO-BE-UPDATED"
+  mongoPort: "TO-BE-UPDATED"
+  redisSentinels: ""
+  redisCluster: "TO-BE-UPDATED"
+  spRestartOnFailure: "false"
+  kafkaTopicsFilePath: "/data/topics.txt"
+  enablePIDDBRequestEvent: "false"
+  vinValidationEnabled: "true"
+  bootstrap_servers: "TO-BE-UPDATED"
+  zookeeper_connect: "TO-BE-UPDATED"
+  vehicle_profile_base_url: "http://oss-vehicle-profile-api-int-svc:8080"
+  device_mqtt_message_base_url: "http://oss-device-message-api-int-svc:8080/device-message"
+  device_association_base_url: "http://oss-association-api-int-svc:8080/vehicle-association-service"
+  source_topic_name: "vehicle-profile-modified-service-provisioning,vin-events,vehicle-profile-modified-vehicle-attributes"
+  health:
+    healthMongo: "true"
+    healthKafkaConsumer: "true"
+    healthKafkaTopics: "false"
+    healthDMA: "false"
+    healthDFF: "false"
+    healthRedis: "false"
+    healthMqtt: "false"
+  extraParams:
+
+api_gateway:
+  api_registry_enabled: true
+  api_security_enabled: false
+  spring_application_version: 1.0
+  openapi_path_include: "/v1.0/vehicleProfiles/**, /v1/vehicleProfiles/filter, /v2/vehicleProfiles/vin/replace, /v1.0/users/**, /v2/users/**, /v1/vins/{vinId}/decode, /v2/vehicles/**, /v1.0/vehicles/**, /v1.0/associatedVehicles"
+  api_registry_service_name: "http://api-registry-int-svc"
+  api_gateway_service_name: "http://api-gateway-int-svc"
+
+logging:
+  encryptLog: "true"
+  logLevel: "INFO"
+  igniteLogLevel: "INFO"
+  storageLogLevel: "INFO"
+  springLogLevel: "INFO"
+  svcLogLevel: "INFO"
+  svcConsoleLogLevel: "INFO"
+  cacheLogLevel: "INFO"
+  kafkaLogLevel: "INFO"
+  streamBaseLogLevel: "INFO"
+  logAppender: "STDOUT"
+  graylogHost: "TO-BE-UPDATED"
+  graylogPort: "TO-BE-UPDATED"
+  registryCommonLogLevel: "INFO"
+
+global_param:
+  allowedDeviceTypes: "tcu,hu"
+  defaultDeviceType: "hu"
+  defaultCapabilityServices: "{hu:'RO'}"
+  defaultProvisionedServices: "{hu:'RO'}"
+
+mongodb:
+  host: "TO-BE-UPDATED"
+  port: "TO-BE-UPDATED"
+  secretName: TO-BE-UPDATED
+  databaseName: TO-BE-UPDATED
+  user: "TO-BE-UPDATED"
+  password: "TO-BE-UPDATED"
+
+secretsEnginePath: data-platform
+
+vehiclespecification:
+  vehicle_specification_client_id: "TO-BE-UPDATED"
+  vehicle_specification_client_secret: "TO-BE-UPDATED"
+  
+mqtt:
+  password: "TO-BE-UPDATED"
+  mqtt_broker_url: "tcp://oss-hivemq-extension-int-svc:1883"

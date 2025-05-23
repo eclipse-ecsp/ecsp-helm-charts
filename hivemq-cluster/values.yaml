@@ -1,0 +1,235 @@
+global:
+  ignite:
+    registry: TO-BE-UPDATED
+  cluster:
+    features:
+      DistributedTracing: false
+  hivemq:
+    namespace: TO-BE-UPDATED
+    uidam:
+      public_key: |-
+        TO-BE-UPDATED
+    podPolicy:
+      podManagementPolicy: "Parallel"
+    extraInitContainers: []
+    defaultCerts:
+      enabled: true
+    defaultKafkaCerts:
+      enabled: true
+    defaultPlugins:
+      enabled: true
+      image:
+        repository: docker.io/eclipseecsp/hivemq-extension
+        tag: 1.0.0
+        pullPolicy: IfNotPresent
+    loadbalancer:
+      mqtt:
+        port: 8883
+      websocket:
+        port: 8443
+      hostname: oss-hivemq
+      type: external
+      scheme: internet-facing
+      ## certificate - specifies the ARN of one or more certificates managed by the AWS Certificate Manager, aplicable on external load balancer service
+      certificate: "arn:aws:acm:<TO-BE-UPDATED>:<TO-BE-UPDATED>:certificate/<TO-BE-UPDATED>" # Change this to your certificate ARN
+      extraAnnotations:
+        service-operator.hctl.harman.com/purpose: default
+      targetType: ip
+      sourceRanges:
+      - "0.0.0.0/0"
+    zookeeper:
+      url: TO-BE-UPDATED
+    redis_configs:
+      redis_mode: CLUSTER
+      sentinel:
+        address: TO-BE-UPDATED
+        masterName: redis-sentinel
+      cluster:
+        service: TO-BE-UPDATED
+      single:
+        address: TO-BE-UPDATED
+      read_mode: MASTER
+      subscription_mode: MASTER
+      dns_monitoring_interval: 5000
+      subscription_conn_min_idle_size: 1
+      subscription_conn_pool_size: 50
+      slave_conn_min_idle_size: 32
+      slave_pool_size: 64
+      master_conn_min_idle_size: 32
+      master_conn_pool_size: 64
+      idle_conn_timeout: 10000
+      conn_timeout: 20000
+      timeout: 10000
+      retry_attempts: 3
+      retry_interval: 1500
+      reconnection_timeout: 3000
+      failed_attempts: 3
+      database: 0
+      password:
+      subscriptions_per_conn: 5
+      client_name: yellow
+      conn_min_idle_size: 32
+      conn_pool_size: 64
+      scan_interval: 1000
+      scan_limit: 10
+      regex_scan_filename: scanregex.txt
+      netty_threads: 64
+      decode_in_executor: true
+      executor_threads: 32
+      keep_alive: true
+      ping_connection_interval: 60000
+      tcp_no_delay: true
+      transport_mode: NIO
+
+    nameOverride: hivemq
+    fullnameOverride: hivemq
+    noPacketIdleTimeout: 120000
+    storage:
+      data:
+        size: 10Gi
+        class: ebs-sc
+      logs:
+        size: 10Gi
+        class: ebs-sc
+    external_service:
+      name: tcpport
+      type: NodePort
+      portConfig:
+      - port: 1883
+        nodePort: 30216
+        protocol: TCP
+        name: tcpport
+      - port: 8883
+        nodePort: 30224
+        protocol: TCP
+        targetPort: 8883
+        name: sslport
+      - port: 1884
+        nodePort: 30226
+        protocol: TCP
+        targetPort: 1884
+        name: nginxport
+    jvmOpts: "-server -Xmx1g -Xms1g -XX:+UseG1GC -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35 -XX:+DisableExplicitGC -XX:MetaspaceSize=96m -XX:G1HeapRegionSize=16M -XX:MinMetaspaceFreeRatio=50 -XX:MaxMetaspaceFreeRatio=80 -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/opt/hivemq/data -Xbootclasspath/a:/usr/local/openjdk-11/lib/logback-gelf-6.1.1.jar:/usr/local/openjdk-11/lib/logback-classic-1.5.18.jar:/usr/local/openjdk-11/lib/logback-core-1.5.18.jar:/usr/local/openjdk-11/lib/slf4j-api-2.0.17.jar --add-opens java.base/java.io=ALL-UNNAMED --add-opens java.base/java.math=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.util.concurrent=ALL-UNNAMED --add-opens java.base/java.net=ALL-UNNAMED --add-opens java.base/java.text=ALL-UNNAMED --add-opens java.sql/java.sql=ALL-UNNAMED"
+    replicas: 1
+    persistence:
+      clientSessionGeneral: in-memory
+      clientSessionQueuedMsg: file
+      maxQMPerClient: 1000
+      queueMsgStrategy: discard
+      clientSessionSub: in-memory
+      clientIncomingMsg: in-memory
+      clientOutgoingMsg: in-memory
+      clientRetainedMsg: in-memory
+      publishPayload: file
+      sessionAttribute: file
+      clientGroup: file
+      maxMessageSize: "1048576"
+    image:
+      repository: hivemq/hivemq-ce
+      tag: 2025.3
+      pullPolicy: IfNotPresent
+      runAsUser: 1001
+    kafka_utils:
+      imageTag: 2.8.2
+    plugin_base:
+      mqtt_qos_level: ALL
+      jwt_validation_enabled: true
+      jwt_valid_scopes: TO-BE-UPDATED
+      allowed_blob_sources: TO-BE-UPDATED
+      allowed_blob_encodings: gpb,json
+      transform_ignite_json: ro
+      mqtt_topic_service_mapping: ro,ro,ro,true
+      device_mqtt_publish_topics: ro
+      device_mqtt_subscribe_topics: ro
+      profile_check_disabled_topics: TO-BE-UPDATED
+      user_mqtt_subscribe_topics: notification
+      whitelisted_users: TO-BE-UPDATED
+      mqtt_topic_formatter: org.eclipse.ecsp.hivemq.utils.IgniteTopicFormatter
+      mqtt_uname_prefix:
+      mqtt_user_prefix: TO-BE-UPDATED
+      mqtt_topic_prefix:
+      redis_enabled: true
+      enableSuscipiousEcuCheck: false
+      commcheckDeviceStatusUrl: ""
+      d2v_http_url: "http://oss-vehicle-profile-api-int-svc:8080/v2/vehicles/getEcuByClientId"
+      kafka_broker_url: TO-BE-UPDATED
+      authentication_impl_class: org.eclipse.ecsp.hivemq.auth.authentication.CertificateAuthentication
+      authorization_impl_class: org.eclipse.ecsp.hivemq.auth.authorization.CertificateBasedAuthorizer
+      topic_mapper_impl_class: org.eclipse.ecsp.hivemq.routing.TopicMapperIgniteServiceBased
+      client_lifecycle_impl_class: org.eclipse.ecsp.hivemq.callbacks.ClientLifeCycleEvents
+      hivemq_sink_impl_class: org.eclipse.ecsp.analytics.stream.base.dao.impl.KafkaSinkNode
+      device_to_vehicle_mapper_impl: org.eclipse.ecsp.hivemq.d2v.DeviceToVehicleSingleIdentityMapper
+      subscription_cache_impl_class: org.eclipse.ecsp.hivemq.cache.DeviceSubscriptionCacheInMemoryImpl
+      plugin_config_class: org.eclipse.ecsp.hivemq.config.PluginConfig
+      vehicle_profile_data_extracter_impl: org.eclipse.ecsp.hivemq.base.VehicleProfileDataExtractionImpl
+      publish_interceptor_class: org.eclipse.ecsp.hivemq.callbacks.MessageStoreCallback
+      service_client_overloadprotection_disabled: false
+      device_aware_enabled: false
+      device_aware_enabled_services:
+      ingestion_serializer_impl: org.eclipse.ecsp.serializer.IngestionSerializerFstImpl
+      expiry_cache_enabled: "false"
+      expiry_cache_impl_class: org.eclipse.ecsp.hivemq.cache.IgniteExpiryCacheImpl
+      static_password_enabled: "true"
+      mqtt_user_password: "TO-BE-UPDATED"
+      disconnect_on_ping_if_not_connected_enabled: "false"
+      keep_alive_topic: "kal"
+      device_mqtt_global_subscribe_topics: crnsn
+      user_cleansession_enabled: "false"
+      user_qos_level_change_enabled: "false"
+      user_qos_level_value_for_2c: "AT_LEAST_ONCE"
+      user_qos_level_value_for_2d: "AT_LEAST_ONCE"
+      swap_response_topic_name: "disconnect"
+      http_vp_service_user: TO-BE-UPDATED
+      http_vp_service_password: TO-BE-UPDATED
+      device_specific_permissions_enabled: false
+      user_management_base_url: http://localhost
+      user_management_api_url: /v1/users/filter
+      dmportal_subs_topic_permissions_impl: org.eclipse.ecsp.hivemq.dmportal.crashnotification.DmPortalSubsTopicPermissions
+      additionalContainerPorts:
+      - containerPort: TO-BE-UPDATED
+        name: sslport
+      - containerPort: TO-BE-UPDATED
+        name: websocketport
+      - containerPort: TO-BE-UPDATED
+        name: nginxport
+    logging:
+      quartzLogLevel: WARN
+      exodusLogLevel: WARN
+      jettyLogLevel: WARN
+      oshiLogLevel: ERROR
+      storageLogLevel: INFO
+      springLogLevel: ERROR
+      migrationsLogLevel: INFO
+      logLevel: INFO
+      clientConnectedLogLevel: INFO
+      msgDroppedlogLevel: ERROR
+      clientSessionExpiredLogLevel: ERROR
+      cacheLogLevel: ERROR
+      kafkaLogLevel: ERROR
+      hivemqLogLevel: INFO
+      igniteLogLevel: ERROR
+      svcLogLevel: INFO
+      keepAliveLogLevel: INFO
+      # Configure logAppender as ASYNC-GELF in env-specific graylog redirection
+      logAppender: "CONSOLE"
+    resources:
+      requests:
+        memory: "1Gi"
+        cpu: "500m"
+hivemq:
+  brokerStop:
+    waitCount: 20
+    waitTimeMs: 5000
+  ## liveness and readiness should cover brokerStop (waitCount*WaitTimeMs) + initialDelay
+  probe:
+    initialDelay: "30"
+    periodSeconds: "10"
+    timeoutSeconds: "4"
+    failureThreshold: "20"
+  heartbeat:
+    port: 9090
+    path: /heartbeat
+    bind_address: 0.0.0.0
+
+environmentDomainName: local
+fullnameOverride: hivemq-cluster

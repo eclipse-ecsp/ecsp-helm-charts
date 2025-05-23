@@ -1,0 +1,198 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: oss-hivemq-extension-cluster
+  labels:
+        {{- include "hivemq.labels.standard" . | nindent 4 }}
+spec:
+  serviceName: oss-hivemq-extension-svc
+{{- if .Values.global.hivemq.podPolicy }}
+  {{ toYaml .Values.global.hivemq.podPolicy | nindent 2 }}
+{{- end }}
+  selector:
+    matchLabels:
+      app: {{ template  "hivemq.name" . }}
+  replicas: {{ .Values.global.hivemq.replicas }}
+  template:
+    metadata:
+      labels:
+        release: {{ .Release.Name }}
+        app: {{ template  "hivemq.name" . }}
+        owner: ignite-core
+      name: {{ template  "hivemq.name" . }}
+      annotations:
+        checksum/secret: {{ include (print $.Template.BasePath "/public-key-secret.yaml") . | sha256sum }}
+        checksum/configmaps: {{ include (print $.Template.BasePath "/configmaps.yaml") . | sha256sum }}  
+{{- if .Values.global.hivemq.affinity }}
+      affinity: {{ toYaml .Values.global.hivemq.affinity | nindent 8 }}
+{{- end }}
+      containers:
+      - name: hivemq
+        image: {{ .Values.global.hivemq.image.repository }}:{{ .Values.global.hivemq.image.tag }}
+        imagePullPolicy: {{ .Values.global.hivemq.image.pullPolicy }}
+        securityContext:
+          runAsUser: {{ .Values.global.hivemq.image.runAsUser }}
+        resources: {{ toYaml .Values.global.hivemq.resources | nindent 10 }}
+        ports:
+        - containerPort: 1883
+          name: tcpport
+{{ if .Values.global.hivemq.plugin_base.additionalContainerPorts }}
+{{ toYaml .Values.global.hivemq.plugin_base.additionalContainerPorts | indent 8 }}
+{{end}}
+        envFrom:
+        - configMapRef:
+            name: oss-hivemq-extension-variables
+        env:    
+        - name: mqtt_user_password
+          valueFrom:
+            secretKeyRef:
+              name: oss-hivemq-extension-secret
+              key: secret            
+        readinessProbe:
+          tcpSocket:
+            port: 1883
+          initialDelaySeconds: 30
+          periodSeconds: 60
+          failureThreshold: 60
+        livenessProbe:
+          tcpSocket:
+            port: 1883
+          initialDelaySeconds: 30
+          periodSeconds: 60
+          failureThreshold: 60
+        volumeMounts:
+          - mountPath: /opt/hivemq/log
+            name: logs
+          - mountPath: /opt/hivemq/data
+            name: data
+          - mountPath: /opt/hivemq/conf/publickey.pem
+            name: public-key
+            subPath: publickey.pem
+          - mountPath: /opt/hivemq/extensions
+            name: extensions
+          - name: hivemq-config
+            mountPath: /opt/hivemq/conf/config.xml
+            subPath: config.xml
+          - name: hivemq-config
+            mountPath: /opt/hivemq/conf/logback.xml
+            subPath: logback.xml
+          - name: hivemq-config
+            mountPath: /opt/hivemq/conf/hivemq-plugin-base.properties
+            subPath: hivemq-plugin-base.properties
+          - name: hivemq-config
+            mountPath: /opt/hivemq/conf/cache-enabler.properties
+            subPath: cache-enabler.properties
+          - name: logback-extensions
+            mountPath: /usr/local/openjdk-11/lib/logback-gelf-6.1.1.jar
+            subPath: logback-gelf-6.1.1.jar
+          - name: logback-extensions
+            mountPath: /usr/local/openjdk-11/lib/logback-core-1.5.18.jar
+            subPath: logback-core-1.5.18.jar
+          - name: logback-extensions
+            mountPath: /usr/local/openjdk-11/lib/logback-classic-1.5.18.jar
+            subPath: logback-classic-1.5.18.jar
+          - name: logback-extensions
+            mountPath: /usr/local/openjdk-11/lib/slf4j-api-2.0.17.jar
+            subPath: slf4j-api-2.0.17.jar
+{{- if .Values.global.hivemq.extraVolumeMounts }}
+  {{ toYaml .Values.global.hivemq.extraVolumeMounts | nindent 10 }}
+{{- end }}
+      - image: yagni/docker-jmx-exporter
+        imagePullPolicy: {{ .Values.global.hivemq.image.pullPolicy }}
+        name: hivemq-exporter
+        ports:
+        - containerPort: 9138
+          name: monitor
+          protocol: TCP
+        volumeMounts:
+        - mountPath: /jmx_prometheus
+          name: hivemq-exp-data
+{{- if .Values.global.cluster.features.DistributedTracing }}
+      - name: jaeger-agent
+        image: jaegertracing/jaeger-agent:1.11
+        imagePullPolicy: IfNotPresent
+        args:
+          - --reporter.grpc.host-port=dns:///jaeger-collector-headless.default:14250
+          - --reporter.type=grpc
+        ports:
+          - name: zk-compact-trft
+            containerPort: TO-BE-UPDATED
+          - name: config-rest
+            containerPort: TO-BE-UPDATED
+          - name: jg-compact-trft
+            containerPort: TO-BE-UPDATED
+          - name: jg-binary-trft
+            containerPort: TO-BE-UPDATED
+{{- end }}
+      initContainers:
+      - name: data-directory-chown
+        image: busybox:latest
+        command: ['/bin/chmod', '-R', '777', '/data']
+        volumeMounts:
+          - mountPath: /data
+            name: data
+      - name: logs-directory-chown
+        image: busybox:latest
+        command: ['/bin/chmod', '-R', '777', '/opt/hivemq/log']
+        volumeMounts:
+          - mountPath: /opt/hivemq/log
+            name: logs
+      - name: copy-logback-extensions
+        image: {{ .Values.global.hivemq.defaultPlugins.image.repository }}:{{ .Values.global.hivemq.defaultPlugins.image.tag }}
+        imagePullPolicy: {{ .Values.global.hivemq.defaultPlugins.image.pullPolicy }}
+        command: ['/bin/sh', '-c', 'cp -r /logback-ext/* /mnt/logback-extensions/.']
+        volumeMounts:
+          - mountPath: /mnt/logback-extensions
+            name: logback-extensions
+{{- if .Values.global.hivemq.defaultPlugins.enabled }}
+      - name: all-plugins
+        image: {{ .Values.global.hivemq.defaultPlugins.image.repository }}:{{ .Values.global.hivemq.defaultPlugins.image.tag }}
+        imagePullPolicy: {{ .Values.global.hivemq.defaultPlugins.image.pullPolicy }}
+        volumeMounts:
+          - name: extensions
+            mountPath: /target
+{{- end }}
+{{- if .Values.global.hivemq.extraInitContainers }}
+{{- toYaml .Values.global.hivemq.extraInitContainers | nindent 6 }}
+{{- end }}
+      volumes:
+      - name: hivemq-config
+        configMap:
+          name: oss-hivemq-extension-files
+      - name: topics-config
+        configMap:
+          name: oss-hivemq-extension-kafka-topics
+      - name: public-key
+        secret:
+          secretName: oss-hivemq-extension-public-key
+      - name: extensions
+        emptyDir: {}
+      - name: logback-extensions
+        emptyDir: {}
+      - name: hivemq-exp-data
+        configMap:
+          name: oss-hivemq-extension-jmx-exporter
+          items:
+            - key: config
+              path: config.yml
+{{- if .Values.global.hivemq.extraVolumes }}
+  {{ toYaml .Values.global.hivemq.extraVolumes | nindent 6 }}
+{{- end }}
+      serviceAccountName: oss-hivemq-extension
+  volumeClaimTemplates:
+  - metadata:
+      name: logs
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: {{ .Values.global.hivemq.storage.logs.class }}
+      resources:
+        requests:
+          storage: {{ .Values.global.hivemq.storage.logs.size }}      
+  - metadata:
+      name: data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: {{ .Values.global.hivemq.storage.data.class }}
+      resources:
+        requests:
+          storage: {{ .Values.global.hivemq.storage.data.size }}

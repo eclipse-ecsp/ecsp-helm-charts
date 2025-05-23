@@ -1,0 +1,243 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: oss-vehicle-profile-sp-topics
+  labels:
+    app: vehicle-profile-sp
+    group: streaming
+    ms: {{ .Values.ms | quote }}
+data:
+  topics.txt: |+
+    post-alerts|25|2
+    post-alerts-vrc|25|2
+    post-alerts-dtc|25|2
+    post-alerts-sqdf|25|2
+    vehicle-profile-created|25|2
+    vehicle-profile-modified-modem-info|25|2
+    vehicle-profile-modified-vehicle-attributes|25|2
+    vehicle-profile-modified-authorized-users|25|2
+    vehicle-profile-modified-ecuswhwversion|25|2
+    vehicle-profile-modified-service-provisioning|25|2
+    vehicle-profile-modified-service-provisioning-vrc|25|2
+    vehicle-profile-modified-service-provisioning-dtc|25|2
+    vehicle-profile-modified-service-provisioning-sqdf|25|2
+    vehicle-profile-modified-service-provisioning-wifihotspot|25|2
+    vehicle-profile-settings-manager|25|2
+    vin-events|25|2
+    vin-events-dlq|25|2
+    device-status-vin-events|1|2
+    vehicle-profile-sp-dlq|25|2
+    device-status-vehicle-profile-sp|25|2
+    dff-dfn-updates|1|2
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: oss-vehicle-profile-sp-config
+  labels:
+    app: vehicle-profile-sp
+    group: streaming
+    ms: {{ .Values.ms | quote }}
+data:
+  application_id: {{ .Values.vehicle_profile_sp.applicationId | quote }}
+  JVM_OPTS: {{ .Values.vehicle_profile_sp.jvmOpts | quote }}
+  mqtt_broker_url: {{ .Values.mqtt.mqtt_broker_url | quote }}
+  mqtt_user_name: "haa_api"
+  mongodb_name: {{ .Values.mongodb.databaseName | quote }}
+  mongodb_port: {{ .Values.mongodb.port | quote }}
+  mongodb_hosts: {{ .Values.mongodb.host | quote }}
+  mongodb_username: {{ .Values.mongodb.user | quote }}
+  mongodb_password: {{ .Values.mongodb.password | quote }}
+  mongodb_auth_db: "admin"
+  mongodb_qr_global_svc: {{ .Values.mongodb.host | quote }}
+  mongodb.collection.shardkey.map: {{ .Values.vehicle_profile_sp.mongodb_collection_shardkey_map | quote }}
+  mongodb_read_preference: "primaryPreferred"
+  metrics_prometheus_enabled: "true"
+  vin_validation_enabled: {{ .Values.vehicle_profile_sp.vinValidationEnabled | quote }}
+  kafka_ssl_enable: "false"
+  bootstrap_servers: {{ .Values.vehicle_profile_sp.bootstrap_servers | quote }}
+  zookeeper_connect: {{ .Values.vehicle_profile_sp.zookeeper_connect | quote }}
+  redis_sentinels: {{ .Values.vehicle_profile_sp.redisSentinels | quote }}
+  redis_cluster_masters: {{ .Values.vehicle_profile_sp.redisCluster | quote }}
+  redis_master_name: "redis-sentinel"
+  redis_read_mode: "MASTER"
+  redis_subscription_mode: "MASTER"
+  redis_address: ""
+  redis_database: "0"
+  num_stream_threads: {{ .Values.vehicle_profile_sp.numStreamThreads | quote }}
+  source_topic_name: {{ .Values.vehicle_profile_sp.source_topic_name | quote }}
+  vin_event_process_enable: "true"
+  vin_decode: {{ .Values.vehicle_profile_sp.vinDecode | quote }}
+  vin_decoder: {{ .Values.vehicle_profile_sp.vinDecoder | quote }}
+  notification_sink_topic_name: "notification"
+  vehicle_profile_base_url: {{ .Values.vehicle_profile_sp.vehicle_profile_base_url | quote }}
+  device_mqtt_message_base_url: {{ .Values.vehicle_profile_sp.device_mqtt_message_base_url | quote }}
+  device_association_base_url: {{ .Values.vehicle_profile_sp.device_association_base_url | quote }}
+  saas_api_base_url: {{ .Values.vehicle_profile_sp.saas_api_base_url | quote }}
+  saas_api_base_url_version: "v1.0"
+  health_mqtt_monitor_enabled : {{ .Values.vehicle_profile_sp.health.healthMqtt | quote }}
+  health_mongo_monitor_enabled : {{ .Values.vehicle_profile_sp.health.healthMongo | quote }}
+  health_kafka_consumer_group.monitor_enabled : {{ .Values.vehicle_profile_sp.health.healthKafkaConsumer | quote }}
+  health_device_status_backdoor.monitor_enabled : {{ .Values.vehicle_profile_sp.health.healthDMA | quote }}
+  health_dff_feed.backdoor_monitor_enabled : {{ .Values.vehicle_profile_sp.health.healthDFF | quote }}
+  health_kafka_topics_monitor_enabled : {{ .Values.vehicle_profile_sp.health.healthKafkaTopics | quote }}
+  health_redis_monitor_enabled : {{ .Values.vehicle_profile_sp.health.healthRedis | quote }}
+  sp_restart_on_failure : {{ .Values.vehicle_profile_sp.spRestartOnFailure | quote }}
+  kafka_producer_service_enabled: {{ .Values.vehicle_profile_sp.vehicleProfile_kafka_enabled | quote }}
+  kafka_topics_file_path : {{ .Values.vehicle_profile_sp.kafkaTopicsFilePath | quote }}
+  allowed_device_types : {{ .Values.global_param.allowedDeviceTypes | quote }}
+  default_device_type : {{ .Values.global_param.defaultDeviceType | quote }}
+  default_capability_services: {{ .Values.global_param.defaultCapabilityServices | quote }}
+  default_provisioned_services: {{ .Values.global_param.defaultProvisionedServices | quote }}
+  encrypt_log: {{ .Values.logging.encryptLog | quote }}
+  enable_pid_request_event: {{ .Values.vehicle_profile_sp.enablePIDDBRequestEvent | quote }}
+  health_mongo_monitor_enabled: "true"
+  health_service_failure_retry_thrshold: "2"
+  health_service_failure_retry_interval_millis: "2000"
+  NEVER_BLOCK_FOR_GRAYLOG: "true"
+  LOG_LEVEL: {{ .Values.logging.logLevel | quote }}
+  SVC_LOG_LEVEL: {{ .Values.logging.svcLogLevel | quote }}
+  IGNITE_LOG_LEVEL: {{ .Values.logging.igniteLogLevel | quote }}
+  STORAGE_LOG_LEVEL: {{ .Values.logging.storageLogLevel | quote }}
+  SPRING_LOG_LEVEL: {{ .Values.logging.springLogLevel | quote }}
+  CACHE_LOG_LEVEL: {{ .Values.logging.cacheLogLevel | quote }}
+  KAFKA_LOG_LEVEL: {{ .Values.logging.kafkaLogLevel | quote }}
+  STREAM_BASE_LOG_LEVEL: {{ .Values.logging.streamBaseLogLevel | quote }}
+  GRAYLOG_HOST: {{ .Values.logging.graylogHost | quote }}
+  GRAYLOG_PORT: {{ .Values.logging.graylogPort | quote }}
+  LOG_APPENDER:  {{ .Values.logging.logAppender | quote }}
+{{- if .Values.vehicle_profile_sp.extraParams }}
+{{ toYaml .Values.vehicle_profile_sp.extraParams | indent 2 }}
+{{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: oss-vehicle-profile-sp-svc
+  labels:
+    app: vehicle-profile-sp
+    group: streaming
+    ms: {{ .Values.ms | quote }}
+spec:
+  ports:
+  - name: monitor
+    port: 9100
+    protocol: TCP
+    targetPort: 9100
+  - port: 1883
+    name: server
+  clusterIP: None
+  selector:
+    app: vehicle-profile-sp
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oss-vehicle-profile-sp
+  labels:
+    app: vehicle-profile-sp
+    group: streaming
+spec:
+  selector:
+    matchLabels:
+      app: vehicle-profile-sp
+  replicas: {{ .Values.vehicle_profile_sp.replicas }}
+  template:
+    metadata:
+      labels:
+        app: vehicle-profile-sp
+        group: streaming
+        redeploy-timestamp: "123456789"
+      name: vehicle-profile-sp
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: {{ .Values.vehicle_profile_sp.nodeAffinityKey }}
+                operator: In
+                values: [{{ .Values.vehicle_profile_sp.nodeType | quote }}]
+        {{- if .Values.vehicle_profile_sp.podAntiAffinityEnabled }}
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: "app"
+                    operator: In
+                    values:
+                    - vehicle-profile-sp
+              topologyKey: "kubernetes.io/hostname"
+        {{- end }}
+      containers:
+      - name: vehicle-profile-sp
+        image: {{ .Values.image.repository }}/vehicle-profile-sp:{{ .Values.vehicle_profile_sp.imageTag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command:
+        - sh
+        - -c
+        - "exec env mongodb_hosts=$NODE_NAME,$mongodb_qr_global_svc /bin/sh /opt/vehicle-profile/sp/start.sh"
+        resources:
+{{ toYaml .Values.vehicle_profile_sp.resources | indent 10 }}
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: app
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['app']
+        - name: ms
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['ms']
+        - name: msCtype
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['group']
+        envFrom:
+        - configMapRef:
+            name: oss-vehicle-profile-sp-config
+        env:
+        - name: mqtt_user_password
+          valueFrom:
+            secretKeyRef:
+              name: vehicle-profile
+              key: mqtt-password
+        - name: mongodb_username
+          valueFrom:
+            secretKeyRef:
+              name: vehicle-profile
+              key: mongodb-user   
+        - name: mongodb_password
+          valueFrom:
+            secretKeyRef:
+              name: vehicle-profile
+              key: mongodb-password
+        volumeMounts:
+          - mountPath: logs
+            name: logs
+          - mountPath: /data
+            name: topics-config
+      initContainers:
+      - name: kafka-topics-creation
+        image: {{ .Values.image.kafka_repository }}/ignite-kafka-utils:{{ .Values.kafka_utils.imageTag }}
+        imagePullPolicy: Always
+        command: ["/etc/confluent/docker/launch"]
+        env:
+        - name: action
+          value : "createTopics"
+        - name: ZOOKEEPER_URL
+          value: {{ .Values.vehicle_profile_sp.zookeeper_connect }}
+        volumeMounts:
+          - mountPath: /data
+            name: topics-config
+      serviceAccountName: {{ include "vehicle-profile-sp.fullname" . }}
+      imagePullSecrets: {{- toYaml .Values.imagePullSecrets | nindent 8 }}
+      volumes:
+        - name: logs
+          emptyDir: {}
+        - name: topics-config
+          configMap:
+            name: oss-vehicle-profile-sp-topics
