@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: oss-ro-api-mongodb-config
+  labels:
+    app: ro-api
+    group: api
+    ms: {{ .Values.ms | quote }}
+data:
+  ro-api-mongodb-config.yml: |
+    roles:
+    - role: "ro-api-mongo-role"
+      databases: ["admin", {{ .Values.mongodb.databaseName | quote }}]
+      privileges:
+      - resource:
+          db: {{ .Values.mongodb.databaseName | quote }}
+          collection: "ro"
+        actions: ["find", "insert", "remove", "update", "createIndex", "dropIndex"]
+      - resource:
+          db: {{ .Values.mongodb.databaseName | quote }}
+          collection: "roConfig"
+        actions: ["find", "insert", "remove", "update", "createIndex", "dropIndex"]
+      - resource:
+          db: {{ .Values.mongodb.databaseName | quote }}
+          collection: "roConfig"
+        actions: ["find", "insert", "remove", "update", "createIndex", "dropIndex"]
+      - resource:
+          db: {{ .Values.mongodb.databaseName | quote }}
+          collection: "roSchedule"
+        actions: ["find", "insert", "remove", "update", "createIndex", "dropIndex"]
+      - resource:
+          db: {{ .Values.mongodb.databaseName | quote }}
+          collection: "roScheduleV2"
+        actions: ["find", "insert", "remove", "update", "createIndex", "dropIndex"]
+      - resource:
+          db: {{ .Values.mongodb.databaseName | quote }}
+          collection: "rcpd"
+        actions: ["find", "insert", "remove", "update", "createIndex", "dropIndex"]
+

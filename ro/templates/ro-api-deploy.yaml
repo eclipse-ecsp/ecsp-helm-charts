@@ -1,0 +1,132 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oss-ro-api
+  labels:
+    app: ro-api
+    group: api
+    ms: {{ .Values.ms | quote }}
+spec:
+  selector:
+    matchLabels:
+      app: ro-api
+  replicas: {{ .Values.ro_api.replicas }}
+  template:
+    metadata:
+      labels:
+        app: ro-api
+        group: api
+        ms: {{ .Values.ms | quote }}
+        redeploy-timestamp: "123456789"
+      name: ro-api
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: "hctl.harman.com/node-group"
+                operator: In
+                values: [{{ .Values.ro_api.nodeType | quote }}]
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: "app"
+                    operator: In
+                    values:
+                      - ro-api
+              topologyKey: "kubernetes.io/hostname"
+      containers:
+      - name: ro-api
+        image: {{ .Values.image.repository }}/ro-api:{{ .Values.ro_api.imageTag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command:
+        - sh
+        - -c
+        - "env mongodb_hosts=$NODE_NAME,$mongodb_qr_global_svc /bin/sh /opt/ro-api/bin/start.sh"
+        ports:
+        - containerPort: 8080
+          name: tcp
+        resources:
+{{ toYaml .Values.ro_api.resources | indent 10 }}
+        envFrom:
+        - configMapRef:
+            name: oss-ro-api-config
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: MONGODB_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: oss-ro-mongodb
+              key: mongodb-user
+        - name: MONGODB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: oss-ro-mongodb
+              key: mongodb-password
+        - name: app
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['app']
+        - name: ms
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['ms']
+        - name: msCtype
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['group']
+        volumeMounts:
+          - mountPath: /usr/local/tomcat/health
+            name: health
+          - mountPath: /usr/local/tomcat/logs
+            name: logs
+        {{- if .Values.ro_api.livenessProbe.enabled }}
+        livenessProbe:
+          initialDelaySeconds: {{ .Values.ro_api.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.ro_api.livenessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.ro_api.livenessProbe.timeoutSeconds }}
+          successThreshold: {{ .Values.ro_api.livenessProbe.successThreshold }}
+          failureThreshold: {{ .Values.ro_api.livenessProbe.failureThreshold }}
+          exec:
+            command:
+            - sh
+            - -c
+            - /usr/local/tomcat/health/api_liveness.sh
+        {{- end }}
+        {{- if .Values.ro_api.readinessProbe.enabled }}
+        readinessProbe:
+          initialDelaySeconds: {{ .Values.ro_api.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.ro_api.readinessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.ro_api.readinessProbe.timeoutSeconds }}
+          successThreshold: {{ .Values.ro_api.readinessProbe.successThreshold }}
+          failureThreshold: {{ .Values.ro_api.readinessProbe.failureThreshold }}
+          exec:
+            command:
+            - sh
+            - -c
+            - /usr/local/tomcat/health/api_readiness.sh
+        {{- end }}
+      serviceAccountName: {{ include "ro-api.fullname" . }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets: {{- toYaml . | nindent 6 }}
+      {{- end }}
+      volumes:
+        - name: logs
+          emptyDir: { }
+        - name: ignite-mongodb-config
+          configMap:
+            name: oss-ro-api-mongodb-config
+        - name: health
+          configMap:
+            name: oss-ro-api-health-config
+            defaultMode: 0755
+            items:
+            - key: api_readiness.sh
+              path: api_readiness.sh
+            - key: api_liveness.sh
+              path: api_liveness.sh

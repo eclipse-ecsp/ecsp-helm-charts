@@ -1,0 +1,163 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: oss-ro-sp-topics
+  labels:
+    app: ro-sp
+    group: sp
+    ms: {{ .Values.ms | quote }}
+data:
+  topics.txt: {{ toYaml .Values.ro_sp.kafka_topics | indent 2 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: oss-ro-sp-config
+  labels:
+    app: ro-sp
+    group: streaming
+    ms: {{ .Values.ms | quote }}
+data:
+  service_name: "ro"
+  mqtt_broker_url: {{ .Values.mqtt_details.mqttBrokerURL }}
+  mqtt_user_name: {{ .Values.mqtt_details.mqttUserName }}
+  mqtt_service_topic_name_prefix: {{ .Values.mqtt_details.mqttServiceTopicNamePrefix | quote }}
+  mqtt_service_topic_name: {{ .Values.mqtt_details.mqttServiceTopicName }}
+  mqtt_ri_svas_topic_name: {{ .Values.mqtt_details.mqttRiSvasTopicName }}
+  mqtt_ri_ftd_topic_name: {{ .Values.mqtt_details.mqttRiFtdTopicName }}
+  source_topic_name: {{ .Values.ro_sp.sourceTopicName | quote }}
+  sink_topic_name: {{ .Values.ro_sp.sinkTopicName }}
+  dff_feedback_topic: "ro"
+  redis_sentinels: {{ .Values.ro_sp.redisSentinels | quote }}
+  redis_cluster_masters: {{ .Values.ro_sp.redisCluster | quote }}
+  redis_scan_limit: "10000"
+  redis_scan_interval: "10000"
+  redis_master_name: redis-sentinel
+  redis_read_mode: "MASTER"
+  redis_subscription_mode: "MASTER"
+  mongodb_port: {{ .Values.mongodb.port | quote }}
+  mongodb_name: {{ .Values.mongodb.databaseName | quote }}
+  mongodb_client_cleanup_interval_ms: {{ .Values.mongodb.clientCleanupIntervalMs | quote }}
+  mongodb_client_create_retry_count: {{ .Values.mongodb.clientCreateRetryCount | quote }}
+  mongodb_client_close_wait_interval_ms: {{ .Values.mongodb.clientCloseWaitIntervalMs | quote }}
+  mongodb_read_preference: {{ .Values.mongodb.readPreference | quote }}
+  mongodb_qr_global_svc: {{ .Values.mongodb.host | quote }}
+  mongodb_auth_db: "admin"
+  metrics_prometheus_enabled: "true"
+  metrics_dao_enabled: "true"
+  metrics_enabled: "false"
+  num_stream_threads: {{ .Values.ro_sp.numStreamThreads | quote }}
+  application_id: {{ .Values.ro_sp.applicationId | quote }}
+  JVM_OPTS: "{{ .Values.ro_sp.jvmOpts }} {{ .Values.ro_sp.javaOpts }}"
+  http_vp_url: "http://vehicle-profile-api-int-svc.data-platform:8080/v1.0/vehicleProfiles/"
+  http_sm_url: "http://settingsmgmt-api-int-svc.default.svc.cluster.local:8080/settingsmgmt-api/v1.0/users/{userId}/vehicles/{vehicleId}/settings"
+  outboud_api_additional_headers: {{ .Values.ro_sp.outboudApiAdditionalHeaders | quote }}
+  acv_outboud_api_additional_headers: {{ .Values.ro_sp.acvOutboudApiAdditionalHeaders | quote }}
+  NEVER_BLOCK_FOR_GRAYLOG: "true"
+  LOG_FILE_LOCATION: "logs/ro-sp.log"
+  APPENDER: {{ .Values.logging.appender | quote }}
+  LOG_APPENDER: {{ .Values.logging.appender | quote }}
+  GRAYLOG_HOST: {{ .Values.logging.graylogHost | quote }}
+  GRAYLOG_PORT: {{ .Values.logging.graylogPort | quote }}
+  LOG_LEVEL: {{ .Values.logging.logLevel | quote }}
+  IGNITE_LOG_LEVEL: {{ .Values.logging.igniteLogLevel | quote }}
+  STORAGE_LOG_LEVEL: {{ .Values.logging.storageLogLevel | quote }}
+  SPRING_LOG_LEVEL: {{ .Values.logging.springLogLevel | quote }}
+  SVC_LOG_LEVEL: {{ .Values.logging.svcLogLevel | quote }}
+  CACHE_LOG_LEVEL: {{ .Values.logging.cacheLogLevel | quote }}
+  KAFKA_LOG_LEVEL: {{ .Values.logging.kafkaLogLevel | quote }}
+  STREAM_BASE_LOG_LEVEL: {{ .Values.logging.streamBaseLogLevel | quote }}
+  BACKDOORCONSUMER_LOG_LEVEL: {{ .Values.logging.backdoorConsumerLogLevel | quote }}
+  dma_shoulder_tap_invoker_wam_send_sms_url: {{ .Values.ro_sp.shouldertapSendSmsUrl | quote }}
+  dma_shoulder_tap_invoker_wam_sms_transaction_status_url: {{ .Values.ro_sp.shouldertapSmsTransactionStatusUrl | quote }}
+  shoulder_tap_max_retry: "0"
+  mqtt.client.auth.mechanism: "basic-auth"
+  mqtt.service.truststore.path: ""
+  mqtt.service.truststore.password: ""
+  mqtt.service.truststore.type: ""
+  dma.dispatcher.ecu.types: ""
+  kafka.acks: "1"
+  kafka.key.serializer: "org.apache.kafka.common.serialization.StringSerializer"
+  kafka.value.serializer: "org.apache.kafka.common.serialization.ByteArraySerializer"
+  kafka.batch.size: "16384"
+  kafka.buffer.memory: "33554432"
+  dma_shoulder_tap_enabled: {{ .Values.ro_sp.dmaShoulderTapEnabled | quote }}
+  dma_shoulder_tap_invoker_impl_class: "org.eclipse.ecsp.stream.dma.shouldertap.ShoulderTapInvokerWAMImpl"
+  dma_shoulder_tap_wam_sms_priority: "HIGH"
+  dma_shoulder_tap_wam_sms_validity_hours: {{ .Values.ro_sp.dmashouldertapwamsmsvalidityhours | quote }}
+  dma_shoulder_tap_wam_send_sms_skip_status_check: "true"
+  dma_service_max_retry: {{ .Values.ro_sp.dmaServiceMaxRetry | quote }}
+  dma_service_retry_interval_millis: {{ .Values.ro_sp.dmaServiceRetryIntervalMillis | quote }}
+  dma_bsrf_retry_interval_millis: {{ .Values.ro_sp.dmaBsrfRetryIntervalMillis | quote }}
+  dma_service_retry_interval_divisor: {{ .Values.ro_sp.dmaServiceRetryIntervalDivisor | quote }}
+  dma_config_retry_resolver_class: {{ .Values.ro_sp.dmaConfigResolverClass | quote }}
+  dma_device_delivery_cutoff_resolver_class: {{ .Values.ro_sp.dmaDeliveryCutoffResolverClass | quote }}
+  dma_bsrf_retry_interval_events: {{ .Values.ro_sp.dmaBsrfRetryIntervalEvents | quote }}
+  dma_service_retry_interval_ecus: {{ .Values.ro_sp.dmaServiceRetryIntervalEcus | quote }}
+  dma_service_ttl_buffer: {{ .Values.ro_sp.dmaServiceTtlBuffer | quote }}
+  dmaEnabled: "true"
+  scheduler_enabled: "true"
+  dmaNotificationTopicName: "ro-dma-scheduler-notification"
+  dma_ttl_expiry_notification_enabled: "true"
+  max.poll.records: {{ .Values.ro_sp.maxPollRecords | quote }}
+  consumer.max.poll.records: {{ .Values.ro_sp.consumerMaxPollRecords | quote }}
+  session.timeout.ms: {{ .Values.ro_sp.sessionTimeoutMs | quote }}
+  heartbeat.interval.ms: {{ .Values.ro_sp.heartbeatIntervalMs | quote }}
+  request.timeout.ms: {{ .Values.ro_sp.requestTimeoutMs | quote }}
+  max.poll.interval.ms: {{ .Values.ro_sp.maxPollIntervalMs | quote }}
+  exec.shutdown.hook: {{ .Values.ro_sp.execShutdownHook | quote }}
+  shutdown.hook.wait.ms: {{ .Values.ro_sp.shutdownHookWaitTimeMs | quote }}
+  redis_idle_conn_timeout: {{ .Values.ro_sp.redisIdleConnTimeout | quote }}
+  redis_conn_timeout: {{ .Values.ro_sp.redisConnTimeout | quote }}
+  redis_master_conn_pool_size: {{ .Values.ro_sp.redisMasterConnPoolSize | quote }}
+  redis_timeout: {{ .Values.ro_sp.redisTimeout | quote }}
+  redis_master_conn_min_idle_size: {{ .Values.ro_sp.redisMasterConnMinIdlePoolSize | quote }}
+  redis_reconnection_timeout: {{ .Values.ro_sp.redisReconnectionTimeout | quote }}
+  redis_database: {{ .Values.ro_sp.redisDatabase | quote }}
+  health_mqtt_monitor_enabled: {{ .Values.ro_sp.health.healthMqtt | quote }}
+  health_mongo_monitor_enabled: {{ .Values.ro_sp.health.healthMongo | quote }}
+  health_mqtt_monitor_restart_on_failure: {{ .Values.ro_sp.health.healthMqttRestartOnFailure | quote }}
+  health_kafka_consumer_group.monitor_enabled: {{ .Values.ro_sp.health.healthKafkaConsumer | quote }}
+  health_device_status_backdoor.monitor_enabled: {{ .Values.ro_sp.health.healthDMA | quote }}
+  health_dff_feed.backdoor_monitor_enabled: {{ .Values.ro_sp.health.healthDFF | quote }}
+  health_kafka_topics_monitor_enabled: {{ .Values.ro_sp.health.healthKafkaTopics | quote }}
+  health_redis_monitor_enabled: {{ .Values.ro_sp.health.healthRedis | quote }}
+  sp_restart_on_failure: {{ .Values.ro_sp.spRestartOnFailure | quote }}
+  kafka_topics_file_path: {{ .Values.ro_sp.kafkaTopicsFilePath | quote }}
+  settings_object_json_path: {{ .Values.ro_sp.settingsObjectJsonPath | quote }}
+  whitelisted_dff_origins_list: {{ .Values.ro_sp.whitelistedDffOrigins | quote }}
+  msg_seq_topic_name: "ro"
+  msg_seq_time_interval_in_millis: "0"
+  ri_partner_service_id: {{ .Values.ro_sp.riPartnerServiceId | quote }}
+  callcenter_enabled_origin: {{ .Values.ro_sp.callCenterEnabledOrigin | quote }}
+  ro_operation_firing_count: {{ .Values.ro_sp.roFiringCount | quote }}
+  kafka_streams_offset_persistence_enabled: {{ .Values.ro_sp.kafkaStreamsOffsetPersistenceEnabled | quote }}
+  enable_input_validation:  {{ .Values.ro_sp.enableValidation | quote }}
+  notification_responsemessage_notificationid_mapping: {{ .Values.ro_sp.notificationResponsemessageNotificationidMapping | replace "\n" "" |quote }}
+  rcpd_notificationId_mapping: {{ .Values.ro_sp.rcpdNotificationIdMapping | replace "\n" "" | quote }}
+  engine_start_check_enable: {{ .Values.ro_sp.engineStartCheckEnable | quote }}
+  engine_status_ttl_ms: {{ .Values.ro_sp.engineStatusTTL | quote }}
+  ro_queue_enable: {{ .Values.ro_sp.roQueueEnable | quote }}
+  ro_foreach_ttl: {{ .Values.ro_sp.roForEachTTL | quote }}
+  kafka_data_consumption_metrics: {{ .Values.ro_sp.kafkaDataConsumptionMetrics | quote }}
+  data_consumption_metrics_kafka_topic: {{ .Values.ro_sp.dataConsumptionMetricsKafkaTopic | quote }}
+  deviceMessage_failures_store: {{ .Values.ro_sp.deviceMessageFailuresStore | quote }}
+  stockingRule_enable: {{ .Values.ro_sp.stockingRuleEnable | quote }}
+  stockingRule_config_events: {{ .Values.ro_sp.stockingRuleConfigEvents | quote }}
+  stockingRule_key_name: {{ .Values.ro_sp.stockingRuleKeyName | quote }}
+  notification_ext_mapping: {{ .Values.ro_sp.notificationExtMapping | replace "\n" "" |quote }}
+  acv_beforeExecuteTimeMinutes: {{ .Values.ro_sp.acvBeforeExecuteTimeMinutes | quote }}
+  stocking_rule_configurationObject: {{ .Values.ro_sp.stockingRuleConfigurationObject | quote }}
+  dma_retry_interval_mapping: {{ .Values.ro_sp.dmaRetryIntervalMappingInMS | replace "\n" "" |quote }}
+  dma_ttl_mapping: {{ .Values.ro_sp.dmaTTLMappingInMS | replace "\n" "" |quote }}
+  settings_configurationObject_json_path: {{ .Values.ro_sp.settingsConfigurationObjectJsonPath | quote }}
+  mongodb_collection_shardkey_map: {{ .Values.ro_sp.mongodbShardkeyMap | quote }}
+  dff_enabled: {{ .Values.ro_sp.dffEnabled | quote }}
+  bootstrap_servers: {{ .Values.kafka.brokerUrl | quote }}
+  kafka_ssl_enable: {{ .Values.kafka.sslEnable | quote }}
+  kafka_broker_url: {{ .Values.kafka.brokerUrl | quote }}
+  zookeeper_connect: {{ .Values.kafka.zookeeperConnect | quote }}
+{{- if .Values.ro_sp.extraParams }}
+{{ toYaml .Values.ro_sp.extraParams | indent 2 }}
+{{- end }}
