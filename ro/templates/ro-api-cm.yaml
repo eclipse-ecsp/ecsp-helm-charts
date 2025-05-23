@@ -1,0 +1,167 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: oss-ro-api-health-config
+  labels:
+    app: ro-api
+    group: api
+    ms: {{ .Values.ms | quote }}
+data:
+  api_readiness.sh: |+
+    #!/bin/sh
+    wget -O /usr/local/tomcat/metrics-rediness http://localhost:8080/ro-api/metrics
+    file="/usr/local/tomcat/metrics-rediness"
+    if [ -f "$file" ]
+    then
+      echo "$file found."
+      serviceHealth=$(grep SERVICE_HEALTH $file | cut -d' ' -f2)
+      if [ "$serviceHealth" == "1.0" ]; then
+        echo "Service is unhealthy during readiness check"
+        rm "$file"
+        exit 1
+      else
+        echo "Service is healthy during readiness check"
+      fi
+        rm "$file"
+    else
+      echo "$file not found."
+    fi
+  api_liveness.sh: |+
+    #!/bin/sh
+    wget -O /usr/local/tomcat/metrics http://localhost:8080/ro-api/metrics
+    file="/usr/local/tomcat/metrics"
+    if [ -f "$file" ]
+    then
+      echo "$file found."
+      serviceHealth=$(grep SERVICE_HEALTH $file | cut -d' ' -f2)
+      if [ "$serviceHealth" == "1.0" ]; then
+        echo "Service is unhealthy during liveness check"
+        rm "$file"
+        exit 1
+      else
+        echo "Service is healthy during liveness check"
+      fi
+        rm "$file"
+    else
+      echo "$file not found."
+    fi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: oss-ro-api-config
+  labels:
+    app: ro-api
+    group: api
+data:
+  CATALINA_OPTS: "{{ .Values.ro_api.jvmOpts }} {{ .Values.ro_api.javaOpts }}"
+  metrics_prometheus_enabled: "true"
+  metrics_dao_enabled: "true"
+  mongodb_port: {{ .Values.mongodb.port | quote }}
+  mongodb_name: {{ .Values.mongodb.databaseName | quote }}
+  mongodb_client_cleanup_interval_ms: {{ .Values.mongodb.clientCleanupIntervalMs | quote }}
+  mongodb_client_create_retry_count: {{ .Values.mongodb.clientCreateRetryCount | quote }}
+  mongodb_client_close_wait_interval_ms: {{ .Values.mongodb.clientCloseWaitIntervalMs | quote }}
+  mongodb_read_preference: {{ .Values.mongodb.readPreference | quote }}
+  mongodb_qr_global_svc: {{ .Values.mongodb.host | quote }}
+  mongodb_auth_db: "admin"
+  redis_read_mode: "MASTER"
+  redis_subscription_mode: "MASTER"
+  redis_sentinels: {{ .Values.ro_api.redisSentinels | quote }}
+  redis_cluster_masters: {{ .Values.ro_api.redisCluster | quote }}
+  redis_scan_limit: "10000"
+  redis_scan_interval: "10000"
+  redis_master_name: redis-sentinel
+  redis_idle_conn_timeout: {{ .Values.ro_api.redisIdleConnTimeout | quote }}
+  redis_conn_timeout: {{ .Values.ro_api.redisConnTimeout | quote }}
+  redis_master_conn_pool_size: {{ .Values.ro_api.redisMasterConnPoolSize | quote }}
+  redis_timeout: {{ .Values.ro_api.redisTimeout | quote }}
+  redis_master_conn_min_idle_size: {{ .Values.ro_api.redisMasterConnMinIdlePoolSize | quote }}
+  redis_reconnection_timeout: {{ .Values.ro_api.redisReconnectionTimeout | quote }}
+  redis_database: {{ .Values.ro_api.redisDatabase | quote }}
+  ro_schedule_limit: "5"
+  history_default_page_size: {{ .Values.ro_api.defaultPageSize | quote }}
+  kafka_sink_topic: {{ .Values.ro_api.sinkTopicName | quote }}
+  ri_kafka_sink_topic: {{ .Values.ro_api.riTopicName | quote }}
+  rcpd_kafka_sink_topic: {{ .Values.ro_api.rcpdTopicName | quote }}
+  NEVER_BLOCK_FOR_GRAYLOG: "true"
+  GRAYLOG_HOST: {{ .Values.logging.graylogHost | quote }}
+  GRAYLOG_PORT: {{ .Values.logging.graylogPort | quote }}
+  LOG_LEVEL: {{ .Values.logging.logLevel | quote }}
+  IGNITE_LOG_LEVEL: {{ .Values.logging.igniteLogLevel | quote }}
+  STORAGE_LOG_LEVEL: {{ .Values.logging.storageLogLevel | quote }}
+  SPRING_LOG_LEVEL: {{ .Values.logging.springLogLevel | quote }}
+  SVC_LOG_LEVEL: {{ .Values.logging.svcLogLevel | quote }}
+  CACHE_LOG_LEVEL: {{ .Values.logging.cacheLogLevel | quote }}
+  KAFKA_LOG_LEVEL: {{ .Values.logging.kafkaLogLevel | quote }}
+  STREAM_BASE_LOG_LEVEL: {{ .Values.logging.streamBaseLogLevel | quote }}
+  APPENDER: {{ .Values.logging.appender | quote }}
+  LOG_APPENDER: {{ .Values.logging.logAppender | quote }}
+  metrics_enabled: "true"
+  performance_monitoring_enabled: "true"
+  health_mqtt_monitor_enabled : {{ .Values.ro_api.health.healthMqtt | quote }}
+  health_mongo_monitor_enabled : {{ .Values.ro_api.health.healthMongo | quote }}
+  health_kafka_consumer_group.monitor_enabled : {{ .Values.ro_api.health.healthKafkaConsumer | quote }}
+  health_device_status_backdoor.monitor_enabled : {{ .Values.ro_api.health.healthDMA | quote }}
+  health_dff_feed.backdoor_monitor_enabled : {{ .Values.ro_api.health.healthDFF | quote }}
+  health_kafka_topics_monitor_enabled : {{ .Values.ro_api.health.healthKafkaTopics | quote }}
+  health_redis_monitor_enabled : {{ .Values.ro_api.health.healthRedis | quote }}
+  filter_deviceMessage_failures: {{ .Values.ro_api.filterDeviceMessagefailures | quote }}
+  filter_general_event: {{ .Values.ro_api.filterGeneralEvent | quote }}
+  kafka_ssl_enable: {{ .Values.kafka.sslEnable | quote }}
+  kafka_producer_service_enabled: {{ .Values.kafka.kafkaProducerServiceEnabled | quote }}
+  kafka_broker_url: {{ .Values.kafka.brokerUrl | quote }}
+  cache_bypass_queue_capacity: {{ .Values.cache.bypass.queueCapacity | quote }}
+  cache_bypass_thread_initial_delay: {{ .Values.cache.bypass.threadInitialDelay | quote }}
+  cache_bypass_thread_delay: {{ .Values.cache.bypass.threadDelay | quote }}
+  cache_bypass_thread_shutdown_wait_time: {{ .Values.cache.bypass.threadShutdownWaitTime | quote }}
+  cache_bypass_max_retry_attempts: {{ .Values.cache.bypass.maxRetryAttempts | quote }}
+  cache_bypass_retry_interval_milli_secs: {{ .Values.cache.bypass.retryIntervalMilliSecs | quote }}
+  ignite_key_transformer_class: {{ .Values.ro_api.igniteKeyTransformerClass | quote }}
+  bootstrap_servers: {{ .Values.kafka.brokerUrl | quote }}
+  kafka_bootstrap_servers: {{ .Values.kafka.brokerUrl | quote }}
+  backdoor_kafka_consumer_default_api_timeout_ms: {{ .Values.kafka.backdoorConsumerDefaultApiTimeout | quote }}
+  stream_threads_active_states: {{ .Values.ro_api.streamThreadsActiveStates | quote }}
+  stream_threads_dead_states: {{ .Values.ro_api.streamThreadsDeadStates | quote }}
+  ignore_bootstrap_failure_monitors: {{ .Values.ro_api.ignoreBootstrapFailureMonitors | quote }}
+  kafka_streams_max_failures: {{ .Values.kafka.streamsMaxFailures | quote }}
+  kafka_streams_max_time_millis: {{ .Values.kafka.streamsMaxTimeMillis | quote }}
+  launcher_impl_class_fqn:  {{ .Values.ro_api.launcherImplClassFqn | quote }}
+  exec_shutdown_hook: {{ .Values.ro_api.execShutdownHook | quote }}
+  shutdown_hook_wait_ms: {{ .Values.ro_api.shutdownHookWaitTimeMs | quote }}
+  messageid_generator_type:  {{ .Values.ro_api.messageidGeneratorType | quote }}
+  dma_shoulder_tap_invoker_wam_send_sms_url: {{ .Values.ro_sp.shouldertapSendSmsUrl | quote }}
+  dma_shoulder_tap_invoker_wam_sms_transaction_status_url: {{ .Values.ro_sp.shouldertapSmsTransactionStatusUrl | quote }}
+  shoulder_tap_max_retry: "0"
+  dma_shoulder_tap_enabled: {{ .Values.ro_sp.dmaShoulderTapEnabled | quote }}
+  dma_shoulder_tap_invoker_impl_class: "org.eclipse.ecsp.stream.dma.shouldertap.ShoulderTapInvokerWAMImpl"
+  dma_shoulder_tap_wam_sms_priority: "HIGH"
+  dma_shoulder_tap_wam_sms_validity_hours: {{ .Values.ro_sp.dmashouldertapwamsmsvalidityhours | quote }}
+  dma_shoulder_tap_wam_send_sms_skip_status_check: "true"
+  dma_shoulder_tap_wam_api_max_retry_count: {{ .Values.ro_api.dmaShoulderTapWamApiMaxRetryCount | quote }}
+  dma_shoulder_tap_wam_api_max_retry_interval_ms: {{ .Values.ro_api.dmaShoulderTapWamApiMaxRetryIntervalMs | quote }}
+  mongodb_collection_shardkey_map: {{ .Values.ro_sp.mongodbShardkeyMap | quote }}
+  dff_enabled: {{ .Values.ro_api.dffEnabled | quote }}
+  dmaEnabled: "false"
+  dma_enabled: {{ .Values.ro_api.dmaEnabled | quote }}
+  api_gatewayUrls: "https://oss-api-gateway3.eks-ignite-qa.kqa.ignite.harman.com"
+  api_gateway_service_name: {{ .Values.api_gateway.api_gateway_service_name | quote }}
+  api_registry_enabled: {{ .Values.api_gateway.api_registry_enabled | quote }}
+  api_security_enabled: {{ .Values.api_gateway.api_security_enabled | quote }}
+  spring_application_version: {{ .Values.api_gateway.spring_application_version | quote }}
+  spring_application_servicename: {{ .Values.api_gateway.spring_application_servicename | quote }}
+  spring_application_name: {{ .Values.api_gateway.spring_application_name | quote }}
+  server_port: {{ .Values.api_gateway.server_port | quote }}
+  api_context-path: {{ .Values.api_gateway.api_context | quote }}
+  openapi_path_include: {{ .Values.api_gateway.openapi_path_include | quote }}
+  openapi_path_exclude: {{ .Values.api_gateway.openapi_path_exclude | quote }}
+  api_registry_service_name: {{ .Values.api_gateway.api_registry_service_name | quote }}
+  association_api_base_url: {{ .Values.ro_api.associationApiUrl | quote }}
+  associated_user_api_path: {{ .Values.ro_api.associatedUserApiPath | quote }}
+  vehicle_profile_api_base_url: {{ .Values.ro_api.vehicle_profile_api_base_url | quote }}
+  vehicle_profile_search_query: {{ .Values.ro_api.vehicle_profile_search_query | quote }}
+  vehicle_profile_api_url_path: {{ .Values.ro_api.vehicle_profile_api_url_path | quote }}
+{{- if .Values.ro_api.extraParams }}
+{{ toYaml .Values.ro_api.extraParams | indent 2 }}
+{{- end }}

@@ -1,0 +1,124 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oss-ro-sp
+  labels:
+    app: ro-sp
+    group: streaming
+    ms: {{ .Values.ms | quote }}
+spec:
+  selector:
+    matchLabels:
+      app: ro-sp
+  replicas: {{ .Values.ro_sp.replicas }}
+  template:
+    metadata:
+      labels:
+        app: ro-sp
+        group: streaming
+        ms: {{ .Values.ms | quote }}
+        redeploy-timestamp: "123456789"
+      annotations:
+        checksum/sp-config: {{ include (print $.Template.BasePath "/ro-sp-cm.yaml") . | sha256sum }}
+        checksum/sp-mongodb-config: {{ include (print $.Template.BasePath "/ro-sp-mongodb-configmap.yaml") . | sha256sum }}
+      name: ro-sp
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: "hctl.harman.com/node-group"
+                operator: In
+                values: [{{ .Values.ro_sp.nodeType | quote }}]
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: "app"
+                    operator: In
+                    values:
+                    - ro-sp
+              topologyKey: "kubernetes.io/hostname"
+      containers:
+      - name: ro-sp
+        image: {{ .Values.image.repository }}/ro-sp:{{ .Values.ro_sp.imageTag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        securityContext:
+          privileged: false
+          allowPrivilegeEscalation: false
+        command:
+        - sh
+        - -c
+        - exec env mongodb_hosts=$NODE_NAME,$mongodb_qr_global_svc /bin/sh /opt/ro-sp/bin/start.sh
+        resources:
+{{ toYaml .Values.ro_sp.resources | indent 10 }}
+        ports:
+        - containerPort: 8080
+          name: tcp
+        env:
+        - name: app
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['app']
+        - name: ms
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['ms']
+        - name: msCtype
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['group']
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: MONGODB_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: oss-ro-mongodb
+              key: mongodb-user
+        - name: MONGODB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: oss-ro-mongodb
+              key: mongodb-password
+        - name: MQTT_USER_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: oss-ro-sp-mqtt-secrets
+              key: mqtt_user_password
+        envFrom:
+        - configMapRef:
+            name: oss-ro-sp-config
+        volumeMounts:
+        - mountPath: /logs
+          name: logs
+        - mountPath: /data
+          name: topics-config
+      initContainers:
+      - name: kafka-topics-creation
+        image: {{ .Values.kafka_utils.repository }}/ignite-kafka-utils:{{ .Values.kafka_utils.imageTag }}
+        imagePullPolicy: Always
+        command: ["/etc/confluent/docker/launch"]
+        env:
+        - name: action
+          value: "createTopics"
+        - name: ZOOKEEPER_URL
+          value: {{ .Values.kafka.zookeeperUrl}}
+        volumeMounts:
+        - mountPath: /data
+          name: topics-config
+      serviceAccountName: {{ include "ro-sp.fullname" . }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets: {{- toYaml . | nindent 6 }}
+      {{- end }}
+      volumes:
+        - name: logs
+          emptyDir: {}
+        - name: topics-config
+          configMap:
+            name: oss-ro-sp-topics
+        - name: ignite-mongodb-config
+          configMap:
+            name: oss-ro-sp-mongodb-config
