@@ -760,7 +760,7 @@ ro_sp:
 mqtt_details:
   mqttBrokerURL: "tcp://oss-hivemq-extension-int-svc:1883"
   mqttUserName: "haa_api"
-  mqttUserPassword: "MqttPas$$word"
+  mqttUserPassword: "TO-BE-UPDATED"
   mqttServiceTopicNamePrefix: ""
   mqttServiceTopicName: "ro"
   mqttRiSvasTopicName: "ri/svas"
@@ -776,7 +776,7 @@ mongodb:
   readPreference: "primaryPreferred"
   connectionName: mongodb-sharded
   username: "root"
-  password: "5D0c72dz4bxl"
+  password: "TO-BE-UPDATED"
   clientCleanupIntervalMs: "600000"
   clientCreateRetryCount: "3"
   clientCloseWaitIntervalMs: "300000"
