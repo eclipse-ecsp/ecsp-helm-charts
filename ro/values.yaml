@@ -521,7 +521,7 @@ api_gateway:
   api_registry_enabled: "true"
   api_security_enabled: "false"
   spring_application_version: "1.0"
-  openapi_path_include: "/v1/**, /v1/rcpd, /v1/rcpd/requests/**, /v1/rcpd/status, /v1/rcpd/history/**, /v1\
+  openapi_path_include: "/v1/**, /v2/**, /v1/rcpd, /v1/rcpd/requests/**, /v1/rcpd/status, /v1/rcpd/history/**, /v1\
   .1/users/{userId}/vehicles/{vehicleId}/ro/inhibit/**, \
   /v2/users/{userId}/vehicles/{vehicleId}/remoteinhibit/requests/{roRequestId}/**, /v1\
   .1/users/{userId}/vehicles/{vehicleId}/remoteinhibit/requests/{roRequestId}/**, /v2/ro/acv, /v2/ro/acv/schedule, \
@@ -535,8 +535,7 @@ api_gateway:
   .1/users/{userId}/vehicles/{vehicleId}/ro/horn/**, /v1.1/users/{userId}/vehicles/{vehicleId}/ro/lights/**, /v1\
   .2/users/{userId}/vehicles/{vehicleId}/ro/lights/**, /v1.1/users/{userId}/vehicles/{vehicleId}/ro/alarm/**, /v1\
   .1/users/{userId}/vehicles/{vehicleId}/ro/horn/**, /v1.1/users/{userId}/vehicles/{vehicleId}/ro/lights/**, /v1\
-  .2/users/{userId}/vehicles/{vehicleId}/ro/lights/**, /v1.1/users/{userId}/vehicles/{vehicleId}/ro/alarm/**, \
-  /v2/ro/rambox, /v1/users/{userId}/vehicles/{vehicleId}/ro/{roType}/schedules, /v1.1/ro/settings/service, /v1\
+  .2/users/{userId}/vehicles/{vehicleId}/ro/lights/**, /v1.1/users/{userId}/vehicles/{vehicleId}/ro/alarm/**, /v1/users/{userId}/vehicles/{vehicleId}/ro/{roType}/schedules, /v1.1/ro/settings/service, /v1\
   .1/users/{userId}/vehicles/{vehicleId}/ro/requests/{roRequestId}, /v2/ro/requests, /v1\
   .1/users/{userId}/vehicles/{vehicleId}/ro/history, /v2/ro/history, /v1\
   .1/users/{userId}/vehicles/{vehicleId}/ro/windows, /v1.1/users/{userId}/vehicles/{vehicleId}/ro/windows/driver"
