@@ -65,10 +65,18 @@ data:
   api-registry_metrics_service-health_prefix: {{ .Values.api_registry.metrics.serviceHealth.prefix | quote }}
   api-registry_metrics_service-routes_prefix: {{ .Values.api_registry.metrics.serviceRoutes.prefix | quote }}
   management_server_port: {{ .Values.api_registry.metrics.port | quote }}
-  management_endpoint_prometheus_enabled: {{ .Values.api_registry.metrics.prometheus.enabled | quote }}
-  management_endpoint_health_enabled: {{ .Values.api_registry.metrics.health.enabled | quote }}
+{{- if .Values.api_registry.metrics.prometheus.enabled }}
+  management_endpoint_prometheus_access: "read-only"
+{{- else }}
+  management_endpoint_prometheus_access: "none"
+{{- end }}
+{{- if .Values.api_registry.metrics.health.enabled }}
+  management_endpoint_health_access: "read-only"
+{{- else }}
+  management_endpoint_health_access: "none"
+{{- end }}
+  management_endpoints_enabled_default: "none"  
   management_endpoint_health_show-components: "ALWAYS"
-  management_endpoints_enabled-by-default: "false"
   management_endpoints_web_exposure_include: "health, prometheus"
   management_endpoints_web_exposure_exclude: "gateway, beans, cache, conditions, configprops, auditevents, env, flyway, httpexchanges, info, integrationgraph, loggers, liquibase, metrics, mappings, quartz, scheduledtasks, sessions, shutdown, startup, threaddump, heapdump, logfile"
   management_endpoints_web_base-path: {{ .Values.api_registry.metrics.basePath | quote }}
