@@ -142,6 +142,13 @@ data:
   management_metrics_tags_application: "api-gateway"
   management_metrics_export_prometheus_enabled: {{ .Values.api_gateway.metrics.prometheus.enabled | quote }}
   management_health_probes_enabled: {{ .Values.api_gateway.metrics.health.enabled | quote }}
+  api_gateway_accesslog_enabled: {{ .Values.api_gateway.accesslog.enabled | quote }}
+  api_gateway_accesslog_request-headers_enabled: {{ .Values.api_gateway.accesslog.requestHeaders.enabled | quote }}
+  api_gateway_accesslog_request-headers_skip-headers: {{ .Values.api_gateway.accesslog.requestHeaders.skipHeaders | quote }}
+  api_gateway_accesslog_response-headers_enabled: {{ .Values.api_gateway.accesslog.responseHeaders.enabled | quote }}
+  api_gateway_accesslog_response-headers_skip-headers: {{ .Values.api_gateway.accesslog.responseHeaders.skipHeaders | quote }}
+  api_gateway_accesslog_response-body_enabled: {{ .Values.api_gateway.accesslog.responseBody.enabled | quote }}
+  api_gateway_accesslog_response-body_skip-for-routes: {{ .Values.api_gateway.accesslog.responseBody.skipForRoutes | quote }}
 {{- if .Values.api_gateway.extraParams }}
 {{ toYaml .Values.api_gateway.extraParams | indent 2 }}
 {{- end }}

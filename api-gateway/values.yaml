@@ -136,6 +136,19 @@ api_gateway:
         buckets: 100ms, 500ms, 1000ms, 3000ms, 5000ms, 8000ms, 10000ms, 15000ms  # slo thresholds in milliseconds
         expiry: 5m
         bufferLength: 10
+  accesslog:
+    enabled: "true"
+    requestHeaders: 
+      enabled: "true"
+      skipHeaders: "Authorization,user-id"
+    responseHeaders:
+      enabled: "true"
+      skipHeaders: "headername1, headername2"
+    responseBody:
+      enabled: "true"      
+      skipForRoutes: "routeId1, routeid2"       
+  extraParams:
+
 
   annotations:
     service.beta.kubernetes.io/aws-load-balancer-ssl-cert: arn:aws:acm:<TO-BE-UPDATED>:<TO-BE-UPDATED>:certificate/<TO-BE-UPDATED> # Change this to your certificate ARN
@@ -177,7 +190,8 @@ api_registry:
   cacheLogLevel: "ERROR"
   logAppender: "ASYNC-GELF"
   graylogHost: "TO-BE-UPDATED" # Change this to your Graylog host
-  graylogPort: "TO-BE-UPDATED" # Change this to your Graylog port
+  graylogPort: "TO-BE-UPDATED" # Change this to your Graylog port      
+  extraParams:
 
 
 
