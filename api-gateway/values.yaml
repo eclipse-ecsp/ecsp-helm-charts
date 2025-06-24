@@ -11,7 +11,7 @@ api_gateway:
   jvmOpts: "-Xmx2g -Xms2g -XX:+UseG1GC -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35 -XX:+DisableExplicitGC -XX:MetaspaceSize=96m -XX:G1HeapRegionSize=16M -XX:MinMetaspaceFreeRatio=50 -XX:MaxMetaspaceFreeRatio=80 -Dlogback.configurationFile=/api-gateway/conf/logback.xml -DLOG_LEVEL=INFO"
   nodeType: "default"
   replicas: 1
-  imageTag: 1.1.0
+  imageTag: 1.2.3
   tokenHeaderConfig:
     tenantIdRequired: "false"
     tenantIdRegex: "^[a-zA-Z0-9]+$"
@@ -136,6 +136,19 @@ api_gateway:
         buckets: 100ms, 500ms, 1000ms, 3000ms, 5000ms, 8000ms, 10000ms, 15000ms  # slo thresholds in milliseconds
         expiry: 5m
         bufferLength: 10
+  accesslog:
+    enabled: "true"
+    requestHeaders: 
+      enabled: "true"
+      skipHeaders: "Authorization,user-id"
+    responseHeaders:
+      enabled: "true"
+      skipHeaders: "headername1, headername2"
+    responseBody:
+      enabled: "true"      
+      skipForRoutes: "routeId1, routeid2"       
+  extraParams:
+
 
   annotations:
     service.beta.kubernetes.io/aws-load-balancer-ssl-cert: arn:aws:acm:<TO-BE-UPDATED>:<TO-BE-UPDATED>:certificate/<TO-BE-UPDATED> # Change this to your certificate ARN
@@ -147,7 +160,7 @@ api_registry:
   jvmOpts: "-Xmx2g -Xms2g -XX:+UseG1GC -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35 -XX:+DisableExplicitGC -XX:MetaspaceSize=96m -XX:G1HeapRegionSize=16M -XX:MinMetaspaceFreeRatio=50 -XX:MaxMetaspaceFreeRatio=80 -Dlogback.configurationFile=/opt/api-registry/conf/logback.xml -DLOG_LEVEL=INFO"
   nodeType: "default"
   replicas: 1
-  imageTag: 1.1.0
+  imageTag: 1.2.3
   serviceName: api-registry
   database:
     ## supported types - sql, nosql
@@ -177,7 +190,8 @@ api_registry:
   cacheLogLevel: "ERROR"
   logAppender: "ASYNC-GELF"
   graylogHost: "TO-BE-UPDATED" # Change this to your Graylog host
-  graylogPort: "TO-BE-UPDATED" # Change this to your Graylog port
+  graylogPort: "TO-BE-UPDATED" # Change this to your Graylog port      
+  extraParams:
 
 
 
