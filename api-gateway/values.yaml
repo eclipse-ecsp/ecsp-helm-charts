@@ -11,7 +11,7 @@ api_gateway:
   jvmOpts: "-Xmx2g -Xms2g -XX:+UseG1GC -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35 -XX:+DisableExplicitGC -XX:MetaspaceSize=96m -XX:G1HeapRegionSize=16M -XX:MinMetaspaceFreeRatio=50 -XX:MaxMetaspaceFreeRatio=80 -Dlogback.configurationFile=/api-gateway/conf/logback.xml -DLOG_LEVEL=INFO"
   nodeType: "default"
   replicas: 1
-  imageTag: 1.2.2
+  imageTag: 1.2.3
   tokenHeaderConfig:
     tenantIdRequired: "false"
     tenantIdRegex: "^[a-zA-Z0-9]+$"
@@ -147,7 +147,7 @@ api_registry:
   jvmOpts: "-Xmx2g -Xms2g -XX:+UseG1GC -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35 -XX:+DisableExplicitGC -XX:MetaspaceSize=96m -XX:G1HeapRegionSize=16M -XX:MinMetaspaceFreeRatio=50 -XX:MaxMetaspaceFreeRatio=80 -Dlogback.configurationFile=/opt/api-registry/conf/logback.xml -DLOG_LEVEL=INFO"
   nodeType: "default"
   replicas: 1
-  imageTag: 1.2.2
+  imageTag: 1.2.3
   serviceName: api-registry
   database:
     ## supported types - sql, nosql

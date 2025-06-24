@@ -75,7 +75,7 @@ data:
 {{- else }}
   management_endpoint_health_access: "none"
 {{- end }}
-  management_endpoints_enabled_default: "none"  
+  management_endpoints_access_default: "none"
   management_endpoint_health_show-components: "ALWAYS"
   management_endpoints_web_exposure_include: "health, prometheus"
   management_endpoints_web_exposure_exclude: "gateway, beans, cache, conditions, configprops, auditevents, env, flyway, httpexchanges, info, integrationgraph, loggers, liquibase, metrics, mappings, quartz, scheduledtasks, sessions, shutdown, startup, threaddump, heapdump, logfile"
