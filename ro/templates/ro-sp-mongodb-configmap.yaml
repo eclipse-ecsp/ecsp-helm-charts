@@ -1,0 +1,87 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: oss-ro-sp-mongodb-config
+  labels:
+    app: ro-sp
+    group: streaming
+    ms: {{ .Values.ms | quote }}
+data:
+  ro-sp-mongodb-config.yml: |
+    sharded_collections:
+    - database: {{ .Values.mongodb.databaseName }}
+      collection: ro
+      key:
+        "roEvent.vehicleId": "hashed"
+    - database: {{ .Values.mongodb.databaseName }}
+      collection: dmOfflineBufferEntriesro
+      key:
+        "vehicleId": "hashed"
+    - database: {{ .Values.mongodb.databaseName }}
+      collection: RoScheduleV2
+      key:
+        "vehicleId": "hashed"
+    roles:
+    - role: "ro-sp-mongo-role"
+      databases: ["admin", {{ .Values.mongodb.databaseName | quote }}]
+      privileges:
+      - resource:
+          db: {{ .Values.mongodb.databaseName | quote }}
+          collection: "sequenceBlock"
+        actions: ["find", "insert", "remove", "update", "createIndex", "dropIndex"]
+      - resource:
+          db: {{ .Values.mongodb.databaseName | quote }}
+          collection: "ro"
+        actions: ["find", "insert", "remove", "update", "createIndex", "dropIndex"]
+      - resource:
+          db: {{ .Values.mongodb.databaseName | quote }}
+          collection: "roConfig"
+        actions: ["find", "insert", "remove", "update", "createIndex", "dropIndex"]
+      - resource:
+          db: {{ .Values.mongodb.databaseName | quote }}
+          collection: "settings"
+        actions: ["find", "insert", "remove", "update", "createIndex", "dropIndex"]
+      - resource:
+          db: {{ .Values.mongodb.databaseName | quote }}
+          collection: "integrationFeed"
+        actions: ["find", "insert", "remove", "update", "createIndex", "dropIndex"]
+      - resource:
+          db: {{ .Values.mongodb.databaseName | quote }}
+          collection: "dmOfflineBufferEntries"
+        actions: ["find", "insert", "remove", "update", "createIndex", "dropIndex"]
+      - resource:
+          db: {{ .Values.mongodb.databaseName | quote }}
+          collection: "dmOfflineBufferEntriesro"
+        actions: ["find", "insert", "remove", "update", "createIndex", "dropIndex"]
+      - resource:
+          db: {{ .Values.mongodb.databaseName | quote }}
+          collection: "BackdoorKafkaTopicOffset"
+        actions: ["find", "insert", "remove", "update", "createIndex", "dropIndex"]
+      - resource:
+          db: {{ .Values.mongodb.databaseName | quote }}
+          collection: "backdoorOffsetro"
+        actions: ["find", "insert", "remove", "update", "createIndex", "dropIndex"]
+      - resource:
+          db: {{ .Values.mongodb.databaseName | quote }}
+          collection: "dmNextTtlExpirationTimerro"
+        actions: ["find", "insert", "remove", "update", "createIndex", "dropIndex"]
+      - resource:
+          db: {{ .Values.mongodb.databaseName | quote }}
+          collection: "roSchedule"
+        actions: ["find", "insert", "remove", "update", "createIndex", "dropIndex"]
+      - resource:
+          db: {{ .Values.mongodb.databaseName | quote }}
+          collection: "roScheduleV2"
+        actions: ["find", "insert", "remove", "update", "createIndex", "dropIndex"]
+      - resource:
+          db: {{ .Values.mongodb.databaseName | quote }}
+          collection: "kafkastreamsoffsetro"
+        actions: ["find", "insert", "remove", "update", "createIndex", "dropIndex"]
+      - resource:
+          db: {{ .Values.mongodb.databaseName | quote }}
+          collection: "rcpd"
+        actions: ["find", "insert", "remove", "update", "createIndex", "dropIndex"]
+      - resource:
+          db: {{ .Values.mongodb.databaseName | quote }}
+          collection: "dmCacheEntitiesro"
+        actions: ["find", "insert", "remove", "update", "createIndex", "dropIndex"]

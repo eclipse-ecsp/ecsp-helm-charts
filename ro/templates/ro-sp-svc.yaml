@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: oss-ro-sp-int-svc
+  labels:
+    app: ro-sp
+    group: streaming
+    ms: {{ .Values.ms | quote }}
+    facing: internal
+    impl: native
+spec:
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+      name: tcp
+  type: ClusterIP
+  selector:
+    app: ro-sp

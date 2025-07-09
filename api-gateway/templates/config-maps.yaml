@@ -120,10 +120,18 @@ data:
   spring_cloud_gateway_metrics_enabled: {{ .Values.api_gateway.metrics.gatewayRequests.enabled | quote }}
   spring_cloud_gateway_metrics_prefix: {{ .Values.api_gateway.metrics.gatewayRequests.prefix | quote }}
   management_server_port: {{ .Values.api_gateway.metrics.port | quote }}
-  management_endpoint_prometheus_enabled: {{ .Values.api_gateway.metrics.prometheus.enabled | quote }}
-  management_endpoint_health_enabled: {{ .Values.api_gateway.metrics.health.enabled | quote }}
+{{- if .Values.api_gateway3.metrics.prometheus.enabled }}
+  management_endpoint_prometheus_access: "read-only"
+{{- else }}
+  management_endpoint_prometheus_access: "none"
+{{- end }}
+{{- if .Values.api_gateway3.metrics.health.enabled }}
+  management_endpoint_health_access: "read-only"
+{{- else }} 
+  management_endpoint_health_access: 'none'
+{{- end }}
+  management_endpoints_access_default: "none"
   management_endpoint_health_show-components: "ALWAYS"
-  management_endpoints_enabled-by-default: "false"
   management_endpoints_web_exposure_include: "health, prometheus"
   management_endpoints_web_exposure_exclude: "gateway, beans, cache, conditions, configprops, auditevents, env, flyway, httpexchanges, info, integrationgraph, loggers, liquibase, metrics, mappings, quartz, scheduledtasks, sessions, shutdown, startup, threaddump, heapdump, logfile"
   management_endpoints_web_base-path: {{ .Values.api_gateway.metrics.basePath | quote }}
@@ -134,6 +142,13 @@ data:
   management_metrics_tags_application: "api-gateway"
   management_metrics_export_prometheus_enabled: {{ .Values.api_gateway.metrics.prometheus.enabled | quote }}
   management_health_probes_enabled: {{ .Values.api_gateway.metrics.health.enabled | quote }}
+  api_gateway_accesslog_enabled: {{ .Values.api_gateway.accesslog.enabled | quote }}
+  api_gateway_accesslog_request-headers_enabled: {{ .Values.api_gateway.accesslog.requestHeaders.enabled | quote }}
+  api_gateway_accesslog_request-headers_skip-headers: {{ .Values.api_gateway.accesslog.requestHeaders.skipHeaders | quote }}
+  api_gateway_accesslog_response-headers_enabled: {{ .Values.api_gateway.accesslog.responseHeaders.enabled | quote }}
+  api_gateway_accesslog_response-headers_skip-headers: {{ .Values.api_gateway.accesslog.responseHeaders.skipHeaders | quote }}
+  api_gateway_accesslog_response-body_enabled: {{ .Values.api_gateway.accesslog.responseBody.enabled | quote }}
+  api_gateway_accesslog_response-body_skip-for-routes: {{ .Values.api_gateway.accesslog.responseBody.skipForRoutes | quote }}
 {{- if .Values.api_gateway.extraParams }}
 {{ toYaml .Values.api_gateway.extraParams | indent 2 }}
 {{- end }}

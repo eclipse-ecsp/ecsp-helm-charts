@@ -1,0 +1,8 @@
+apiVersion: v1
+appVersion: "1.0.0"
+description: ro helm chart that deploys ro API,stream processor
+name: ro
+version: 1.0.0
+maintainers:
+  - name: Suyash
+    email: Suyash.Srivastava@Harman.com

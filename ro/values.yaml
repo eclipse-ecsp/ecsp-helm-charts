@@ -1,0 +1,549 @@
+ms: "ro"
+image:
+  repository: docker.io/eclipseecsp
+  pullPolicy: Always
+
+imagePullSecrets:
+  - name: artifactory
+  - name: ghcr-secret
+
+kafka_utils:
+  repository: arti.dev.ignite.harman.com:5061/ignite-core
+  imageTag: 2.8.2
+
+init_container:
+  kafkaTopicImage: "arti.dev.ignite.harman.com:5061/ignite-core/ignite-kafka-utils:2.8.2"
+
+ro_api:
+  jvmOpts: "-server -XX:MaxRAMFraction=1 -XX:MaxRAM=512m -XX:+UseG1GC -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35 -XX:+DisableExplicitGC -Dfile.encoding=UTF8"
+  javaOpts: "-Djava.awt.headless=true"
+  nodeType: "default"
+  associationApiUrl: "http://oss-association-api-int-svc:8080/vehicle-association-service"
+  associatedUserApiPath: "/v1/users/association/details"
+  vehicle_profile_search_query: "vehicleId"
+  vehicle_profile_api_base_url: "http://oss-vehicle-profile-api-int-svc:8080/"
+  vehicle_profile_api_url_path: "/v1.0/vehicleProfiles"
+  key: "hctl.harman.com/node-group"
+  vault_server_port_number: "80"
+  vault_server_ipaddress: "vault-nginx.data-platform"
+  replicas: 1
+  resources:
+    requests:
+      memory: "1Gi"
+      cpu: "10m"
+  imageTag: 0.1.7
+  sinkTopicName: "ro"
+  riTopicName: "ro"
+  rcpdTopicName: "ro"
+  defaultPageSize: "1000"
+  redisIdleConnTimeout: "10000"
+  redisConnTimeout: "20000"
+  redisMasterConnPoolSize: "128"
+  redisMasterConnMinIdlePoolSize: "32"
+  redisTimeout: "20000"
+  redisReconnectionTimeout: "20000"
+  redisDatabase: "0"
+  redisSentinels: ""
+  redisCluster: "redis.data-platform:6379"
+  igniteKeyTransformerClass: "org.eclipse.ecsp.transform.IgniteKeyTransformerStringImpl"
+  streamThreadsActiveStates: "CREATED,STARTING,PARTITIONS_REVOKED,PARTITIONS_ASSIGNED,RUNNING,PENDING_SHUTDOWN"
+  streamThreadsDeadStates: "DEAD"
+  ignoreBootstrapFailureMonitors: "KAFKA_CONSUMER_GROUP_HEALTH_MONITOR,DEVICE_STATUS_BACKDOOR_HEALTH_MONITOR"
+  filterDeviceMessagefailures: "false"
+  filterGeneralEvent: "true"
+  dffEnabled: "false"
+  dmaEnabled: "false"
+  execShutdownHook: "false"
+  shutdownHookWaitTimeMs: "180000"
+  launcherImplClassFqn: "org.eclipse.ecsp.analytics.stream.base.KafkaStreamsLauncher"
+  messageidGeneratorType: "org.eclipse.ecsp.analytics.stream.base.idgen.internal.GlobalMessageIdGenerator"
+  dmaShoulderTapWamApiMaxRetryCount: "3"
+  dmaShoulderTapWamApiMaxRetryIntervalMs: "30000"
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 120
+    periodSeconds: 10
+    timeoutSeconds: 120
+    successThreshold: 1
+    failureThreshold: 30
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 120
+    successThreshold: 1
+    failureThreshold: 30
+  healthVaultNeedsRestartOnFailure: "false"
+  health:
+    healthMongo: "false"
+    healthKafkaConsumer: "true"
+    healthKafkaTopics: "true"
+    healthDMA: "true"
+    healthDFF: "true"
+    healthRedis: "false"
+    healthMqtt: "true"
+    healthVault: "false"
+  extraParams:
+
+ro_sp:
+  jvmOpts: "-XX:MaxRAMFraction=1 -XX:MaxRAM=1g -XX:NativeMemoryTracking=detail -XX:MetaspaceSize=96m -XX:G1HeapRegionSize=16M -XX:MinMetaspaceFreeRatio=50 -XX:MaxMetaspaceFreeRatio=80 -server -XX:+UseG1GC -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35 -XX:+DisableExplicitGC -Dfile.encoding=UTF8"
+  javaOpts: "-Djava.awt.headless=true -Dlogback.configurationFile=/ro-sp/conf/logback.xml  --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.io=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.math=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED --add-opens=java.base/java.text=ALL-UNNAMED --add-opens=java.sql/java.sql=ALL-UNNAMED"
+  nodeType: "default"
+  replicas: 1
+  resources:
+    requests:
+      memory: "1Gi"
+      cpu: "50m"
+  applicationId: "ro-sp"
+  numStreamThreads: "1"
+#  imageTag: 0.1.2
+  imageTag: 0.1.6
+  imageName : "ro-sp"
+  mongodbShardkeyMap: "ro:roEvent.vehicleId,dmOfflineBufferEntriesro:vehicleId"
+  sourceTopicName: "ro,vehicle-profile-modified-authorized-users"
+  sinkTopicName: "https-integ-high,https-integ-low,https-integ-critical"
+  shouldertapSendSmsUrl: "http://fca-m2m-api-int-svc.default.svc.cluster.local:8080/v1.0/m2m/sms/send/"
+  dmaShoulderTapEnabled: "false"
+  shouldertapSmsTransactionStatusUrl: "http://fca-m2m-api-int-svc.default.svc.cluster.local:8080/v1.0/m2m/sim/transaction/"
+  dmashouldertapwamsmsvalidityhours: "72"
+  outboudApiAdditionalHeaders: "x-api-key:k2hvag5cxs9NTU5zXqTou6Ge35lNnHkB8UL4CfDJ,content-type:application/json"
+  acvOutboudApiAdditionalHeaders: "x-api-key:0TpKBa8YFd9D7jcy9xdxV74bDTXAuMnV9z7tSQhT,content-type:application/json"
+  acvBeforeExecuteTimeMinutes: "15"
+  dmaBsrfRetryIntervalEvents: "RemoteOperationEngine"
+  dmaBsrfRetryIntervalMillis: "60000"
+  dmaConfigResolverClass: "org.eclipse.ecsp.stream.dma.config.DefaultDMAConfigResolver"
+  dmaDeliveryCutoffResolverClass: "org.eclipse.ecsp.fca.services.ro.dma.FCADeviceDeliveryCutoffResolver"
+  dmaServiceRetryIntervalDivisor: "100"
+  dmaServiceRetryIntervalEcus: "BSRF"
+  stockingRuleConfigEvents: "RemoteOperationEngine"
+  stockingRuleKeyName: "mappingName"
+  maxPollRecords: "100"
+  consumerMaxPollRecords: "1000"
+  sessionTimeoutMs: "300000"
+  heartbeatIntervalMs: "3000"
+  requestTimeoutMs: "502000"
+  maxPollIntervalMs: "500000"
+  execShutdownHook: "true"
+  shutdownHookWaitTimeMs: "180000"
+  redisIdleConnTimeout: "10000"
+  redisConnTimeout: "20000"
+  redisMasterConnPoolSize: "128"
+  redisMasterConnMinIdlePoolSize: "32"
+  redisTimeout: "20000"
+  redisReconnectionTimeout: "20000"
+  redisDatabase : "0"
+  redisSentinels: ""
+  redisCluster: "redis.data-platform:6379"
+  settingsObjectJsonPath: "settings[0].Data.configurationObject"
+  extraParams:
+  dmaServiceMaxRetry: "2"
+  dmaServiceRetryIntervalMillis: "40000"
+  dmaServiceTtlBuffer: "100000"
+  spRestartOnFailure: "true"
+  kafkaTopicsFilePath: "/data/topics.txt"
+  whitelistedDffOrigins: "SDPR"
+  riPartnerServiceId: "RI"
+  callCenterEnabledOrigin: "SVL,NOTIFICATION"
+  roFiringCount: "1000"
+  kafkaStreamsOffsetPersistenceEnabled: "false"
+  dffEnabled: "true"
+  kafka_topics: |+
+    ro|25|2|1|1000012|0,1,2
+    ro-dlq|25|2|1|1000012|0,1,2
+    notification|25|2|1|1000012|0,1,2
+    device-status-ro|25|2|1|1000012|0,1,2
+    vehicle-profile-modified-authorized-users|25|2|1|1000012|0,1,2
+  enableValidation: "false"
+  stockingRuleConfigurationObject: "notificationMapping"
+  settingsConfigurationObjectJsonPath: "settings[0].Data.configurationObject"
+  stockingRuleEnable: "false"
+  dmaTTLMappingInMS: |+
+    {
+    "Architecture_1": {
+      "RemoteOperationEngine": 220000,
+      "RemoteOperationAlarm": 180000,
+      "RemoteOperationConfig": 180000,
+      "RemoteOperationDoors": 180000,
+      "RemoteOperationDriverDoor": 180000,
+      "RemoteOperationDriverWindow": 180000,
+      "RemoteOperationHood": 180000,
+      "RemoteOperationHorn": 180000,
+      "RemoteOperationLiftgate": 180000,
+      "RemoteOperationLights": 180000,
+      "RemoteOperationLightsOnly": 180000,
+      "RemoteOperationServiceSettings": 180000,
+      "RemoteOperationStatus": 180000,
+      "RemoteOperationTrunk": 180000,
+      "RemoteOperationVehicleSettings": 180000,
+      "RemoteOperationWindows": 180000,
+      "RemoteOperationGloveBox": 180000,
+      "RemoteOperationClimate": 180000    
+    }
+    }
+  dmaRetryIntervalMappingInMS: |+
+    {
+    "Architecture_1": {
+      "RemoteOperationEngine": 60000,
+      "RemoteOperationAlarm": 5000,
+      "RemoteOperationConfig": 5000,
+      "RemoteOperationDoors": 5000,
+      "RemoteOperationDriverDoor": 5000,
+      "RemoteOperationDriverWindow": 5000,
+      "RemoteOperationHood": 5000,
+      "RemoteOperationHorn": 5000,
+      "RemoteOperationLiftgate": 5000,
+      "RemoteOperationLights": 5000,
+      "RemoteOperationLightsOnly": 5000,
+      "RemoteOperationServiceSettings": 5000,
+      "RemoteOperationStatus": 5000,
+      "RemoteOperationTrunk": 5000,
+      "RemoteOperationVehicleSettings": 5000,
+      "RemoteOperationWindows": 5000,
+      "RemoteOperationGloveBox": 5000,
+      "RemoteOperationClimate": 5000
+    }
+    }
+  notificationExtMapping: |+
+    {
+    "default": {
+    "REMOTEOPERATIONENGINE_STARTED_FAILED_IGNITION_ON": "S12_RO_START_FAILED_IGNITION_ON",
+    "REMOTEOPERATIONENGINE_STARTED_SPEEDLOCKOUT": "S12_RO_START_FAILED_SPEED_LOCKOUT",
+    "REMOTEOPERATIONENGINE_STARTED_COMPLETE_TIMEOUT": "S12_RO_START_FAILED_TIMEOUT",
+    "REMOTEOPERATIONENGINE_STARTED_SUCCESS_CONTINUE": "S12_RO_START_SUCCESS_CONTINUE",
+    "REMOTEOPERATIONENGINE_STARTED_SUCCESS": "S12_RO_START_SUCCESS",
+    "REMOTEOPERATIONENGINE_STARTED_NOT_AUTHORIZED": "S12_RO_START_FAILED",
+    "REMOTEOPERATIONENGINE_STARTED_FAILED": "S12_RO_START_FAILED",
+    "REMOTEOPERATIONENGINE_STARTED_REMST_ERR_GBOX_OPEN": "S12_RO_STARTFAILED_GBOX_OPEN",
+    "REMOTEOPERATIONENGINE_STARTED_REMST_ERR_RBOX_OPEN": "S12_RO_STARTFAILED_RBOX_OPEN",
+    "REMOTEOPERATIONENGINE_STARTED_REMST_ERR_WINDOW_OPEN": "S12_RO_STARTFAILED_WINDOW_OPEN",
+    "REMOTEOPERATIONENGINE_STARTED_REMST_ERR_TRUNK_OPEN": "S12_RO_STARTFAILED_TRUNK_OPEN",
+    "REMOTEOPERATIONENGINE_STARTED_REMST_ERR_OTA_ONGOING": "S12_RO_STARTFAILED_FOTA_OTA_ONGOING",
+    "REMOTEOPERATIONENGINE_STARTED_REMST_ERR_IGN_TOUT_RUN": "S12_RO_STARTFAILED_RUN_MODE",
+    "REMOTEOPERATIONENGINE_STARTED_REMST_ERR_IGN_TOUT_ACCESS": "S12_RO_STARTFAILED_CUSTOMER_ACCESS",
+    "REMOTEOPERATIONENGINE_STARTED_REMST_ERR_DRIVER_DOOR_OPEN": "S12_RO_STARTFAILED_DR_DOOR_OPEN",
+    "REMOTEOPERATIONENGINE_STARTED_REMST_ERR_PSNGR_DOOR_OPEN": "S12_RO_STARTFAILED_PASS_DOOR_OPEN",
+    "REMOTEOPERATIONENGINE_STARTED_REMST_ERR_LR_DOOR_OPEN": "S12_RO_STARTFAILED_LR_DOOR_OPEN",
+    "REMOTEOPERATIONENGINE_STARTED_REMST_ERR_RR_DOOR_OPEN": "S12_RO_STARTFAILED_RR_DOOR_OPEN",
+    "REMOTEOPERATIONENGINE_STARTED_REMST_ERR_START_COUNTER_EXCEEDED": "S12_RO_STARTFAILED_START_COUNTER_EXCEEDED",
+    "REMOTEOPERATIONENGINE_STARTED_REMST_ERR_FAILED_COUNTER_EXCEEDED": "S12_RO_STARTFAILED_COUNTER_EXCEEDED",
+    "REMOTEOPERATIONENGINE_STARTED_REMST_ERR_LOW_RPM": "S12_RO_STARTFAILED_LOW_RPM",
+    "REMOTEOPERATIONENGINE_STARTED_REMST_ERR_KEY_IGNITION": "S12_RO_STARTFAILED_KEY_IGN",
+    "REMOTEOPERATIONENGINE_STARTED_REMST_ERR_BRAKE_PRESSED": "S12_RO_STARTFAILED_BREAK_PRESSED",
+    "REMOTEOPERATIONENGINE_STARTED_REMST_ERR_HAZARD_LIGHTS_ON": "S12_RO_STARTFAILED_HAZARD_LIGHTS_ON",
+    "REMOTEOPERATIONENGINE_STARTED_REMST_ERR_GEAR_ENGAGED": "S12_RO_STARTFAILED_GEAR_ENGAGED",
+    "REMOTEOPERATIONENGINE_STARTED_REMST_ERR_SPEED_LOCKOUT": "S12_RO_STARTFAILED_SPEED_LOCKOUT",
+    "REMOTEOPERATIONENGINE_STARTED_REMST_ERR_HOOD_OPEN": "S12_RO_STARTFAILED_HOOD_OPEN",
+    "REMOTEOPERATIONENGINE_STARTED_REMST_ERR_LIFTGATE_OPEN": "S12_RO_STARTFAILED_LIFTGATE_OPEN",
+    "REMOTEOPERATIONENGINE_STARTED_REMST_ERR_VTA_ALARM": "S12_RO_STARTFAILED_VTA_ALARM",
+    "REMOTEOPERATIONENGINE_STARTED_REMST_ERR_BATTERY_HIGH": "S12_RO_STARTFAILED_BATTERY_HIGH",
+    "REMOTEOPERATIONENGINE_STARTED_REMST_ERR_BATTERY_LOW": "S12_RO_STARTFAILED_BATTERY_LOW",
+    "REMOTEOPERATIONENGINE_STARTED_REMST_ERR_POWER_LOSS": "S12_RO_STARTFAILED_POWER_LOSS",
+    "REMOTEOPERATIONENGINE_STARTED_REMST_ERR_MIL_LIGHT_ON": "S12_RO_STARTFAILED_MIL_LIGHT_ON",
+    "REMOTEOPERATIONENGINE_STARTED_REMST_ERR_OIL_PRESSURE_LOW": "S12_RO_STARTFAILED_OIL_PRESSURE_LOW",
+    "REMOTEOPERATIONENGINE_STARTED_REMST_ERR_COOLANT_TEMP_HIGH": "S12_RO_STARTFAILED_COOLANT_TEMP_HIGH",
+    "REMOTEOPERATIONENGINE_STARTED_REMST_ERR_CRANK_NO_START": "S12_RO_STARTFAILED_CRANK_NO_START",
+    "REMOTEOPERATIONENGINE_STARTED_REMST_ERR_OFF_REQUESTED": "S12_RO_STARTFAILED_OFF_REQUESTED",
+    "REMOTEOPERATIONENGINE_STARTED_REMST_ERR_DISABLED": "S12_RO_STARTFAILED_DISABLED",
+    "REMOTEOPERATIONENGINE_STARTED_REMST_ERR_NOT_CONFIGURED": "S12_RO_STARTFAILED_NOT_CONFIGURED",
+    "REMOTEOPERATIONENGINE_STARTED_REMST_ERR_NO_HOOD_SWITCH": "S12_RO_STARTFAILED_NO_HOOD_SWITCH",
+    "REMOTEOPERATIONENGINE_STARTED_REMST_ERR_NO_AUTO_TRANS": "S12_RO_STARTFAILED_NO_AUTO_TRANS",
+    "REMOTEOPERATIONENGINE_STARTED_REMST_ERR_NOT_ENABLED": "S12_RO_STARTFAILED_NOT_ENABLED",
+    "REMOTEOPERATIONENGINE_STARTED_REMST_ERR_IGN_STS_UNKNOWN": "S12_RO_STARTFAILED_IGN_STS_UNKNOWN",
+    "REMOTEOPERATIONENGINE_STARTED_REMST_ERR_IGN_NOT_LOCK": "S12_RO_STARTFAILED_IGN_NOT_LOCK",
+    "REMOTEOPERATIONENGINE_STARTED_REMST_ERR_LOW_FUEL": "S12_RO_STARTFAILED_LOW_FUEL",
+    "REMOTEOPERATIONENGINE_STARTED_REMST_ERR_ETC_LAMP_ON": "S12_RO_STARTFAILED_ETC_LAMP_ON",
+    "REMOTEOPERATIONENGINE_STARTED_REMST_ERR_LOGISTIC_MODE": "S12_RO_STARTFAILED_LOGISTIC_MODE",
+    "REMOTEOPERATIONENGINE_STARTED_REMST_ERR_ESL_NOT_UNLOCKED": "S12_RO_STARTFAILED_ESL_NOT_UNLOCKED",
+    "REMOTEOPERATIONENGINE_STARTED_REMST_ERR_RF_HUB_HS_FAILED": "S12_RO_STARTFAILED_RF_HUB_HS_FAILED",
+    "REMOTEOPERATIONENGINE_STARTED_REMST_ERR_PSA_NOT_ACTIVE": "S12_RO_STARTFAILED_PSA_NOT_ACTIVE",
+    "REMOTEOPERATIONENGINE_STARTED_REMST_ERR_FOTA_INSTALL_OR_FAIL": "S12_RO_STARTFAILED_FOTA_INSTALL_OR_FAIL",
+    "REMOTEOPERATIONENGINE_STOPPED_SPEEDLOCKOUT": "S12_RO_STOP_FAILED_SPEED_LOCKOUT",
+    "REMOTEOPERATIONENGINE_STOPPED_COMPLETE_TIMEOUT": "S12_RO_STOP_FAILED_TIMEOUT",
+    "REMOTEOPERATIONENGINE_STOPPED_SUCCESS_CONTINUE": "S12_RO_STOP_SUCCESS_CONTINUE",
+    "REMOTEOPERATIONENGINE_STOPPED_SUCCESS": "S12_RO_STOP_SUCCESS",
+    "REMOTEOPERATIONENGINE_STOPPED_NOT_AUTHORIZED": "S12_RO_STOP_FAILED",
+    "REMOTEOPERATIONENGINE_STOPPED_FAILED": "S12_RO_STOP_FAILED",
+    "REMOTEOPERATIONENGINE_STARTED_NOT_AUTHORIZED_20": "S12_RO_FAILED_IGN_ON",
+    "REMOTEOPERATIONENGINE_STOPPED_NOT_AUTHORIZED_20": "S12_RO_FAILED_IGN_ON",
+    "REMOTEOPERATIONENGINE_STARTED_NOTIFY_NOCONTINUE_41": "S12_RO_FAILED_SUPPORT",
+    "REMOTEOPERATIONENGINE_STOPPED_NOTIFY_NOCONTINUE_41": "S12_RO_FAILED_SUPPORT",
+    "REMOTEOPERATIONENGINE_STARTED_NOT_AUTHORIZED_42": "S12_RO_FAILED_PRIVACY_ON",
+    "REMOTEOPERATIONENGINE_STOPPED_NOT_AUTHORIZED_42": "S12_RO_FAILED_PRIVACY_ON",
+    "REMOTEOPERATIONENGINE_STARTED_NOT_AUTHORIZED_45": "S12_RO_FAILED_SUPPORT",
+    "REMOTEOPERATIONENGINE_STOPPED_NOT_AUTHORIZED_45": "S12_RO_FAILED_SUPPORT",
+    "REMOTEOPERATIONENGINE_STARTED_COMPLETE_TIMEOUT_44": "S12_RO_FAILED_GENERIC",
+    "REMOTEOPERATIONENGINE_STOPPED_COMPLETE_TIMEOUT_44": "S12_RO_FAILED_GENERIC",
+    "REMOTEOPERATIONENGINE_STARTED_FAILED_IGNITION_ON_20": "S12_RO_FAILED_IGN_ON",
+    "REMOTEOPERATIONENGINE_STARTED_FAILED_500": "S12_RO_FAILED_GENERIC",
+    "REMOTEOPERATIONENGINE_STARTED_NOT_AUTHORIZED_5101": "S12_RO_FAILED_ACTIVE_PRECOND",
+    "REMOTEOPERATIONENGINE_STARTED_NOT_AUTHORIZED_5102": "S12_RO_FAILED_KEEP_THERMAL",
+    "REMOTEOPERATIONENGINE_STARTED_NOT_AUTHORIZED_5103": "S12_RO_FAILED_GENERIC",
+    "REMOTEOPERATIONENGINE_STARTED_NOT_AUTHORIZED_5104": "S12_RO_FAILED_UNLOCKED",
+    "REMOTEOPERATIONENGINE_STARTED_NOT_AUTHORIZED_5105": "S12_RO_FAILED_LOW_SOC",
+    "REMOTEOPERATIONENGINE_STARTED_NOT_AUTHORIZED_5106": "S12_RO_FAILED_LOW_FUEL",
+    "REMOTEOPERATIONENGINE_STARTED_NOT_AUTHORIZED_5107": "S12_RO_FAILED_MANY_UNUSED_PRECOND",
+    "REMOTEOPERATIONENGINE_STARTED_NOT_AUTHORIZED_5108": "S12_RO_FAILED_PROG_ACTIVE",
+    "REMOTEOPERATIONENGINE_STARTED_NOT_AUTHORIZED_5109": "S12_RO_FAILED_ROOF_WINDOWS_OPEN",
+    "REMOTEOPERATIONENGINE_STARTED_NOT_AUTHORIZED_51010": "S12_RO_FAILED_HOOD_OPEN",
+    "REMOTEOPERATIONENGINE_STARTED_NOT_AUTHORIZED_51011": "S12_RO_FAILED_NOT_PARKED",
+    "REMOTEOPERATIONENGINE_STARTED_NOT_AUTHORIZED_51012": "S12_RO_FAILED_BAD_USE",
+    "REMOTEOPERATIONENGINE_STOPPED_FAILED_600": "S12_RO_FAILED_GENERIC",
+    "REMOTEOPERATIONENGINE_STOPPED_NOT_AUTHORIZED_6101": "S12_RO_FAILED_ACTIVE_PRECOND",
+    "REMOTEOPERATIONENGINE_STOPPED_NOT_AUTHORIZED_6102": "S12_RO_FAILED_KEEP_THERMAL",
+    "REMOTEOPERATIONENGINE_STOPPED_NOT_AUTHORIZED_6103": "S12_RO_FAILED_GENERIC",
+    "REMOTEOPERATIONENGINE_STOPPED_NOT_AUTHORIZED_6104": "S12_RO_FAILED_UNLOCKED",
+    "REMOTEOPERATIONENGINE_STOPPED_NOT_AUTHORIZED_6105": "S12_RO_FAILED_LOW_SOC",
+    "REMOTEOPERATIONENGINE_STOPPED_NOT_AUTHORIZED_6106": "S12_RO_FAILED_LOW_FUEL",
+    "REMOTEOPERATIONENGINE_STOPPED_NOT_AUTHORIZED_6107": "S12_RO_FAILED_MANY_UNUSED_PRECOND",
+    "REMOTEOPERATIONENGINE_STOPPED_NOT_AUTHORIZED_6108": "S12_RO_FAILED_PROG_ACTIVE",
+    "REMOTEOPERATIONENGINE_STOPPED_NOT_AUTHORIZED_6109": "S12_RO_FAILED_ROOF_WINDOWS_OPEN",
+    "REMOTEOPERATIONENGINE_STOPPED_NOT_AUTHORIZED_61010": "S12_RO_FAILED_HOOD_OPEN",
+    "REMOTEOPERATIONENGINE_STOPPED_NOT_AUTHORIZED_61011": "S12_RO_FAILED_NOT_PARKED",
+    "REMOTEOPERATIONENGINE_STOPPED_NOT_AUTHORIZED_61012": "S12_RO_FAILED_BAD_USE"
+    }
+    }
+  notificationResponsemessageNotificationidMapping: |+
+    {
+      "FAILED": "S12_RO_REQUEST_FAILED",
+      "REMOTEOPERATIONDOORS_LOCKED_SPEEDLOCKOUT": "S12_RO_DOOR_LOCK_FAILED_SPEED_LOCKOUT",
+      "REMOTEOPERATIONDOORS_LOCKED_DOORS_FAILED_DOOR_OPEN": "S12_RO_DOOR_LOCK_FAILED_DOOR_OPEN",
+      "REMOTEOPERATIONDOORS_LOCKED_COMPLETE_TIMEOUT": "S12_RO_DOOR_LOCK_FAILED_TIMEOUT",
+      "REMOTEOPERATIONDOORS_LOCKED_SUCCESS": "S12_RO_DOOR_LOCK_SUCCESS",
+      "REMOTEOPERATIONDOORS_UNLOCKED_SPEEDLOCKOUT": "S12_RO_DOOR_UNLOCK_FAILED_SPEED_LOCKOUT",
+      "REMOTEOPERATIONDOORS_UNLOCKED_DOORS_FAILED_DOOR_OPEN": "S12_RO_DOOR_UNLOCK_FAILED_DOOR_OPEN",
+      "REMOTEOPERATIONDOORS_UNLOCKED_COMPLETE_TIMEOUT": "S12_RO_DOOR_UNLOCK_FAILED_TIMEOUT",
+      "REMOTEOPERATIONDOORS_UNLOCKED_SUCCESS": "S12_RO_DOOR_UNLOCK_SUCCESS",
+      "REMOTEOPERATIONDOORS_UNLOCKED_DOORUNLOCK_RELOCKED_FAILED": "S12_RO_DOOR_UNLOCK_RELOCK_OVERLAP",
+      "REMOTEOPERATIONENGINE_STARTED_FAILED_IGNITION_ON": "S12_RO_START_FAILED_IGNITION_ON",
+      "REMOTEOPERATIONENGINE_STARTED_SPEEDLOCKOUT": "S12_RO_START_FAILED_SPEED_LOCKOUT",
+      "REMOTEOPERATIONENGINE_STARTED_COMPLETE_TIMEOUT": "S12_RO_START_FAILED_TIMEOUT",
+      "REMOTEOPERATIONENGINE_STARTED_SUCCESS_CONTINUE": "S12_RO_START_SUCCESS_CONTINUE",
+      "REMOTEOPERATIONENGINE_STARTED_SUCCESS": "S12_RO_START_SUCCESS",
+      "REMOTEOPERATIONENGINE_STOPPED_SPEEDLOCKOUT": "S12_RO_STOP_FAILED_SPEED_LOCKOUT",
+      "REMOTEOPERATIONENGINE_STOPPED_COMPLETE_TIMEOUT": "S12_RO_STOP_FAILED_TIMEOUT",
+      "REMOTEOPERATIONENGINE_STOPPED_SUCCESS_CONTINUE": "S12_RO_STOP_SUCCESS_CONTINUE",
+      "REMOTEOPERATIONENGINE_STOPPED_SUCCESS": "S12_RO_STOP_SUCCESS",
+      "REMOTEOPERATIONALARM_ON_FLASHLIGHTS_FAILED_IGNITIONON": "S12_RO_HORNLIGHT_FAILED_IGNITION_ON",
+      "REMOTEOPERATIONALARM_ON_SPEEDLOCKOUT": "S12_RO_HORNLIGHT_FAILED_SPEED_LOCKOUT",
+      "REMOTEOPERATIONALARM_ON_COMPLETE_TIMEOUT": "S12_RO_HORNLIGHT_FAILED_TIMEOUT",
+      "REMOTEOPERATIONALARM_ON_SUCCESS": "S12_RO_ALARM_ON_SUCCESS",
+      "REMOTEOPERATIONALARM_OFF_SUCCESS": "S12_RO_ALARM_OFF_SUCCESS",
+      "REMOTEOPERATIONALARM_ON_FAIL": "S12_RO_ALARM_ON_FAIL",
+      "REMOTEOPERATIONALARM_OFF_FAIL": "S12_RO_ALARM_OFF_FAIL",
+      "REMOTEOPERATIONDOORS_LOCKED_NOT_AUTHORIZED": "S12_RO_DOOR_LOCK_FAILED",
+      "REMOTEOPERATIONDOORS_UNLOCKED_NOT_AUTHORIZED": "S12_RO_DOOR_UNLOCK_FAILED",
+      "REMOTEOPERATIONENGINE_STARTED_NOT_AUTHORIZED": "S12_RO_START_FAILED",
+      "REMOTEOPERATIONENGINE_STOPPED_NOT_AUTHORIZED": "S12_RO_STOP_FAILED",
+      "REMOTEOPERATIONALARM_ON_NOT_AUTHORIZED": "S12_RO_HORNLIGHT_FAILED",
+      "REMOTEOPERATIONLIGHTS_ON_FLASHLIGHTS_FAILED_IGNITIONON": "S12_RO_LIGHTS_FAILED_IGNITION_ON",
+      "REMOTEOPERATIONLIGHTS_ON_SPEEDLOCKOUT": "S12_RO_LIGHTS_FAILED_SPEED_LOCKOUT",
+      "REMOTEOPERATIONLIGHTS_ON_COMPLETE_TIMEOUT": "S12_RO_LIGHTS_FAILED_TIMEOUT",
+      "REMOTEOPERATIONLIGHTS_ON_SUCCESS": "S12_RO_LIGHTS_ON_SUCCESS",
+      "REMOTEOPERATIONLIGHTS_OFF_SUCCESS": "S12_RO_LIGHTS_OFF_SUCCESS",
+      "REMOTEOPERATIONLIGHTS_ON_FAIL": "S12_RO_LIGHTS_ON_FAIL",
+      "REMOTEOPERATIONLIGHTS_OFF_FAIL": "S12_RO_LIGHTS_OFF_FAIL",
+      "REMOTEOPERATIONWINDOWS_OPENED_SUCCESS": "S12_RO_WINDOWS_OPENED_SUCEESS",
+      "REMOTEOPERATIONWINDOWS_CLOSED_SUCCESS": "S12_RO_WINDOWS_CLOSED_SUCEESS",
+      "REMOTEOPERATIONWINDOWS_PARTIAL_OPENED_SUCCESS": "S12_RO_WINDOWS_PARTIAL_OPENED_SUCEESS",
+      "REMOTEOPERATIONWINDOWS_OPENED_FAIL": "S12_RO_WINDOWS_OPENED_FAIL",
+      "REMOTEOPERATIONWINDOWS_CLOSED_FAIL": "S12_RO_WINDOWS_CLOSED_FAIL",
+      "REMOTEOPERATIONWINDOWS_PARTIAL_OPENED_FAIL": "S12_RO_WINDOWS_PARTIAL_OPENED_FAIL",
+      "REMOTEOPERATIONLIGHTS_ON_NOT_AUTHORIZED": "S12_RO_LIGHTS_FAILED",
+      "REMOTEOPERATIONTRUNK_LOCKED_SUCCESS": "S12_RO_TRUNK_LOCK_SUCCESS",
+      "REMOTEOPERATIONTRUNK_LOCKED_SPEEDLOCKOUT": "S12_RO_TRUNK_LOCK_FAILED_SPEED_LOCKOUT",
+      "REMOTEOPERATIONTRUNK_LOCKED_DOORS_FAILED_DOOR_OPEN": "S12_RO_TRUNK_LOCK_FAILED_DOOR_OPEN",
+      "REMOTEOPERATIONTRUNK_LOCKED_NOT_AUTHORIZED": "S12_RO_TRUNK_LOCK_FAILED",
+      "REMOTEOPERATIONTRUNK_LOCKED_COMPLETE_TIMEOUT": "S12_RO_TRUNK_LOCK_FAILED_TIMEOUT",
+      "REMOTEOPERATIONTRUNK_UNLOCKED_SUCCESS": "S12_RO_TRUNK_UNLOCK_SUCCESS",
+      "REMOTEOPERATIONTRUNK_UNLOCKED_SPEEDLOCKOUT": "S12_RO_TRUNK_UNLOCK_FAILED_SPEED_LOCKOUT",
+      "REMOTEOPERATIONTRUNK_UNLOCKED_COMPLETE_TIMEOUT": "S12_RO_TRUNK_UNLOCK_FAILED_TIMEOUT",
+      "REMOTEOPERATIONTRUNK_UNLOCKED_NOT_AUTHORIZED": "S12_RO_TRUNK_UNLOCK_FAILED",
+      "REMOTEOPERATIONCLIMATE_ON_SUCCESS": "S12_RO_HVAC_ON_SUCCESS",
+      "REMOTEOPERATIONCLIMATE_ON_FAILED_IGNITION_ON": "S12_RO_HVAC_ON_FAILED_IGNITION_ON",
+      "REMOTEOPERATIONCLIMATE_ON_COMPLETE_TIMEOUT": "S12_RO_HVAC_ON_FAILED_TIMEOUT",
+      "REMOTEOPERATIONCLIMATE_ON_NOT_AUTHORIZED": "S12_RO_HVAC_ON_FAILED",
+      "REMOTEOPERATIONCLIMATE_OFF_SUCCESS": "S12_RO_HVAC_OFF_SUCCESS",
+      "REMOTEOPERATIONCLIMATE_OFF_FAILED_IGNITION_ON": "S12_RO_HVAC_OFF_FAILED_IGNITION_ON",
+      "REMOTEOPERATIONCLIMATE_OFF_COMPLETE_TIMEOUT": "S12_RO_HVAC_OFF_FAILED_TIMEOUT",
+      "REMOTEOPERATIONCLIMATE_OFF_NOT_AUTHORIZED": "S12_RO_HVAC_OFF_FAILED",
+      "REMOTEOPERATIONCLIMATE_AUTO_ON_COMFORT_OFF_SUCCESS": "S12_RO_AUTOONCOMFORT_OFF_SUCCESS",
+      "REMOTEOPERATIONCLIMATE_AUTO_ON_COMFORT_OFF_FAILED_IGNITION_ON": "S12_RO_AUTOONCOMFORT_OFF_FAILED_IGNITION_ON",
+      "REMOTEOPERATIONCLIMATE_AUTO_ON_COMFORT_OFF_COMPLETE_TIMEOUT": "S12_RO_AUTOONCOMFORT_OFF_FAILED_TIMEOUT",
+      "REMOTEOPERATIONCLIMATE_AUTO_ON_COMFORT_OFF_NOT_AUTHORIZED": "S12_RO_AUTOONCOMFORT_OFF_FAILED",
+      "REMOTEOPERATIONCLIMATE_AUTO_ON_COMFORT_ALL_START_SUCCESS": "S12_RO_AUTOONCOMFORT_ON_SUCCESS",
+      "REMOTEOPERATIONCLIMATE_AUTO_ON_COMFORT_ALL_START_FAILED_IGNITION_ON": "S12_RO_AUTOONCOMFORT_ON_FAILED_IGNITION_ON",
+      "REMOTEOPERATIONCLIMATE_AUTO_ON_COMFORT_ALL_START_COMPLETE_TIMEOUT": "S12_RO_AUTOONCOMFORT_ON_FAILED_TIMEOUT",
+      "REMOTEOPERATIONCLIMATE_AUTO_ON_COMFORT_ALL_START_NOT_AUTHORIZED": "S12_RO_AUTOONCOMFORT_ON_FAILED",
+      "REMOTEOPERATIONLIFTGATE_LOCKED_SUCCESS": "S12_RO_LIFTGATE_LOCK_SUCCESS",
+      "REMOTEOPERATIONLIFTGATE_LOCKED_SPEEDLOCKOUT": "S12_RO_LIFTGATE_LOCK_FAILED_SPEED_LOCKOUT",
+      "REMOTEOPERATIONLIFTGATE_LOCKED_DOORS_FAILED_DOOR_OPEN": "S12_RO_LIFTGATE_LOCK_FAILED_DOOR_OPEN",
+      "REMOTEOPERATIONLIFTGATE_LOCKED_NOT_AUTHORIZED": "S12_RO_LIFTGATE_LOCK_FAILED",
+      "REMOTEOPERATIONLIFTGATE_LOCKED_COMPLETE_TIMEOUT": "S12_RO_LIFTGATE_LOCK_FAILED_TIMEOUT",
+      "REMOTEOPERATIONLIFTGATE_UNLOCKED_SUCCESS": "S12_RO_LIFTGATE_UNLOCK_SUCCESS",
+      "REMOTEOPERATIONLIFTGATE_UNLOCKED_SPEEDLOCKOUT": "S12_RO_LIFTGATE_UNLOCK_FAILED_SPEED_LOCKOUT",
+      "REMOTEOPERATIONLIFTGATE_UNLOCKED_COMPLETE_TIMEOUT": "S12_RO_LIFTGATE_UNLOCK_FAILED_TIMEOUT",
+      "REMOTEOPERATIONLIFTGATE_UNLOCKED_NOT_AUTHORIZED": "S12_RO_LIFTGATE_UNLOCK_FAILED",
+      "REMOTEOPERATIONDOORS_LOCKED_FAIL": "S12_RO_DOOR_LOCK_FAIL",
+      "REMOTEOPERATIONDOORS_UNLOCKED_FAIL": "S12_RO_DOOR_UNLOCK_FAIL",
+      "REMOTEOPERATIONDRIVERDOOR_LOCKED_FAILED": "S12_RO_DOOR_LOCK_FAILED",
+      "REMOTEOPERATIONDRIVERDOOR_UNLOCKED_FAILED": "S12_RO_DOOR_UNLOCK_FAILED",
+      "REMOTEOPERATIONENGINE_STARTED_FAIL": "S12_RO_START_FAIL",
+      "REMOTEOPERATIONALARM_ON_FAILED": "S12_RO_HORNLIGHT_FAILED",
+      "REMOTEOPERATIONALARM_OFF_FAILED": "S12_RO_HORNLIGHT_FAILED",
+      "REMOTEOPERATIONLIGHTS_ON_FAILED": "S12_RO_LIGHTS_FAILED",
+      "REMOTEOPERATIONLIGHTS_OFF_FAILED": "S12_RO_LIGHTS_FAILED",
+      "REMOTEOPERATIONTRUNK_LOCKED_FAIL": "S12_RO_TRUNK_LOCK_FAIL",
+      "REMOTEOPERATIONTRUNK_UNLOCKED_FAIL": "S12_RO_TRUNK_UNLOCK_FAIL",
+      "REMOTEOPERATIONCLIMATE_ON_FAILED": "S12_RO_HVAC_ON_FAILED",
+      "REMOTEOPERATIONCLIMATE_OFF_FAILED": "S12_RO_HVAC_OFF_FAILED",
+      "REMOTEOPERATIONCLIMATE_AUTO_ON_COMFORT_OFF_FAILED": "S12_RO_AUTOONCOMFORT_OFF_FAILED",
+      "REMOTEOPERATIONCLIMATE_AUTO_ON_COMFORT_ALL_START_FAILED": "S12_RO_AUTOONCOMFORT_ON_FAILED",
+      "REMOTEOPERATIONLIFTGATE_LOCKED_FAILED": "S12_RO_LIFTGATE_LOCK_FAILED",
+      "REMOTEOPERATIONLIFTGATE_UNLOCKED_FAILED": "S12_RO_LIFTGATE_UNLOCK_FAILED",
+      "REMOTEOPERATIONENGINE_STOPPED_FAIL": "S12_RO_STOP_FAIL",
+      "REMOTEOPERATIONDRIVERDOOR_LOCKED_SPEEDLOCKOUT": "S12_RO_DOOR_LOCK_FAILED_SPEED_LOCKOUT",
+      "REMOTEOPERATIONDRIVERDOOR_LOCKED_DOORS_FAILED_DOOR_OPEN": "S12_RO_DOOR_LOCK_FAILED_DOOR_OPEN",
+      "REMOTEOPERATIONDRIVERDOOR_LOCKED_COMPLETE_TIMEOUT": "S12_RO_DOOR_LOCK_FAILED_TIMEOUT",
+      "REMOTEOPERATIONDRIVERDOOR_LOCKED_SUCCESS": "S12_RO_DOOR_LOCK_SUCCESS",
+      "REMOTEOPERATIONDRIVERDOOR_UNLOCKED_SPEEDLOCKOUT": "S12_RO_DOOR_UNLOCK_FAILED_SPEED_LOCKOUT",
+      "REMOTEOPERATIONDRIVERDOOR_UNLOCKED_DOORS_FAILED_DOOR_OPEN": "S12_RO_DOOR_UNLOCK_FAILED_DOOR_OPEN",
+      "REMOTEOPERATIONDRIVERDOOR_UNLOCKED_COMPLETE_TIMEOUT": "S12_RO_DOOR_UNLOCK_FAILED_TIMEOUT",
+      "REMOTEOPERATIONDRIVERDOOR_UNLOCKED_SUCCESS": "S12_RO_DOOR_UNLOCK_SUCCESS",
+      "REMOTEOPERATIONDRIVERDOOR_UNLOCKED_DOORUNLOCK_RELOCKED_FAILED": "S12_RO_DOOR_UNLOCK_RELOCK_OVERLAP",
+      "REMOTEOPERATIONDRIVERDOOR_LOCKED_NOT_AUTHORIZED": "S12_RO_DOOR_LOCK_FAILED",
+      "REMOTEOPERATIONDRIVERDOOR_UNLOCKED_NOT_AUTHORIZED": "S12_RO_DOOR_UNLOCK_FAILED",
+      "ENGINE_NOT_START": "S12_RO_APP_NOT_RUNNING",
+      "REMOTEOPERATIONTRUNK_UNLOCKED_DOORS_FAILED_DOOR_OPEN": "S12_RO_TRUNK_UNLOCK_FAILED_DOOR_OPEN",
+      "REMOTEOPERATIONLIFTGATE_UNLOCKED_DOORS_FAILED_DOOR_OPEN": "S12_RO_LIFTGATE_UNLOCK_FAILED_DOOR_OPEN"
+    }
+  
+
+  rcpdNotificationIdMapping: |+
+    {
+      "SUCCESS":"S12_RO_CLEARPERSONALDATA_SUCCESS",
+      "CPD_RESPONSE_NOT_SET":"S12_RO_CLEARPERSONALDATA_FAILED",
+      "GENERAL_FAILURE":"S12_RO_CLEARPERSONALDATA_FAILED",
+      "TIME_OUT":"S12_RO_CLEARPERSONALDATA_FAILED_TIME_OUT",
+      "VEHICLE_IN_MOTION":"S12_RO_CLEARPERSONALDATA_FAILED_VEHICLE_IN_MOTION",
+      "FAIL_DELIVERY_RETRYING":"S12_RO_CLEARPERSONALDATA_FAILED",
+      "SCHEDULE_TIMEOUT":"S12_RO_CLEARPERSONALDATA_FAILED_TIME_OUT"
+    }
+
+  healthVaultNeedsRestartOnFailure: "false"
+  engineStartCheckEnable: "true"
+  engineStatusTTL: "900000"
+  roQueueEnable: "false"
+  roForEachTTL: "180000"
+  kafkaDataConsumptionMetrics: "false"
+  dataConsumptionMetricsKafkaTopic: "data_usage"
+  deviceMessageFailuresStore: "true"
+  health:
+    healthMongo: "false"
+    healthKafkaConsumer: "true"
+    healthKafkaTopics: "true"
+    healthDMA: "true"
+    healthDFF: "true"
+    healthRedis: "false"
+    healthMqtt: "true"
+    healthMqttRestartOnFailure: "true"
+
+mqtt_details:
+  mqttBrokerURL: "tcp://oss-hivemq-extension-int-svc:1883"
+  mqttUserName: "haa_api"
+  mqttUserPassword: "TO-BE-UPDATED"
+  mqttServiceTopicNamePrefix: ""
+  mqttServiceTopicName: "ro"
+  mqttRiSvasTopicName: "ri/svas"
+  mqttRiFtdTopicName: "ri/ftd"
+  dmaMaxRetry: "0"
+  dma_service_retry_interval_millis: "60000"
+
+mongodb:
+  host: "mongodb-sharded-cluster.data-platform"
+  port: "27017"
+  secretName: mongodb-sharded-cluster-credentials
+  databaseName: oss_ignite
+  readPreference: "primaryPreferred"
+  connectionName: mongodb-sharded
+  username: "root"
+  password: "TO-BE-UPDATED"
+  clientCleanupIntervalMs: "600000"
+  clientCreateRetryCount: "3"
+  clientCloseWaitIntervalMs: "300000"
+  vaultEnabled: "false"
+  vaultRefreshIntervalMs: "30000"
+  vaultLeaseIntervalMs: "10000"
+  initializer:
+    image:
+      repository: "arti.dev.ignite.harman.com:5061/hctl/mongodb-initializer"
+      tag: "1.0.0-master-1c68cc5"
+    imagePullPolicy: Always
+
+logging:
+  logLevel: "DEBUG"
+  igniteLogLevel: "ERROR"
+  storageLogLevel: "ERROR"
+  springLogLevel: "ERROR"
+  svcLogLevel: "DEBUG"
+  svcConsoleLogLevel: "ERROR"
+  cacheLogLevel: "ERROR"
+  kafkaLogLevel: "ERROR"
+  streamBaseLogLevel: "ERROR"
+  backdoorConsumerLogLevel: "ERROR"
+  logAppender: "STDOUT"
+  appender: "STDOUT"
+  graylogHost: "graylog3-tcp.graylog.svc.cluster.local"
+  graylogPort: 12201
+
+kafka:
+  brokerUrl: "kafka-0.kafka-svc.data-platform:9093,kafka-1.kafka-svc.data-platform:9093,kafka-2.kafka-svc.data-platform:9093"
+  zookeeperConnect: "zk-0.data-platform:2182,zk-1.data-platform:2182,zk-2.data-platform:2182"
+  sinkTopic: "test"
+  sslEnable: "false"
+  source_topic_name: "media"
+  kafkaProducerServiceEnabled: "true"
+  backdoorConsumerDefaultApiTimeout: "606000"
+  streamsMaxFailures: "10"
+  streamsMaxTimeMillis: "3600000"
+  zookeeperUrl: "zk-svc.data-platform:2182"
+cache:
+  bypass:
+    queueCapacity: "100000"
+    threadInitialDelay: "0"
+    threadDelay: "100"
+    threadShutdownWaitTime: "2000"
+    maxRetryAttempts: "10"
+    retryIntervalMilliSecs: "1000"
+
+secretsEnginePath: opensource-perf
+
+api_gateway:
+  api_registry_enabled: "true"
+  api_security_enabled: "false"
+  spring_application_version: "1.0"
+  openapi_path_include: "/v1/**, /v2/**, /v1/rcpd, /v1/rcpd/requests/**, /v1/rcpd/status, /v1/rcpd/history/**, /v1\
+  .1/users/{userId}/vehicles/{vehicleId}/ro/inhibit/**, \
+  /v2/users/{userId}/vehicles/{vehicleId}/remoteinhibit/requests/{roRequestId}/**, /v1\
+  .1/users/{userId}/vehicles/{vehicleId}/remoteinhibit/requests/{roRequestId}/**, /v2/ro/acv, /v2/ro/acv/schedule, \
+  /v2/ro/acv/schedule/history/**, /v1.1/users/{userId}/vehicles/{vehicleId}/ro/climate/**, /v2/ro/hvac, /v1\
+  .1/users/{userId}/vehicles/{vehicleId}/ro/config/**, /v1.1/users/{userId}/vehicles/{vehicleId}/ro/doors/**, /v1\
+  .1/users/{userId}/vehicles/{vehicleId}/ro/doors/driver/**, /v1.1/users/{userId}/vehicles/{vehicleId}/ro/engine,\
+  /v2/users/{userId}/vehicles/{vehicleId}/ro/engine/**, \
+  /v2/ro/glovebox, /v1.1/users/{userId}/vehicles/{vehicleId}/ro/hood/**, /v1\
+  .1/users/{userId}/vehicles/{vehicleId}/ro/trunk/**, /v2/ro/trunk, /v1\
+  .1/users/{userId}/vehicles/{vehicleId}/ro/liftgate/**, /v2/ro/liftgate, /v1\
+  .1/users/{userId}/vehicles/{vehicleId}/ro/horn/**, /v1.1/users/{userId}/vehicles/{vehicleId}/ro/lights/**, /v1\
+  .2/users/{userId}/vehicles/{vehicleId}/ro/lights/**, /v1.1/users/{userId}/vehicles/{vehicleId}/ro/alarm/**, /v1\
+  .1/users/{userId}/vehicles/{vehicleId}/ro/horn/**, /v1.1/users/{userId}/vehicles/{vehicleId}/ro/lights/**, /v1\
+  .2/users/{userId}/vehicles/{vehicleId}/ro/lights/**, /v1.1/users/{userId}/vehicles/{vehicleId}/ro/alarm/**, /v1/users/{userId}/vehicles/{vehicleId}/ro/{roType}/schedules, /v1.1/ro/settings/service, /v1\
+  .1/users/{userId}/vehicles/{vehicleId}/ro/requests/{roRequestId}, /v2/ro/requests, /v1\
+  .1/users/{userId}/vehicles/{vehicleId}/ro/history, /v2/ro/history, /v1\
+  .1/users/{userId}/vehicles/{vehicleId}/ro/windows, /v1.1/users/{userId}/vehicles/{vehicleId}/ro/windows/driver"
+  openapi_path_exclude: ""
+  api_registry_service_name: "http://api-registry-int-svc"
+  api_gateway_service_name: "api-gateway3-int-svc:8080"
+  spring_application_servicename: "oss-ro-api-int-svc"
+  spring_application_name: "ro-api"
+  server_port: "8080"
+  api_context: "/ro-api"
+
