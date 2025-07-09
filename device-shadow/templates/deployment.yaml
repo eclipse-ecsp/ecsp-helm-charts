@@ -1,0 +1,133 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oss-device-shadow-api
+  labels:
+    app: device-shadow-api
+    group: api
+spec:
+  selector:
+    matchLabels:
+      app: device-shadow-api
+  replicas: {{ .Values.device_shadow_api.replicas }}
+  template:
+    metadata:
+      labels:
+        app: device-shadow-api
+        group: api
+        redeploy-timestamp: "123456789"
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/config-maps.yaml") . | sha256sum }}
+      name: device-shadow-api
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: {{ .Values.device_shadow_api.nodeAffinityKey }}
+                operator: In
+                values: [{{ .Values.device_shadow_api.nodeType | quote }}]
+        {{- if .Values.device_shadow_api.podAntiAffinityEnabled }}
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: "app"
+                    operator: In
+                    values:
+                    - device-shadow-api
+              topologyKey: "kubernetes.io/hostname"
+        {{- end }}
+      containers:
+      - name: device-shadow-api
+        image: {{ .Values.image.repository }}/device-shadow-api:{{ .Values.device_shadow_api.imageTag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command:
+        - sh
+        - -c
+        - "env mongodb_hosts=$NODE_NAME,$mongodb_qr_global_svc /bin/sh  /opt/device-shadow-api/bin/start.sh"
+        resources:
+{{ toYaml .Values.device_shadow_api.resources | indent 10 }}
+        ports:
+        - containerPort: 8080
+          name: tcp
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: node_name
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: app
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['app']
+        - name: ms
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['ms']
+        - name: msCtype
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['group']
+        volumeMounts:
+          - mountPath: /usr/local/tomcat/logs
+            name: logs
+          - mountPath: /usr/local/tomcat/health
+            name: health
+        {{- if .Values.device_shadow_api.livenessProbe.enabled }}
+        livenessProbe:
+          initialDelaySeconds: {{ .Values.device_shadow_api.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.device_shadow_api.livenessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.device_shadow_api.livenessProbe.timeoutSeconds }}
+          successThreshold: {{ .Values.device_shadow_api.livenessProbe.successThreshold }}
+          failureThreshold: {{ .Values.device_shadow_api.livenessProbe.failureThreshold }}
+          exec:
+            command:
+            - sh
+            - -c
+            - /usr/local/tomcat/health/api_liveness.sh
+        {{- end }}
+        {{- if .Values.device_shadow_api.readinessProbe.enabled }}
+        readinessProbe:
+          initialDelaySeconds: {{ .Values.device_shadow_api.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.device_shadow_api.readinessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.device_shadow_api.readinessProbe.timeoutSeconds }}
+          successThreshold: {{ .Values.device_shadow_api.readinessProbe.successThreshold }}
+          failureThreshold: {{ .Values.device_shadow_api.readinessProbe.failureThreshold }}
+          exec:
+            command:
+            - sh
+            - -c
+            - /usr/local/tomcat/health/api_readiness.sh
+        {{- end }}
+        envFrom:
+        - configMapRef:
+            name: oss-device-shadow-config
+        env:
+        - name: mongodb_username
+          valueFrom:
+            secretKeyRef:
+              name: device-shadow-api
+              key: mongodb-user   
+        - name: mongodb_password
+          valueFrom:
+            secretKeyRef:
+              name: device-shadow-api
+              key: mongodb-password
+      serviceAccountName: {{ include "device-shadow.fullname" . }}
+      volumes:
+      - name: logs
+        emptyDir: {}
+      - name: health
+        configMap:
+          name: oss-device-shadow-api-health-config
+          defaultMode: 0755
+          items:
+          - key: api_readiness.sh
+            path: api_readiness.sh
+          - key: api_liveness.sh
+            path: api_liveness.sh

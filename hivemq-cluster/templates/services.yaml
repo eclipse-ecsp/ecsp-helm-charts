@@ -1,0 +1,116 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: oss-hivemq-extension-ext-svc
+  annotations:
+{{- if .Values.global.hivemq.loadbalancer.certificate }}
+    service.beta.kubernetes.io/aws-load-balancer-ssl-cert: {{ .Values.global.hivemq.loadbalancer.certificate }}
+    service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "{{ .Values.global.hivemq.loadbalancer.mqtt.port }},{{ .Values.global.hivemq.loadbalancer.websocket.port }}"
+{{- end }}
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: tcp
+    service.beta.kubernetes.io/aws-load-balancer-type: {{ .Values.global.hivemq.loadbalancer.type }}
+    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: {{ .Values.global.hivemq.loadbalancer.targetType }}
+    service.beta.kubernetes.io/aws-load-balancer-scheme: {{ .Values.global.hivemq.loadbalancer.scheme }}
+    external-dns.alpha.kubernetes.io/hostname: {{ printf "%s.%s" .Values.global.hivemq.loadbalancer.hostname .Values.environmentDomainName | quote }}
+    {{- with .Values.global.hivemq.loadbalancer.extraAnnotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  labels:
+        {{- include "hivemq.labels.standard" . | nindent 4 }}
+spec:
+  ports:
+    - protocol: TCP
+      port: {{ .Values.global.hivemq.loadbalancer.mqtt.port }}
+      targetPort: TO-BE-UPDATED
+      name: sslport
+    - protocol: TCP
+      port: {{ .Values.global.hivemq.loadbalancer.websocket.port }}
+      targetPort: TO-BE-UPDATED
+      name: websocket
+  type: LoadBalancer
+  selector:
+    app: {{ template  "hivemq.name" . }}
+  loadBalancerSourceRanges: {{ .Values.global.hivemq.loadbalancer.sourceRanges }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: oss-hivemq-extension-int-svc
+  labels:
+        {{- include "hivemq.labels.standard" . | nindent 4 }}
+spec:
+  ports:
+  - protocol: TCP
+    port: TO-BE-UPDATED
+    targetPort: TO-BE-UPDATED
+    name: tcpport
+  selector:
+    app: {{ template  "hivemq.name" . }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: oss-hivemq-extension-svc
+  labels:
+        {{- include "hivemq.labels.standard" . | nindent 4 }}
+spec:
+  ports:
+    - protocol: TCP
+      port: TO-BE-UPDATED
+      targetPort: TO-BE-UPDATED
+      name: tcp1
+    - protocol: TCP
+      port: TO-BE-UPDATED
+      targetPort: TO-BE-UPDATED
+      name: tcp2
+    - protocol: TCP
+      port: TO-BE-UPDATED
+      targetPort: TO-BE-UPDATED
+      name: tcp3
+    - protocol: TCP
+      port: TO-BE-UPDATED
+      targetPort: TO-BE-UPDATED
+      name: tcp4
+    - protocol: TCP
+      port: TO-BE-UPDATED
+      targetPort: TO-BE-UPDATED
+      name: tcp5
+    - protocol: TCP
+      port: TO-BE-UPDATED
+      targetPort: TO-BE-UPDATED
+      name: tcp6
+  clusterIP: None
+  selector:
+    app: {{ template  "hivemq.name" . }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: oss-hivemq-extension-external
+  labels:
+        {{- include "hivemq.labels.standard" . | nindent 4 }}
+spec:
+  type: {{ .Values.global.hivemq.external_service.type }}
+  ports:
+  {{- if .Values.global.hivemq.external_service.portConfig }}
+  {{ toYaml .Values.global.hivemq.external_service.portConfig | nindent 4 }}
+  {{- end }}
+  selector:
+    app: {{ template  "hivemq.name" . }}
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: oss-hivemq-extension-discovery
+  labels:
+        {{- include "hivemq.labels.standard" . | nindent 4 }}
+  annotations:
+    service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
+spec:
+  selector:
+    app: {{ template  "hivemq.name" . }}
+  ports:
+    - protocol: TCP
+      port: TO-BE-UPDATED
+      targetPort: TO-BE-UPDATED
+  clusterIP: None

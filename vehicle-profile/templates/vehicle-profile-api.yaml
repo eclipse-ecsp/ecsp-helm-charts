@@ -1,0 +1,159 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: oss-vehicle-profile-api-int-svc
+  labels:
+    app: vehicle-profile-api
+    group: api
+    ms: {{ .Values.ms | quote }}
+    facing: internal
+    impl: native
+spec:
+  ports:
+  - protocol: TCP
+    port: 8080
+    targetPort: 8080
+    name: tcp
+  selector:
+    app: vehicle-profile-api
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oss-vehicle-profile-api
+  labels:
+    app: vehicle-profile-api
+    group: api
+spec:
+  selector:
+    matchLabels:
+      app: vehicle-profile-api
+  replicas: {{ .Values.vehicle_profile_api.replicas }}
+  template:
+    metadata:
+      labels:
+        app: vehicle-profile-api
+        group: api
+        redeploy-timestamp: "123456789"
+      name: vehicle-profile-api
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmaps.yaml") . | sha256sum }}
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: {{ .Values.vehicle_profile_api.nodeAffinityKey }}
+                operator: In
+                values: [{{ .Values.vehicle_profile_api.nodeType | quote }}]
+        {{- if .Values.vehicle_profile_api.podAntiAffinityEnabled }}
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: "app"
+                    operator: In
+                    values:
+                    - vehicle-profile-api
+              topologyKey: "kubernetes.io/hostname"
+        {{- end }}
+      containers:
+      - name: vehicle-profile-api
+        image: {{ .Values.image.repository }}/vehicle-profile-api:{{ .Values.vehicle_profile_api.imageTag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command:
+        - sh
+        - -c
+        - "env mongodb_hosts=$mongodb_qr_global_svc java -jar {{ .Values.vehicle_profile_api.jvmOpts }} /opt/vehicle-profile/api/vehicle-profile-api.jar"
+        resources:
+{{ toYaml .Values.vehicle_profile_api.resources | indent 10 }}
+        ports:
+        - containerPort: 8080
+          name: tcp
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: app
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['app']
+        - name: ms
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['ms']
+        - name: msCtype
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['group']
+        envFrom:
+        - configMapRef:
+            name: oss-vehicle-profile-api-config
+        env:
+        - name: vehicle_specification_client_id
+          valueFrom:
+            secretKeyRef:
+              name: vehicle-profile
+              key: vehicle-specification-client-id
+        - name: vehicle_specification_client_secret
+          valueFrom:
+            secretKeyRef:
+              name: vehicle-profile
+              key: vehicle-specification-client-secret
+        - name: mongodb_username
+          valueFrom:
+            secretKeyRef:
+              name: vehicle-profile
+              key: mongodb-user   
+        - name: mongodb_password
+          valueFrom:
+            secretKeyRef:
+              name: vehicle-profile
+              key: mongodb-password
+        volumeMounts:
+          - mountPath: /usr/local/tomcat/logs
+            name: logs
+          - mountPath: /usr/local/tomcat/health
+            name: health
+        {{- if .Values.vehicle_profile_api.livenessProbe.enabled }}
+        livenessProbe:
+          initialDelaySeconds: {{ .Values.vehicle_profile_api.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.vehicle_profile_api.livenessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.vehicle_profile_api.livenessProbe.timeoutSeconds }}
+          successThreshold: {{ .Values.vehicle_profile_api.livenessProbe.successThreshold }}
+          failureThreshold: {{ .Values.vehicle_profile_api.livenessProbe.failureThreshold }}
+          exec:
+            command:
+            - sh
+            - -c
+            - /usr/local/tomcat/health/api_liveness.sh
+        {{- end }}
+        {{- if .Values.vehicle_profile_api.readinessProbe.enabled }}
+        readinessProbe:
+          initialDelaySeconds: {{ .Values.vehicle_profile_api.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.vehicle_profile_api.readinessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.vehicle_profile_api.readinessProbe.timeoutSeconds }}
+          successThreshold: {{ .Values.vehicle_profile_api.readinessProbe.successThreshold }}
+          failureThreshold: {{ .Values.vehicle_profile_api.readinessProbe.failureThreshold }}
+          exec:
+            command:
+            - sh
+            - -c
+            - /usr/local/tomcat/health/api_readiness.sh
+        {{- end }}
+      serviceAccountName: {{ include "vehicle-profile-api.fullname" . }}
+      imagePullSecrets: {{- toYaml .Values.imagePullSecrets | nindent 8 }}
+      volumes:
+        - name: logs
+          emptyDir: {}
+        - name: health
+          configMap:
+            name: oss-vehicle-profile-api-health-config
+            defaultMode: 0755
+            items:
+            - key: api_readiness.sh
+              path: api_readiness.sh
+            - key: api_liveness.sh
+              path: api_liveness.sh

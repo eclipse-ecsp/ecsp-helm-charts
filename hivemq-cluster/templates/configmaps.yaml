@@ -1,0 +1,130 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: oss-hivemq-extension-jmx-exporter 
+  labels:
+        {{- include "hivemq.labels.standard" . | nindent 4 }}
+data:
+  config: |-
+    ---
+    startDelaySeconds: 0
+    hostPort: localhost:9010
+    ssl: false
+    lowercaseOutputLabelNames: true
+    lowercaseOutputName: true
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: oss-hivemq-extension-kafka-topics
+  labels:
+        {{- include "hivemq.labels.standard" . | nindent 4 }}
+data:
+  topics.txt: |+
+    connect|25|2
+    disconnect|25|2
+    test|25|2
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: oss-hivemq-extension-variables
+  labels:
+        {{- include "hivemq.labels.standard" . | nindent 4 }}
+data:
+  ENV: {{ .Values.global.hivemq.env | default "" | quote }}
+  TENANT: {{ .Values.global.hivemq.tenant | default "" | quote }}
+  HIVEMQ_MAX_QUEUED_MSG: "1000"
+  HIVEMQ_PACKET_IDLE_TIMEOUT: {{ .Values.global.hivemq.noPacketIdleTimeout | quote }}
+  HIVEMQ_PERSISTENCE_CLIENT_GENERAL_MODE: {{ .Values.global.hivemq.persistence.clientSessionGeneral | quote }}
+  HIVEMQ_PERSISTENCE_QUEUED_MSG_MODE: {{ .Values.global.hivemq.persistence.clientSessionQueuedMsg | quote }}
+  HIVEMQ_MAX_QUEUED_MSG_PER_CLIENT: {{ .Values.global.hivemq.persistence.maxQMPerClient | quote }}
+  HIVEMQ_QUEUE_MSG_STRATEGY: {{ .Values.global.hivemq.persistence.queueMsgStrategy | quote }}
+  HIVEMQ_PERSISTENCE_CLIENT_SUB_MODE: {{ .Values.global.hivemq.persistence.clientSessionSub | quote }}
+  HIVEMQ_PERSISTENCE_MSG_IN_MODE: {{ .Values.global.hivemq.persistence.clientIncomingMsg | quote }}
+  HIVEMQ_PERSISTENCE_MSG_OUT_MODE: {{ .Values.global.hivemq.persistence.clientOutgoingMsg | quote }}
+  HIVEMQ_PERSISTENCE_RETAINED_MODE: {{ .Values.global.hivemq.persistence.clientRetainedMsg | quote }}
+  HIVEMQ_PERSISTENCE_PUBLISH_PAYLOADS_MODE: {{ .Values.global.hivemq.persistence.publishPayload | quote }}
+  HIVEMQ_PERSISTENCE_SESSION_ATTRIBUTE_MODE: {{ .Values.global.hivemq.persistence.sessionAttribute | quote }}
+  HIVEMQ_PERSISTENCE_CLIENT_GROUP_MODE: {{ .Values.global.hivemq.persistence.clientGroup | quote }}
+  HIVEMQ_MAX_MESSAGE_SIZE: {{ .Values.global.hivemq.persistence.maxMessageSize | quote }}
+  HIVEMQ_CLIENTSESSION_REPLICATE_COUNT: "0"
+  HIVEMQ_SUBSCRIPTIONS_REPLICATE_COUNT: "0"
+  HIVEMQ_TOPICTREE_REPLICATE_COUNT: "4"
+  JAVA_OPTS: {{ .Values.global.hivemq.jvmOpts | quote }}
+  NEVER_BLOCK_FOR_GRAYLOG: "true"
+  QUARTZ_LOG_LEVEL: {{ .Values.global.hivemq.logging.quartzLogLevel | quote }}
+  EXODUS_LOG_LEVEL: {{ .Values.global.hivemq.logging.exodusLogLevel | quote }}
+  JETTY_LOG_LEVEL: {{ .Values.global.hivemq.logging.jettyLogLevel | quote }}
+  OSHI_LOG_LEVEL: {{ .Values.global.hivemq.logging.oshiLogLevel | quote }}
+  STORAGE_LOG_LEVEL: {{ .Values.global.hivemq.logging.storageLogLevel | quote }}
+  SPRING_LOG_LEVEL: {{ .Values.global.hivemq.logging.springLogLevel | quote }}
+  MIGRATIONS_LOG_LEVEL: {{ .Values.global.hivemq.logging.migrationsLogLevel | quote }}
+  LOG_LEVEL: {{ .Values.global.hivemq.logging.logLevel | quote }}
+  HIVEMQ_CLIENT_CONNECTED_LOG_LEVEL: {{ .Values.global.hivemq.logging.clientConnectedLogLevel | quote }}
+  HIVEMQ_MESSAGE_DROPPED_LOG_LEVEL: {{ .Values.global.hivemq.logging.msgDroppedlogLevel | quote }}
+  HIVEMQ_CLIENT_SESSION_EXPIRED_LOG_LEVEL: {{ .Values.global.hivemq.logging.clientSessionExpiredLogLevel | quote }}
+  CACHE_LOG_LEVEL: {{ .Values.global.hivemq.logging.cacheLogLevel | quote }}
+  KAFKA_LOG_LEVEL: {{ .Values.global.hivemq.logging.kafkaLogLevel | quote }}
+  HIVEMQ_LOG_LEVEL: {{ .Values.global.hivemq.logging.hivemqLogLevel | quote }}
+  IGNITE_LOG_LEVEL: {{ .Values.global.hivemq.logging.igniteLogLevel | quote }}
+  SVC_LOG_LEVEL: {{ .Values.global.hivemq.logging.svcLogLevel | quote }}
+  KEEP_ALIVE_LOG_LEVEL: {{ .Values.global.hivemq.logging.keepAliveLogLevel | quote }}
+  LOG_APPENDER: {{ .Values.global.hivemq.logging.logAppender | quote }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: oss-hivemq-extension-files
+  labels:
+        {{- include "hivemq.labels.standard" . | nindent 4 }}
+data:
+  cache-enabler.properties: |+
+    {{-  if eq (.Values.global.hivemq.redis_configs.redis_mode|upper) "SINGLE"  }}
+    redis.address={{.Values.global.hivemq.redis_configs.single.address }}
+    {{ end }}
+    {{- if eq (.Values.global.hivemq.redis_configs.redis_mode|upper) "SENTINEL"}}
+    redis.sentinels={{.Values.global.hivemq.redis_configs.sentinel.address}}
+    redis.master.name={{.Values.global.hivemq.redis_configs.sentinel.masterName}}
+    {{ end }}
+    redis.dns.monitoring.interval={{.Values.global.hivemq.redis_configs.dns_monitoring_interval}}
+    redis.read.mode={{.Values.global.hivemq.redis_configs.read_mode|upper}}
+    redis.subscription.mode={{.Values.global.hivemq.redis_configs.subscription_mode|upper}}
+    redis.subscription.conn.min.idle.size={{.Values.global.hivemq.redis_configs.subscription_conn_min_idle_size}}
+    redis.subscription.conn.pool.size={{.Values.global.hivemq.redis_configs.subscription_conn_pool_size}}
+    redis.slave.conn.min.idle.size= {{.Values.global.hivemq.redis_configs.slave_conn_min_idle_size}}
+    redis.slave.pool.size={{.Values.global.hivemq.redis_configs.slave_pool_size}}
+    redis.master.conn.min.idle.size={{.Values.global.hivemq.redis_configs.master_conn_min_idle_size}}
+    redis.master.conn.pool.size={{.Values.global.hivemq.redis_configs.master_conn_pool_size}}
+    redis.idle.conn.timeout={{.Values.global.hivemq.redis_configs.idle_conn_timeout}}
+    redis.conn.timeout={{.Values.global.hivemq.redis_configs.conn_timeout}}
+    redis.timeout={{.Values.global.hivemq.redis_configs.timeout}}
+    redis.retry.attempts={{.Values.global.hivemq.redis_configs.retry_attempts}}
+    redis.retry.interval={{.Values.global.hivemq.redis_configs.retry_interval}}
+    redis.reconnection.timeout={{.Values.global.hivemq.redis_configs.reconnection_timeout}}
+    redis.failed.attempts={{.Values.global.hivemq.redis_configs.failed_attempts}}
+    redis.database={{.Values.global.hivemq.redis_configs.database}}
+    redis.password={{.Values.global.hivemq.redis_configs.password}}
+    redis.subscriptions.per.conn={{.Values.global.hivemq.redis_configs.subscriptions_per_conn}}
+    redis.client.name={{.Values.global.hivemq.redis_configs.client_name}}
+    redis.conn.min.idle.size={{.Values.global.hivemq.redis_configs.conn_min_idle_size}}
+    redis.conn.pool.size={{.Values.global.hivemq.redis_configs.conn_pool_size}}
+    {{- if eq (.Values.global.hivemq.redis_configs.redis_mode|upper) "CLUSTER" }}
+    redis.cluster.masters={{.Values.global.hivemq.redis_configs.cluster.service }}
+    {{ end }}
+    redis.scan.interval={{.Values.global.hivemq.redis_configs.scan_interval}}
+    redis.scan.limit={{.Values.global.hivemq.redis_configs.scan_limit}}
+    redis.regex.scan.filename={{.Values.global.hivemq.redis_configs.regex_scan_filename}}
+    redis.netty.threads={{.Values.global.hivemq.redis_configs.netty_threads}}
+    redis.decode.in.executor={{.Values.global.hivemq.redis_configs.decode_in_executor}}
+    redis.executor.threads={{.Values.global.hivemq.redis_configs.executor_threads}}
+    redis.keep.alive={{.Values.global.hivemq.redis_configs.keep_alive}}
+    redis.ping.connection.interval={{.Values.global.hivemq.redis_configs.ping_connection_interval}}
+    redis.tcp.no.delay={{.Values.global.hivemq.redis_configs.tcp_no_delay}}
+    redis.transport.mode={{.Values.global.hivemq.redis_configs.transport_mode}}
+    heartbeat.port={{.Values.hivemq.heartbeat.port}}
+    heartbeat.bindAddress={{.Values.hivemq.heartbeat.bind_address}}
+    heartbeat.path={{.Values.hivemq.heartbeat.path}}
+
+  {{- (tpl (.Files.Glob "config/*").AsConfig . ) | nindent 2 }}
+---

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hivemq xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="hivemq-config.xsd">
+     <listeners>
+        <tcp-listener>
+            <port><TO-BE-UPDATED></port>
+            <bind-address><TO-BE-UPDATED></bind-address>
+        </tcp-listener>
+        <tcp-listener>
+            <port><TO-BE-UPDATED></port>
+            <bind-address><TO-BE-UPDATED></bind-address>
+        </tcp-listener>
+        <tcp-listener>
+            <port><TO-BE-UPDATED></port>
+            <bind-address><TO-BE-UPDATED></bind-address>
+        </tcp-listener>
+          <websocket-listener>
+            <port><TO-BE-UPDATED></port>
+            <bind-address><TO-BE-UPDATED></bind-address>
+            <path>/mqtt</path>
+            <subprotocols>
+                <subprotocol>mqttv3.1</subprotocol>
+            </subprotocols>
+            <allow-extensions>true</allow-extensions>
+        </websocket-listener>
+     </listeners>   
+     <restrictions>
+    	<!-- Maximum length of client identifier -->
+        <max-client-id-length><TO-BE-UPDATED></max-client-id-length>
+    	<!-- Disconnect idle clients after configured milliseconds -->
+    	<no-connect-idle-timeout>${HIVEMQ_PACKET_IDLE_TIMEOUT}</no-connect-idle-timeout>
+    	<!-- Maximum simultaneous connections (-1 = unlimited) -->
+    	<max-connections><TO-BE-UPDATED></max-connections>
+    	<!-- Incoming limit in bytes/second (0 = unlimited) -->
+    	<incoming-bandwidth-throttling>0</incoming-bandwidth-throttling>
+    </restrictions>
+     <mqtt>
+            <queued-messages>
+        	<!-- Maximum amount of messages per client that will be stored on the broker -->
+            <max-queue-size>${HIVEMQ_MAX_QUEUED_MSG}</max-queue-size>
+            <strategy>${HIVEMQ_QUEUE_MSG_STRATEGY}</strategy>
+            </queued-messages>
+        <packets>
+            <max-packet-size>${HIVEMQ_MAX_MESSAGE_SIZE}</max-packet-size>
+        </packets>
+    </mqtt>
+        <cluster>
+        <enabled>true</enabled>
+        <transport>
+            <tcp>
+                <bind-port>7800</bind-port>
+            </tcp>
+        </transport>       
+        <discovery>
+            <extension/>
+        </discovery>
+        <failure-detection>
+            <tcp-health-check>
+                <bind-port>9750</bind-port>
+                <port-range>4</port-range>
+            </tcp-health-check>
+        </failure-detection>
+         </cluster>
+</hivemq>

@@ -254,8 +254,6 @@ spec:
           volumeMounts:
             - mountPath: /data
               name: topics-config
-      imagePullSecrets:
-      - name: ghcr-secret
       volumes:
       - name: logs
         emptyDir: {}

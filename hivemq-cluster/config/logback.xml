@@ -1,0 +1,157 @@
+<configuration scan="true" scanPeriod="60 seconds">
+
+		<appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+				<encoder>
+						<pattern>%-30(%d %level)- %msg%n%ex</pattern>
+				</encoder>
+		</appender>
+		
+		<appender name="GELF" class="de.siegmar.logbackgelf.GelfTcpAppender">
+				<graylogHost>graylog3-tcp.graylog.svc.cluster.local</graylogHost>
+				<graylogPort>12201</graylogPort>
+				<connectTimeout>15000</connectTimeout>
+				<reconnectInterval>300</reconnectInterval>
+				<maxRetries>10</maxRetries>
+				<retryDelay>300</retryDelay>
+				<poolSize>2</poolSize>
+				<poolMaxWaitTime>5000</poolMaxWaitTime>
+				<encoder class="de.siegmar.logbackgelf.GelfEncoder">
+						<includeRawMessage>false</includeRawMessage>
+						<includeMarker>true</includeMarker>
+						<includeMdcData>true</includeMdcData>
+						<includeCallerData>false</includeCallerData>
+						<includeRootCauseData>false</includeRootCauseData>
+						<includeLevelName>false</includeLevelName>
+						<fullPatternLayout class="ch.qos.logback.classic.PatternLayout">
+								<pattern>NA</pattern>
+						</fullPatternLayout>
+						<shortPatternLayout class="ch.qos.logback.classic.PatternLayout">
+								<pattern>%d{HH:mm:ss.SSS} [%thread] %-5level-%msg %n</pattern>
+						</shortPatternLayout>
+						<staticField>app:hivemq</staticField>
+						<staticField>ms:hivemq</staticField>
+						<staticField>msCtype:mqtt</staticField>
+						<staticField>node_name:${NODE_NAME}</staticField>
+						<staticField>cName:${HOSTNAME}</staticField>
+				</encoder>
+		</appender>
+		<appender name="ASYNC-GELF" class="ch.qos.logback.classic.AsyncAppender">
+				<queueSize>100000</queueSize>
+				<discardingThreshold>0</discardingThreshold>
+				<neverBlock>${NEVER_BLOCK_FOR_GRAYLOG:-TRUE}</neverBlock>
+				<appender-ref ref="GELF" />
+		</appender>
+
+		<appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+				<file>${hivemq.log.folder}/hivemq.log</file>
+				<append>true</append>
+
+				<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+						<!-- daily rollover -->
+						<fileNamePattern>${hivemq.log.folder}/hivemq.%d{yyyy-MM-dd}.log</fileNamePattern>
+
+						<!-- keep 30 days' worth of history -->
+						<maxHistory>30</maxHistory>
+				</rollingPolicy>
+				<encoder>
+						<pattern>%-30(%d %level)- %msg%n%ex</pattern>
+				</encoder>
+		</appender>
+
+		<appender name="MIGRATIONS-FILE" class="ch.qos.logback.core.FileAppender">
+				<file>${hivemq.log.folder}/migration.log</file>
+				<append>true</append>
+				<encoder>
+						<pattern>%-30(%d %level)- %msg%n%ex</pattern>
+				</encoder>
+		</appender>
+
+		<appender name="EVENT-FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+				<file>${hivemq.log.folder}/event.log</file>
+				<append>true</append>
+				<encoder>
+						<pattern>%-24(%d)- %msg%n%ex</pattern>
+				</encoder>
+				<rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+						<fileNamePattern>${hivemq.log.folder}/event-%i.log.gz</fileNamePattern>
+						<minIndex>1</minIndex>
+						<maxIndex>5</maxIndex>
+				</rollingPolicy>
+				<triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+						<maxFileSize>100MB</maxFileSize>
+				</triggeringPolicy>
+		</appender>
+
+		<root level="${LOG_LEVEL:-INFO}">
+				<appender-ref ref="${LOG_APPENDER:-CONSOLE}" />
+		</root>
+
+		<logger name="org.quartz" level="${QUARTZ_LOG_LEVEL:-WARN}">
+				<appender-ref ref="${LOG_APPENDER:-CONSOLE}" />
+		</logger>
+		<logger name="jetbrains.exodus" level="${EXODUS_LOG_LEVEL:-WARN}">
+				<appender-ref ref="${LOG_APPENDER:-CONSOLE}" />
+		</logger>
+		<logger name="org.eclipse.jetty" level="${JETTY_LOG_LEVEL:-WARN}">
+				<appender-ref ref="${LOG_APPENDER:-CONSOLE}" />
+		</logger>
+		<logger name="com.google.common.util.concurrent.Futures.CombinedFuture" level="OFF">
+				<appender-ref ref="${LOG_APPENDER:-CONSOLE}" />
+		</logger>
+		<logger name="oshi" level="${OSHI_LOG_LEVEL:-ERROR}">
+				<appender-ref ref="${LOG_APPENDER:-CONSOLE}" />
+		</logger>		
+		<logger name="com.mongodb" level="${STORAGE_LOG_LEVEL:-ERROR}" additivity="false">
+				<appender-ref ref="${LOG_APPENDER:-CONSOLE}" />
+		</logger>
+		<logger name="org.springframework" level="${SPRING_LOG_LEVEL:-ERROR}" additivity="false">
+				<appender-ref ref="${LOG_APPENDER:-CONSOLE}" />
+		</logger>
+		<logger name="org.redisson" level="${CACHE_LOG_LEVEL:-ERROR}" additivity="false">
+				<appender-ref ref="${LOG_APPENDER:-CONSOLE}" />
+		</logger>
+		<logger name="org.apache.kafka" level="${KAFKA_LOG_LEVEL:-ERROR}" additivity="false">
+				<appender-ref ref="${LOG_APPENDER:-CONSOLE}" />
+		</logger>
+
+		<logger name="org.eclipse.ecsp" level="${IGNITE_LOG_LEVEL:-ERROR}" additivity="false">
+				<appender-ref ref="${LOG_APPENDER:-CONSOLE}" />
+		</logger>
+		<logger name="org.eclipse.ecsp.dao" level="${STORAGE_LOG_LEVEL:-ERROR}" additivity="false">
+				<appender-ref ref="${LOG_APPENDER:-CONSOLE}" />
+		</logger>
+		<logger name="org.eclipse.ecsp.cache" level="${CACHE_LOG_LEVEL:-ERROR}" additivity="false">
+				<appender-ref ref="${LOG_APPENDER:-CONSOLE}" />
+		</logger>
+		<logger name="org.eclipse.ecsp.analytics.stream" level="${STREAM_BASE_LOG_LEVEL:-ERROR}"
+				additivity="false">
+				<appender-ref ref="${LOG_APPENDER:-CONSOLE}" />
+		</logger>
+		<logger name="org.eclipse.ecsp.stream" level="${STREAM_BASE_LOG_LEVEL:-ERROR}"
+				additivity="false">
+				<appender-ref ref="${LOG_APPENDER:-CONSOLE}" />
+		</logger>
+
+
+		<logger name="com.hivemq" level="${HIVEMQ_LOG_LEVEL:-ERROR}" additivity="false">
+				<appender-ref ref="${LOG_APPENDER:-CONSOLE}" />
+		</logger>
+		<logger name="event.client-connected" level="${HIVEMQ_CLIENT_CONNECTED_LOG_LEVEL:-INFO}"
+				additivity="false">
+				<appender-ref ref="${LOG_APPENDER:-CONSOLE}" />
+		</logger>
+		<logger name="event.client-disconnected"
+				level="${HIVEMQ_CLIENT_CONNECTED_LOG_LEVEL:-INFO}" additivity="false">
+				<appender-ref ref="${LOG_APPENDER:-CONSOLE}" />
+		</logger>
+		<logger name="event.message-dropped" level="${HIVEMQ_MESSAGE_DROPPED_LOG_LEVEL:-INFO}"
+				additivity="false">
+				<appender-ref ref="${LOG_APPENDER:-CONSOLE}" />
+		</logger>
+		<logger name="org.eclipse.ecsp.hivemq" level="${SVC_LOG_LEVEL:-INFO}" additivity="false">
+				<appender-ref ref="${LOG_APPENDER:-CONSOLE}" />
+		</logger>
+		<logger name="org.eclipse.ecsp.hivemq.utils.KeepAliveHandler" level="${KEEP_ALIVE_LOG_LEVEL:-INFO}" additivity="false">
+				<appender-ref ref="${LOG_APPENDER:-CONSOLE}" />
+		</logger>
+</configuration>

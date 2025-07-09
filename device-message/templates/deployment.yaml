@@ -1,0 +1,138 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oss-device-message-api
+  labels:
+    app: device-message-api
+    group: api
+spec:
+  selector:
+    matchLabels:
+      app: device-message-api
+  replicas: {{ .Values.device_message_api.replicas }}
+  template:
+    metadata:
+      labels:
+        app: device-message-api
+        group: api
+        redeploy-timestamp: "1541993161"
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/config-maps.yaml") . | sha256sum }}
+      name: device-message-api
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: {{ .Values.device_message_api.nodeAffinityKey }}
+                operator: In
+                values: [{{ .Values.device_message_api.nodeType | quote }}]
+        {{- if .Values.device_message_api.podAntiAffinityEnabled }}
+        podAntiAffinity:
+           requiredDuringSchedulingIgnoredDuringExecution:
+             - labelSelector:
+                  matchExpressions:
+                    - key: "app"
+                      operator: In
+                      values:
+                        - device-message-api
+               topologyKey: "kubernetes.io/hostname"
+        {{- end }}
+      containers:
+      - name: device-message-api
+        image: {{ .Values.image.repository }}:{{ .Values.device_message_api.imageTag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command:
+        - sh
+        - -c
+        - "exec env mongodb_hosts=$NODE_NAME,$mongodb_qr_global_svc /bin/sh  /opt/device-message-api/bin/start.sh"
+        resources:
+{{ toYaml .Values.device_message_api.resources | indent 10 }}
+        ports:
+        - containerPort: 8080
+          name: tcp
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: node_name
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: app
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['app']
+        - name: ms
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['ms']
+        - name: msCtype
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['group']
+        envFrom:
+        - configMapRef:
+            name: oss-device-message-api-config
+        env:
+        - name: mqtt_user_password
+          valueFrom:
+            secretKeyRef:
+              name: device-message-api
+              key: mqtt-password
+        - name: mongodb_username
+          valueFrom:
+            secretKeyRef:
+              name: device-message-api
+              key: mongodb-user   
+        - name: mongodb_password
+          valueFrom:
+            secretKeyRef:
+              name: device-message-api
+              key: mongodb-password         
+        volumeMounts:
+        - mountPath: /usr/local/tomcat/logs
+          name: logs
+        - mountPath: /usr/local/tomcat/health
+          name: health
+        {{- if .Values.device_message_api.livenessProbe.enabled }}
+        livenessProbe:
+          initialDelaySeconds: {{ .Values.device_message_api.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.device_message_api.livenessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.device_message_api.livenessProbe.timeoutSeconds }}
+          successThreshold: {{ .Values.device_message_api.livenessProbe.successThreshold }}
+          failureThreshold: {{ .Values.device_message_api.livenessProbe.failureThreshold }}
+          exec:
+            command:
+            - sh
+            - -c
+            - /usr/local/tomcat/health/api_liveness.sh
+        {{- end }}
+        {{- if .Values.device_message_api.readinessProbe.enabled }}
+        readinessProbe:
+          initialDelaySeconds: {{ .Values.device_message_api.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.device_message_api.readinessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.device_message_api.readinessProbe.timeoutSeconds }}
+          successThreshold: {{ .Values.device_message_api.readinessProbe.successThreshold }}
+          failureThreshold: {{ .Values.device_message_api.readinessProbe.failureThreshold }}
+          exec:
+            command:
+            - sh
+            - -c
+            - /usr/local/tomcat/health/api_readiness.sh
+        {{- end }}
+      serviceAccountName: {{ include "device-message.fullname" . }}
+      volumes:
+      - name: logs
+        emptyDir: {}
+      - name: health
+        configMap:
+          name: oss-device-message-api-health-config
+          defaultMode: 0755
+          items:
+          - key: api_readiness.sh
+            path: api_readiness.sh
+          - key: api_liveness.sh
+            path: api_liveness.sh

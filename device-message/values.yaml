@@ -1,0 +1,99 @@
+# Default values for device message
+ms: "device-message"
+image:
+  repository: docker.io/eclipseecsp/device-message-api
+  pullPolicy: Always
+
+api_gateway:
+  api_registry_enabled: "true"
+  api_registry_service_name: "http://api-registry-int-svc"
+  api_gateway_service_name: "http://api-gateway-int-svc"
+  api_security_enabled: "false"
+  scopes_override_enabled: "false"
+  
+device_message_api:
+  jvmOpts: "-server -Xmx2G -Xms2G -XX:+UseG1GC -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35 -XX:+DisableExplicitGC -Djava.awt.headless=true"
+  nodeAffinityKey: "TO-BE-UPDATED" #  Change this to your node affinity key
+  nodeType: "default"
+  podAntiAffinityEnabled: true
+  replicas: 1
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  #resources:
+  #  requests:
+  #    memory: "0.75Gi"
+  #    cpu: "0.01"
+  imageTag: 1.0.0
+  mqtt_prefix_enabled: false
+  mqtt_prefix_topic: "TO-BE-UPDATED"
+  mongoHost: "TO-BE-UPDATED" #"<mongo-cluster>.<namespace>"
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-ssl-cert: arn:aws:acm:<TO-BE-UPDATED>:<TO-BE-UPDATED>:certificate/<TO-BE-UPDATED> # Change this to your certificate ARN
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: http
+    service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443"
+    service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: "300"
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 120
+    periodSeconds: 10
+    timeoutSeconds: 120
+    successThreshold: 1
+    failureThreshold: 30
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 120
+    successThreshold: 1
+    failureThreshold: 30
+  logLevel: "INFO"
+  health:
+    healthMongo: "true"
+    healthKafkaConsumer: "false"
+    healthKafkaTopics: "false"
+    healthDMA: "false"
+    healthDFF: "false"
+    healthRedis: "false"
+    healthMqtt: "false"
+
+mongodb:
+  host: "TO-BE-UPDATED" #"<mongo-cluster>.<namespace>"
+  port: "TO-BE-UPDATED"
+  secretName: TO-BE-UPDATED
+  databaseName: TO-BE-UPDATED
+  user: "TO-BE-UPDATED"
+  password: "TO-BE-UPDATED"
+
+global:
+  device-message:
+    cloud_service_provider: "TO-BE-UPDATED" #"aws"
+    default_timezone: "UTC"
+    default_locale: "en-US"
+    log:
+      FILE_LOG_ENABLED: "false"
+    api:
+      app_attachments_max_size: "10"
+      app_attachments_max_count: "5"
+
+logging:
+  logLevel: "INFO"
+  registryCommonLogLevel: "INFO"
+  igniteLogLevel: "INFO"
+  storageLogLevel: "INFO"
+  springLogLevel: "INFO"
+  svcLogLevel: "INFO"
+  svcConsoleLogLevel: "INFO"
+  cacheLogLevel: "INFO"
+  kafkaLogLevel: "INFO"
+  streamBaseLogLevel: "INFO"
+  logAppender: "STDOUT"
+  graylogHost: "TO-BE-UPDATED"
+  graylogPort: "TO-BE-UPDATED"
+
+mqtt:
+  password: "TO-BE-UPDATED"
+  mqtt_broker_url: "TO-BE-UPDATED" #"tcp://oss-hivemq-extension-int-svc:1883"
+
+

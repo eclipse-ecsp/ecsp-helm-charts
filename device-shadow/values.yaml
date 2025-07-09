@@ -1,0 +1,83 @@
+# Default values for device shadow
+ms: "device-shadow"
+image:
+  repository: docker.io/eclipseecsp
+  pullPolicy: Always
+
+api_gateway:
+  api_registry_service_name: "http://api-registry-int-svc"
+  api_gateway_service_name: "http://api-gateway-int-svc"
+  api_registry_enabled: "true"
+  api_security_enabled: "false"
+  scopes_override_enabled: "false"
+
+device_shadow_api:
+  jvmOpts: "-server -Xmx2G -Xms2G -XX:+UseG1GC -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35 -XX:+DisableExplicitGC -Djava.awt.headless=true -Dlogback.configurationFile=/device-shadow-api/conf/logback.xml"
+  nodeAffinityKey: "TO-BE-UPDATED" #  Change this to your node affinity key
+  nodeType: "default"
+  podAntiAffinityEnabled: true
+  replicas: 1
+  resources:
+    requests:
+      memory: "1Gi"
+      cpu: "0.01"
+  imageTag: 1.0.0
+  mongoHost: "TO-BE-UPDATED" #"<mongo-cluster>.<namespace>"
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 120
+    periodSeconds: 10
+    timeoutSeconds: 120
+    successThreshold: 1
+    failureThreshold: 30
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 120
+    successThreshold: 1
+    failureThreshold: 30
+  logLevel: "INFO"
+  health:
+    healthMongo: "true"
+    healthKafkaConsumer: "false"
+    healthKafkaTopics: "false"
+    healthDMA: "false"
+    healthDFF: "false"
+    healthRedis: "false"
+    healthMqtt: "false"
+
+
+global:
+  device-shadow:
+    cloud_service_provider: ""TO-BE-UPDATED" #"aws"
+    default_timezone: "UTC"
+    default_locale: "en-US"
+    log:
+      FILE_LOG_ENABLED: "false"
+    api:
+      app_attachments_max_size: "10"
+      app_attachments_max_count: "5"
+
+mongodb:
+  host: "TO-BE-UPDATED" #"<mongo-cluster>.<namespace>"
+  port: "TO-BE-UPDATED"
+  secretName: TO-BE-UPDATED
+  databaseName: TO-BE-UPDATED
+  user: "TO-BE-UPDATED"
+  password: "TO-BE-UPDATED"
+
+logging:
+  logLevel: "INFO"
+  registryCommonLogLevel: "INFO"
+  igniteLogLevel: "INFO"
+  storageLogLevel: "INFO"
+  springLogLevel: "INFO"
+  svcLogLevel: "INFO"
+  cacheLogLevel: "INFO"
+  kafkaLogLevel: "INFO"
+  streamBaseLogLevel: "INFO"
+  FILE_LOG_ENABLED: "false"
+  logAppender: "STDOUT"
+  graylogHost: "TO-BE-UPDATED"
+  graylogPort: "TO-BE-UPDATED"
