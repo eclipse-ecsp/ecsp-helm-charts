@@ -136,6 +136,7 @@ passwordUpdateTimeInterval: "1"
 additional_attr_check_enabled_for_sign_up: false
 userDefaultAccountName: "userdefaultaccount"
 uidam:
+  db_schema: "eclipseecsp"
   account_id: "TO-BE-UPDATED"
   account_name: "TO-BE-UPDATED"
   account_type: "TO-BE-UPDATED"
