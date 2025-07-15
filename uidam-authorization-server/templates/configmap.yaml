@@ -103,7 +103,7 @@ data:
   ###DAO Configuration###
   health_postgresdb_monitor_enabled: {{ .Values.health.postgresdb.monitor.enabled | quote }}
   health_postgresdb_monitor_restart_on_failure: {{ .Values.health.postgresdb.monitor.restart_on_failure | quote}}
-  postgres_max_pool_size: {{ .Values.max_pool_size | quote }}
+  postgres_max_pool_size: {{ .Values.postgres.max_pool_size | quote }}
   metrics_prometheus_enabled: {{ .Values.metrics.prometheus.enabled | quote}}
   postgres_max_idle_time: {{ .Values.postgres.max_idle_time | quote }}
   postgres_data_source_properties_cachePrepStmts: {{ .Values.postgres.data_source_properties.cachePrepStmts | quote }}
