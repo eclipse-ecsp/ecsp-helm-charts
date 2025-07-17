@@ -189,15 +189,6 @@ api_registry:
     prometheus:
       enabled: true
       path: /metrics
-    datadog:
-      enabled: true
-      uri: https://api.datadoghq.com
-      descriptions: true
-      read-timeout: 5s
-      connect-timeout: 5s
-      batch-size: 1000
-      step: 1m
-      host-tag: "api-registry"
     health:
       enabled: true
       path: /health
@@ -213,17 +204,22 @@ api_registry:
       env: ignite-dev
       host: api-registry
       application: api-registry
-  storageLogLevel: "ERROR"
-  springLogLevel: "ERROR"
-  svcLogLevel: "ERROR"
-  svcConsoleLogLevel: "ERROR"
-  cacheLogLevel: "ERROR"
-  logAppender: "ASYNC-GELF"
-  graylogHost: "TO-BE-UPDATED" # Change this to your Graylog host
-  graylogPort: "TO-BE-UPDATED" # Change this to your Graylog port      
   extraParams:
 
-
+logging:
+  logLevel: "INFO"
+  gatewayLogLevel: "INFO"
+  igniteLogLevel: "INFO"
+  storageLogLevel: "ERROR"
+  springLogLevel: "INFO"
+  svcLogLevel: "INFO"
+  svcConsoleLogLevel: "INFO"
+  cacheLogLevel: "ERROR"
+  kafkaLogLevel: "ERROR"
+  streamBaseLogLevel: "ERROR"
+  logAppender: "STDOUT"
+  graylogHost: "TO-BE-UPDATED"
+  graylogPort: "TO-BE-UPDATED"
 
 # Ingress configuration to configure the ingress resource
 ingress:
