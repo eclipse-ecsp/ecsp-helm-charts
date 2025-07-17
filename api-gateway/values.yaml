@@ -183,6 +183,36 @@ api_registry:
     restartOnDBFailure: true
   metrics:
     databaseMetricsEnabled: true
+    enabled: true
+    basePath: /registry
+    port: 9100
+    prometheus:
+      enabled: true
+      path: /metrics
+    datadog:
+      enabled: true
+      uri: https://api.datadoghq.com
+      descriptions: true
+      read-timeout: 5s
+      connect-timeout: 5s
+      batch-size: 1000
+      step: 1m
+      host-tag: "api-registry"
+    health:
+      enabled: true
+      path: /health
+    httpServerRequests:
+      prefix: "http.server.requests"
+    httpClientRequests:
+      prefix: "http.client.requests"
+    serviceHealth:
+      prefix: "service.health.status"
+    serviceRoutes:
+      prefix: "service.route.count"
+    commonTags:
+      env: ignite-dev
+      host: api-registry
+      application: api-registry
   storageLogLevel: "ERROR"
   springLogLevel: "ERROR"
   svcLogLevel: "ERROR"
