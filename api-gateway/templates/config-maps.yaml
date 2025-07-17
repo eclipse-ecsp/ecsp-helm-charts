@@ -120,12 +120,12 @@ data:
   spring_cloud_gateway_metrics_enabled: {{ .Values.api_gateway.metrics.gatewayRequests.enabled | quote }}
   spring_cloud_gateway_metrics_prefix: {{ .Values.api_gateway.metrics.gatewayRequests.prefix | quote }}
   management_server_port: {{ .Values.api_gateway.metrics.port | quote }}
-{{- if .Values.api_gateway3.metrics.prometheus.enabled }}
+{{- if .Values.api_gateway.metrics.prometheus.enabled }}
   management_endpoint_prometheus_access: "read-only"
 {{- else }}
   management_endpoint_prometheus_access: "none"
 {{- end }}
-{{- if .Values.api_gateway3.metrics.health.enabled }}
+{{- if .Values.api_gateway.metrics.health.enabled }}
   management_endpoint_health_access: "read-only"
 {{- else }} 
   management_endpoint_health_access: 'none'
