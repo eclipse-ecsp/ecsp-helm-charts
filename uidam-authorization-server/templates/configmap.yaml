@@ -99,7 +99,7 @@ data:
   server_servlet_session_timeout: {{ .Values.server_servlet_session_timeout | quote }}
   ###Force user to login always in Auth Code/PKCE flow###
   user_session_force_login: {{ .Values.user_session_force_login | quote }}
-  sessionSESSION_RECREATION_POLICY: "ALWAYS"
+  SESSION_RECREATION_POLICY: "ALWAYS"
 
   ###DAO Configuration###
   health_postgresdb_monitor_enabled: {{ .Values.health.postgresdb.monitor.enabled | quote }}
