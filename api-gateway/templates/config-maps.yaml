@@ -18,15 +18,19 @@ data:
   api_registry_enabled: {{ .Values.api_gateway.apiRegistryEnabled | quote }}
   api_registry_service_name: {{ .Values.api_gateway.registry_service_name | quote }}
   api_isFilterOverrideEnabled: {{ .Values.api_gateway.isFilterOverrideEnabled | quote }}
-  api_caching_enabled: {{ .Values.api_gateway.cachingEnabled | quote }}
-  spring.cloud.gateway.filter.local-response-cache.enabled: {{ .Values.api_gateway.localCachingEnabled | quote }}
-  spring.cloud.gateway.filter.redis.cache.enabled: {{ .Values.api_gateway.redisCachingEnabled | quote }}
   spring.cloud.gateway.httpserver.max-header-size: "16384"
   api_userId_field: {{ .Values.api_gateway.userIdField | quote }}
   api_overrideFilterConfig_JwtAuthValidator_filterName: {{ .Values.api_gateway.overrideFilterConfig.JwtAuthValidator.filterName | quote }}
   plugin_path: {{ .Values.api_gateway.customPlugins.libraryPath | quote }}
   plugin_classes: {{ .Values.api_gateway.customPlugins.pluginClasses | quote }}
   plugin_enabled: {{ .Values.api_gateway.customPlugins.enabled | quote }}
+{{- if .Values.api_gateway.customPlugins.enabled }}
+{{- $firstClass := (splitList "," .Values.api_gateway.customPlugins.pluginClasses | first | trim) }}
+{{- $packageParts := splitList "." $firstClass }}
+{{- $packageNameRaw := (join "." (slice $packageParts 0 (sub (len $packageParts) 1))) }}
+{{- $packageName := regexReplaceAll "\\.$" $packageNameRaw "" }}
+  CUSTOM_PLUGINS_PACKAGE: {{ $packageName | quote }}
+{{- end }}
   spring_main_allow-circular-references: "true"
   jwt_publicKeyFiles: {{ .Values.api_gateway.jwt_publicKeyFiles | quote }}
   jwt_publicKeyFilePath: {{ .Values.api_gateway.jwt_publicKeyFilePath | quote }}
@@ -36,10 +40,10 @@ data:
   jwt_tokenHeaderValidationConfig_accountId_regex: {{ .Values.api_gateway.tokenHeaderConfig.accountIdRegex | quote }}
   springdoc_swagger-ui_oauth2RedirectUrl: "https://{{ .Values.ingress.host }}.{{ .Values.api_gateway.environmentDomainName }}"
   spring_cloud_kubernetes_discovery_discovery-server-url: "http://api-registry-int-svc:7000"
-  spring_cloud_gateway_globalcors_corsConfigurations_config_allowedOriginPatterns: {{ .Values.api_gateway.globalCorsConfigurations.allowedOriginPatterns | quote }}
-  spring_cloud_gateway_globalcors_corsConfigurations_config_maxAge: {{ .Values.api_gateway.globalCorsConfigurations.maxAge | quote }}
-  spring_cloud_gateway_globalcors_corsConfigurations_config_allowedMethods: {{ .Values.api_gateway.globalCorsConfigurations.allowedMethods | quote }}
-  spring_cloud_gateway_globalcors_corsConfigurations_config_allowedHeaders: {{ .Values.api_gateway.globalCorsConfigurations.allowedHeaders | quote }}
+  spring_cloud_gateway_server_webflux_globalcors_cors-configurations_config_allowedOriginPattern: {{ .Values.api_gateway.globalCorsConfigurations.allowedOriginPatterns | quote }}
+  spring_cloud_gateway_server_webflux_globalcors_cors-configurations_config_maxAge: {{ .Values.api_gateway.globalCorsConfigurations.maxAge | quote }}
+  spring_cloud_gateway_server_webflux_globalcors_cors-configurations_config_allowedMethods: {{ .Values.api_gateway.globalCorsConfigurations.allowedMethods | quote }}
+  spring_cloud_gateway_server_webflux_globalcors_cors-configurations_config_allowedHeaders: {{ .Values.api_gateway.globalCorsConfigurations.allowedHeaders | quote }}
   api_caching_enabled: {{ .Values.api_gateway.cachingEnabled | quote }}
   api_caching_ttl: {{ .Values.api_gateway.cacheTtl | quote }}
   api_caching_type: {{ .Values.api_gateway.cachingType | quote }}
@@ -117,31 +121,54 @@ data:
   api_gateway_metrics_http-client-requests_distribution_buckets: {{ .Values.api_gateway.metrics.httpClientRequests.distribution.buckets | quote }}
   api_gateway_metrics_http-client-requests_distribution_expiry: {{ .Values.api_gateway.metrics.httpClientRequests.distribution.expiry | quote }}
   api_gateway_metrics_http-client-requests_distribution_bufferLength: {{ .Values.api_gateway.metrics.httpClientRequests.distribution.bufferLength | quote }}
-  spring_cloud_gateway_metrics_enabled: {{ .Values.api_gateway.metrics.gatewayRequests.enabled | quote }}
-  spring_cloud_gateway_metrics_prefix: {{ .Values.api_gateway.metrics.gatewayRequests.prefix | quote }}
+  spring_cloud_gateway_server_webflux_metrics_enabled: {{ .Values.api_gateway.metrics.gatewayRequests.enabled | quote }}
+  spring_cloud_gateway_server_webflux_metrics_prefix: {{ .Values.api_gateway.metrics.gatewayRequests.prefix | quote }}
   management_server_port: {{ .Values.api_gateway.metrics.port | quote }}
-{{- if .Values.api_gateway.metrics.prometheus.enabled }}
+{{- if  and (.Values.api_gateway.metrics.enabled) (.Values.api_gateway.metrics.prometheus.enabled) }}
   management_endpoint_prometheus_access: "read-only"
+  management_prometheus_metrics_export_enabled: "true"
+  management_endpoints_web_path-mapping_prometheus: {{ .Values.api_gateway.metrics.prometheus.path | quote }}
 {{- else }}
   management_endpoint_prometheus_access: "none"
+  management_metrics_export_prometheus_enabled: "false"
 {{- end }}
-{{- if .Values.api_gateway.metrics.health.enabled }}
+{{- if and (.Values.api_gateway.metrics.enabled) (.Values.api_gateway.metrics.health.enabled) }}
   management_endpoint_health_access: "read-only"
+  management_endpoint_health_probes_enabled: "true"
+  management_endpoints_web_path-mapping_health: {{ .Values.api_gateway.metrics.health.path | quote }}
 {{- else }} 
   management_endpoint_health_access: 'none'
+  management_endpoint_health_probes_enabled: "false"
 {{- end }}
   management_endpoints_access_default: "none"
   management_endpoint_health_show-components: "ALWAYS"
   management_endpoints_web_exposure_include: "health, prometheus"
   management_endpoints_web_exposure_exclude: "gateway, beans, cache, conditions, configprops, auditevents, env, flyway, httpexchanges, info, integrationgraph, loggers, liquibase, metrics, mappings, quartz, scheduledtasks, sessions, shutdown, startup, threaddump, heapdump, logfile"
   management_endpoints_web_base-path: {{ .Values.api_gateway.metrics.basePath | quote }}
-  management_endpoints_web_path-mapping_prometheus: {{ .Values.api_gateway.metrics.prometheus.path | quote }}
-  management_endpoints_web_path-mapping_health: {{ .Values.api_gateway.metrics.health.path | quote }}
   management_endpoints_jmx_exposure_exclude: "*"
   management_metrics_enabled: {{ .Values.api_gateway.metrics.enabled | quote }}
-  management_metrics_tags_application: "api-gateway"
-  management_metrics_export_prometheus_enabled: {{ .Values.api_gateway.metrics.prometheus.enabled | quote }}
-  management_health_probes_enabled: {{ .Values.api_gateway.metrics.health.enabled | quote }}
+  api_gateway_metrics_public-key-cache_enabled: {{ .Values.api_gateway.metrics.publicKeyCache.enabled | quote }}
+  api_gateway_metrics_public-key-cache_cache-size_name: {{ .Values.api_gateway.metrics.publicKeyCache.cacheSize.name | quote }}
+  api_gateway_metrics_public-key-cache_key-sources_name: {{ .Values.api_gateway.metrics.publicKeyCache.keySources.name | quote }}
+  api_gateway_metrics_public-key-cache_refresh-source-count_name: {{ .Values.api_gateway.metrics.publicKeyCache.refreshSourceCount.name | quote }}
+  api_gateway_metrics_public-key-cache_refresh-source-time_name: {{ .Values.api_gateway.metrics.publicKeyCache.refreshSourceTime.name | quote }}
+{{- if and (.Values.api_gateway.metrics.enabled) (.Values.api_gateway.metrics.datadog.enabled) }}
+  api_gateway_datadog_enabled: "true"
+  management_datadog_metrics_export_enabled: "true"
+  management_datadog_metrics_export_uri: {{ .Values.api_gateway.metrics.datadog.uri | quote }}
+  management_datadog_metrics_export_descriptions: {{ .Values.api_gateway.metrics.datadog.descriptions | quote }}
+  management_datadog_metrics_export_read-timeout: {{ .Values.api_gateway.metrics.datadog.readTimeout | quote }}
+  management_datadog_metrics_export_connect-timeout: {{ .Values.api_gateway.metrics.datadog.connectTimeout | quote }}
+  management_datadog_metrics_export_batch-size: {{ .Values.api_gateway.metrics.datadog.batchSize | quote }}
+  management_datadog_metrics_export_step: {{ .Values.api_gateway.metrics.datadog.step | quote }}
+  management_datadog_metrics_export_host-tag: {{ .Values.api_gateway.metrics.datadog.hostTag | quote }}
+{{- else }}
+  api_gateway_datadog_enabled: "false"
+  management_datadog_metrics_export_enabled: "false"
+{{- end }}
+{{- range $key, $value := .Values.api_gateway.metrics.commonTags }}
+  management_metrics_tags_{{ $key }}: {{ $value | quote }}
+{{- end }}
   api_gateway_accesslog_enabled: {{ .Values.api_gateway.accesslog.enabled | quote }}
   api_gateway_accesslog_request-headers_enabled: {{ .Values.api_gateway.accesslog.requestHeaders.enabled | quote }}
   api_gateway_accesslog_request-headers_skip-headers: {{ .Values.api_gateway.accesslog.requestHeaders.skipHeaders | quote }}
@@ -149,6 +176,39 @@ data:
   api_gateway_accesslog_response-headers_skip-headers: {{ .Values.api_gateway.accesslog.responseHeaders.skipHeaders | quote }}
   api_gateway_accesslog_response-body_enabled: {{ .Values.api_gateway.accesslog.responseBody.enabled | quote }}
   api_gateway_accesslog_response-body_skip-for-routes: {{ .Values.api_gateway.accesslog.responseBody.skipForRoutes | quote }}
+## jwt key source configuration
+{{- range $i, $keySource :=  .Values.api_gateway.jwt.keySources }}
+  jwt_key-sources_{{ $i }}_id: {{ $keySource.id }}
+  jwt_key-sources_{{ $i }}_issuer: {{ $keySource.issuer | quote }}
+  {{- if $keySource.type }}
+  jwt_key-sources_{{ $i }}_type: {{ $keySource.type | quote }}
+  {{- end }}
+  {{- if $keySource.url }}
+  jwt_key-sources_{{ $i }}_url: {{ $keySource.url | quote }}
+  {{- end }}
+  {{- if $keySource.location }}
+  jwt_key-sources_{{ $i }}_location: {{ $keySource.location | quote }}
+  {{- end }}
+  {{- if $keySource.default }}
+  jwt_key-sources_{{ $i }}_default: "true"
+  {{- end }}
+  {{- if $keySource.refreshInterval }}
+  jwt_key-sources_{{ $i }}_refresh-interval: {{ $keySource.refreshInterval | quote }}
+  {{- end }}
+  {{- if $keySource.useProviderPrefixedKey }}
+  jwt_key-sources_{{ $i }}_use-provider-prefixed-key: {{ $keySource.useProviderPrefixedKey | quote }}
+  {{- end }}
+{{- end }}
+## jwt token header validation configuration
+{{- range $i, $tokenHeader := .Values.api_gateway.jwt.tokenHeaderValidationConfig }}
+  jwt_token-header-validation-config_{{ $i }}_required: {{ $tokenHeader.required | quote }}
+  jwt_token-header-validation-config_{{ $i }}_regex: {{ $tokenHeader.regex | quote }}
+{{- end }}
+# token header claim mapping
+{{- range $i, $tokenHeader := .Values.api_gateway.jwt.claimToHeaderMapping }}
+  jwt_token-claim-to-header-mapping_{{ $i }}: {{ $tokenHeader | quote }}
+{{- end }}
+# extra params
 {{- if .Values.api_gateway.extraParams }}
 {{ toYaml .Values.api_gateway.extraParams | indent 2 }}
 {{- end }}
