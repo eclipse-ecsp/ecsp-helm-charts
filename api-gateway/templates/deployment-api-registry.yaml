@@ -83,6 +83,7 @@ spec:
               key: password          
         - name: CATALINA_OPTS
           value : "{{ .Values.api_registry.jvmOpts }} {{ .Values.api_registry.javaOpts }}"
+        {{- if and (.Values.api_registry.metrics.enabled) (.Values.api_registry.metrics.datadog.enabled) }}
         - name: management_datadog_metrics_export_api-key
           valueFrom:
             secretKeyRef:
@@ -93,6 +94,7 @@ spec:
             secretKeyRef:
               name: api-registry-datadog-credentials
               key: application-key
+        {{- end }}
         envFrom:
         - configMapRef:
             name: {{ include "api-registry.fullname" . }}-config

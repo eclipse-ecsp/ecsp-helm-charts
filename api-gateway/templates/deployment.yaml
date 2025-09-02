@@ -69,6 +69,7 @@ spec:
               fieldPath: spec.nodeName
         - name: CATALINA_OPTS
           value : "{{ .Values.api_gateway.jvmOpts }} {{ .Values.api_gateway.javaOpts }}"
+        {{- if and (.Values.api_gateway.metrics.enabled) (.Values.api_gateway.metrics.datadog.enabled) }}
         - name: management_datadog_metrics_export_api-key
           valueFrom:
             secretKeyRef:
@@ -79,6 +80,7 @@ spec:
             secretKeyRef:
               name: api-gateway-datadog-credentials
               key: application-key
+        {{- end }}
         envFrom:
         - configMapRef:
             name: api-gateway-config
