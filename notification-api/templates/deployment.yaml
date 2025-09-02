@@ -1,0 +1,103 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oss-notification-api
+  labels:
+    app: notification-api
+    group: api
+    ms: {{ .Values.ms | quote }}
+spec:
+  selector:
+    matchLabels:
+      app: notification-api
+  replicas: {{ .Values.replicaCount }}
+  template:
+    metadata:
+      labels:
+        app: notification-api
+        group: api
+        ms: {{ .Values.ms | quote }}
+      name: notification-api
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/config-maps.yaml") . | sha256sum }}
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: {{ .Values.notification_api.key | quote }}
+                operator: In
+                values: [{{ .Values.notification_api.nodeType | quote }}]
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: "app"
+                    operator: In
+                    values:
+                    - notification-api
+              topologyKey: "kubernetes.io/hostname"
+      securityContext:
+        runAsUser: 1000
+        fsGroup: 2000
+      serviceAccountName: {{ include "notification-api.fullname" . }}
+      imagePullSecrets: {{- toYaml .Values.imagePullSecrets | nindent 8 }}
+      containers:
+      - name: notification-api
+        image: {{ .Values.image.repository }}/{{ .Values.ms }}:{{ .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        securityContext:
+          privileged: false
+          allowPrivilegeEscalation: false
+        command:
+        - sh
+        - -c
+        - "env /bin/sh /notification-api/bin/start.sh"
+        ports:
+        - containerPort: 8080
+          name: tcp
+        resources:
+{{ toYaml .Values.notification_api.resources | indent 10 }}
+        env:
+        - name: maxNonRegisteredRecipientsPerRequest
+          valueFrom:
+            configMapKeyRef:
+              name: oss-notification-api-config
+              key: max_non_registered_recipients_per_request
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: app
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['app']
+        - name: ms
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['ms']
+        - name: msCtype
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['group']
+        - name: mongodb_username
+          valueFrom:
+            secretKeyRef:
+              name: oss-nc-api-secrets
+              key: mongodb-user
+        - name: mongodb_password
+          valueFrom:
+            secretKeyRef:
+              name: oss-nc-api-secrets
+              key: mongodb-password
+        envFrom:
+        - configMapRef:
+            name: oss-notification-api-config
+        volumeMounts:
+          - mountPath: /usr/local/tomcat/logs
+            name: logs
+      volumes:
+        - name: logs
+          emptyDir: {}
