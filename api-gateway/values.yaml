@@ -88,8 +88,8 @@ api_gateway:
     datadog:
       enabled: false
       uri: https://api.datadoghq.eu
-      apiKey: "TO-BE-UPDATED"
-      applicationKey: "TO-BE-UPDATED"
+      apiKey: "<TO-BE-UPDATED>"
+      applicationKey: "<TO-BE-UPDATED>"
       descriptions: true
       readTimeout: 5s
       connectTimeout: 5s
@@ -161,10 +161,10 @@ api_gateway:
       skipHeaders: "Authorization,user-id"
     responseHeaders:
       enabled: "true"
-      skipHeaders: "headername1, headername2"
+      skipHeaders: "<headername1>, <headername2>"
     responseBody:
       enabled: "true"      
-      skipForRoutes: "routeId1, routeid2"
+      skipForRoutes: "<routeId1>, <routeid2>"
   jwt:
     scopePrefixes: "<token_scope_prefix>"
     keySources:
