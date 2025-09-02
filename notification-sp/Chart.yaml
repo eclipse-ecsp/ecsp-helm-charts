@@ -1,0 +1,4 @@
+apiVersion: v1
+description: A Helm chart for Notification SP
+name: notification-sp
+version: 1.0.51
