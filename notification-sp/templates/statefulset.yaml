@@ -1,0 +1,144 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: oss-notification-sp
+  labels:
+    app: notification-sp
+    group: streaming
+    ms: {{ .Values.ms | quote }}
+spec:
+  serviceName: notification-sp-svc
+  selector:
+    matchLabels:
+      app: notification-sp
+  replicas: {{ .Values.notification_sp.replicas }}
+  podManagementPolicy: Parallel
+  template:
+    metadata:
+      labels:
+        app: notification-sp
+        group: streaming
+        ms: {{ .Values.ms | quote }}
+        redeploy-timestamp: "1540547227"
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/config-maps.yaml") . | sha256sum }}
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: {{ .Values.notification_sp.key | quote }}
+                operator: In
+                values: [{{ .Values.notification_sp.nodeType | quote }}]
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: "app"
+                    operator: In
+                    values:
+                    - notification-sp
+              topologyKey: "kubernetes.io/hostname"
+      securityContext:
+        runAsUser: 1000
+        fsGroup: 2000
+      serviceAccountName: {{ include "notification-sp.fullname" . }}
+      imagePullSecrets: {{- toYaml .Values.imagePullSecrets | nindent 8 }}  
+      initContainers:
+        - name: kafka-topics-creation
+          image: {{ .Values.image.kafkarepository }}/ignite-kafka-utils:{{ .Values.kafka_utils.imageTag }}
+          imagePullPolicy: Always
+          command: ["/etc/confluent/docker/launch"]
+          env:
+            - name: action
+              value : "createTopics"
+            - name: ZOOKEEPER_URL
+              value: {{ .Values.kafka.zookeeperConnect | quote }}
+          volumeMounts:
+            - mountPath: /data
+              name: topics-config
+{{- if .Values.global.notification.extraInitContainers }}
+{{ toYaml .Values.global.notification.extraInitContainers | indent 8 }}
+{{- end }}            
+      containers:
+      - name: notification-sp
+        image: {{ .Values.image.repository }}/{{ .Values.notification_sp.imageName }}:{{ .Values.notification_sp.imageTag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        securityContext:
+          privileged: false
+          allowPrivilegeEscalation: false
+        command: ['/bin/sh', '-c', '[ "$(ls -A /target)" ] && cp -r /target/* /opt/notification/jar/plugins/. || echo "Target dir is empty" && exec env aws.access.key=$AWS_ACCESS_KEY aws.secret.key=$AWS_SECRET_KEY /opt/notification/bin/start.sh']
+        resources:
+{{ toYaml .Values.notification_sp.resources | indent 10 }}
+        env:
+        - name: maxNonRegisteredRecipientsPerRequest
+          valueFrom:
+            configMapKeyRef:
+              name: oss-notification-sp-config
+              key: max_non_registered_recipients_per_request
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: app
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['app']
+        - name: ms
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['ms']
+        - name: msCtype
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['group']
+        - name: mqtt_user_password
+          valueFrom:
+            secretKeyRef:
+              name: oss-nc-sp-secrets
+              key: mqtt-password
+        - name: mongodb_username
+          valueFrom:
+            secretKeyRef:
+              name: oss-nc-sp-secrets
+              key: mongodb-user
+        - name: mongodb_password
+          valueFrom:
+            secretKeyRef:
+              name: oss-nc-sp-secrets
+              key: mongodb-password
+        envFrom:
+          - configMapRef:
+              name: oss-notification-sp-config
+        volumeMounts:
+          - mountPath: /data
+            name: topics-config
+          - mountPath: /mnt/ebs0/kafka-streams/notification
+            name: notification-sp-data
+          - mountPath: /logs
+            name: notification-sp-logs
+          - name: plugins
+            mountPath: /target
+          - mountPath: /mnt/nc-sp/fcm/
+            name: fcm-service-account
+      volumes:
+        - name: notification-sp-logs
+          emptyDir: {}
+        - name: topics-config
+          configMap:
+            name: oss-notification-sp-topics
+        - name: plugins
+          emptyDir: {}
+        - name: fcm-service-account
+          secret:
+            secretName: oss-nc-sp-secrets
+  volumeClaimTemplates:
+  - metadata:
+      name: notification-sp-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "ebs-sc"
+      resources:
+        requests:
+          storage: 10Gi
