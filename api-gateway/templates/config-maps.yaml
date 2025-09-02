@@ -32,12 +32,6 @@ data:
   CUSTOM_PLUGINS_PACKAGE: {{ $packageName | quote }}
 {{- end }}
   spring_main_allow-circular-references: "true"
-  jwt_publicKeyFiles: {{ .Values.api_gateway.jwt_publicKeyFiles | quote }}
-  jwt_publicKeyFilePath: {{ .Values.api_gateway.jwt_publicKeyFilePath | quote }}
-  jwt_tokenHeaderValidationConfig_tenantId_required: {{ .Values.api_gateway.tokenHeaderConfig.tenantIdRequired | quote }}
-  jwt_tokenHeaderValidationConfig_tenantId_regex: {{ .Values.api_gateway.tokenHeaderConfig.tenantIdRegex | quote }}
-  jwt_tokenHeaderValidationConfig_accountId_required: {{ .Values.api_gateway.tokenHeaderConfig.accountIdRequired | quote }}
-  jwt_tokenHeaderValidationConfig_accountId_regex: {{ .Values.api_gateway.tokenHeaderConfig.accountIdRegex | quote }}
   springdoc_swagger-ui_oauth2RedirectUrl: "https://{{ .Values.ingress.host }}.{{ .Values.api_gateway.environmentDomainName }}"
   spring_cloud_kubernetes_discovery_discovery-server-url: "http://api-registry-int-svc:7000"
   spring_cloud_gateway_server_webflux_globalcors_cors-configurations_config_allowedOriginPattern: {{ .Values.api_gateway.globalCorsConfigurations.allowedOriginPatterns | quote }}
