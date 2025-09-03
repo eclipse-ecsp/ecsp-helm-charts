@@ -1,0 +1,113 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+    name: oss-notification-api-config
+    labels:
+        app: notification-api
+        group: api
+        ms: {{ .Values.ms | quote }}
+data:
+    kafka_sink_topic: "notification"
+    CATALINA_OPTS: {{ .Values.notification_api.jvmOpts | quote }}
+    JAVA_OPTIONS: {{ .Values.notification_api.javaOpts | quote }}
+    encode.type: "Base64"
+    hash.algorithm: "SHA-256"
+    metrics_enabled: "false"
+    mongodb_port: {{ .Values.mongodb.port | quote }}
+    mongodb_auth_db: "admin"
+    mongodb_name: {{ .Values.mongodb.databaseName | quote }}
+    mongodb_username: {{ .Values.mongodb.user | quote }}
+    mongodb_password: {{ .Values.mongodb.password | quote }}
+    mongodb_client_cleanup_interval_ms: "600000"
+    mongodb_client_create_retry_count: "3"
+    mongodb_client_close_wait_interval_ms: "300000"
+    mongodb_vault_refresh_interval_ms: "60000"
+    mongodb_vault_lease_interval_ms: "300000"
+    mongodb_hosts: {{ .Values.mongodb.host | quote }}
+    mongodb_collection_shardkey_map: {{ .Values.notification_api.mongodbCollectionShardkeyMap | quote }}
+    LOG_FILE_LOCATION: "logs/notification-api.log"
+    mongodb_taggable_read_preference_enabled: "false"
+    mongodb_read_preference_tag: "primary_region"
+    metrics_prometheus_enabled: "false"
+    enable_ignite_notification_history: {{ .Values.notification_api.igniteHistory | quote }}
+    cloud_service_provider: {{ .Values.global.notification.cloud_service_provider | quote }}
+    ignite_kmsArn: {{ .Values.global.notification.igniteKmsArn | quote }}
+    http_vp_url: "http://oss-vehicle-profile-api-int-svc:8080/v1.0/vehicleProfiles/"
+    http_vp_vin_url: {{ .Values.notification_api.http_vp_vin_url | quote }}
+    http_vp_platform_ids: {{ .Values.notification_api.http_vp_platform_ids | quote }}
+    device.association.base.url: http://oss-association-api-int-svc:8080/vehicle-association-service/
+    http.vehicles.url: http://oss-vehicle-profile-api-int-svc:8080/v1.0/vehicles
+    http.associated.vehicles.url: http://oss-association-api-int-svc:8080/vehicle-association-service
+    path_for_getting_services: {{ .Values.global.notification.pathForGettingServices | default .Values.notification_api.pathForGettingServices | quote }}
+    enable_entitlement_validation: {{ .Values.notification_api.enableEntitlementValidation | quote }}
+    app_attachments_max-size: {{ .Values.global.notification.api.app_attachments_max_size | quote }}
+    app_attachments_max_count: {{ .Values.global.notification.api.app_attachments_max_count | quote }}    
+    enable_ignite_vehicle_profile: {{ .Values.notification_api.enable_ignite_vehicle_profile | quote }}
+    bootstrap_servers: {{ .Values.kafka.brokerUrl | quote }}
+    kafka_ssl_enable: {{ .Values.kafka.sslEnable | quote }}
+    kafka_broker_url: {{ .Values.kafka.brokerUrl | quote }}
+    zookeeper_connect: {{ .Values.kafka.zookeeperConnect | quote }}
+    bootstrap.servers: {{ .Values.kafka.brokerUrl | quote }}
+    kafka_ssl.enable: {{ .Values.kafka.sslEnable | quote }}
+    kafka.broker.url: {{ .Values.kafka.brokerUrl | quote }}
+    zookeeper.connect: {{ .Values.kafka.zookeeperConnect | quote }}
+    FILE_LOG_ENABLED: {{ .Values.global.notification.log.FILE_LOG_ENABLED | quote }}
+    LOG_LEVEL: {{ .Values.logging.logLevel | quote }}
+    IGNITE_LOG_LEVEL: {{ .Values.logging.igniteLogLevel | quote }}
+    STORAGE_LOG_LEVEL: {{ .Values.logging.storageLogLevel | quote }}
+    SPRING_LOG_LEVEL: {{ .Values.logging.springLogLevel | quote }}
+    SVC_LOG_LEVEL: {{ .Values.logging.svcLogLevel | quote }}
+    CACHE_LOG_LEVEL: {{ .Values.logging.cacheLogLevel | quote }}
+    KAFKA_LOG_LEVEL: {{ .Values.logging.kafkaLogLevel | quote }}
+    STREAM_BASE_LOG_LEVEL: {{ .Values.logging.streamBaseLogLevel | quote }}
+    NEVER_BLOCK_FOR_GRAYLOG: "true"
+    GRAYLOG_HOST: {{ .Values.logging.graylogHost | quote }}
+    GRAYLOG_PORT: {{ .Values.logging.graylogPort | quote }}
+    LOG_APPENDER: {{ .Values.notification_api.logAppender | quote }}
+    REGISTRY_COMMON_LOG_LEVEL: {{ .Values.logging.registryCommonLogLevel | quote }}
+    max_non_registered_recipients_per_request: {{ .Values.global.notification.max_non_registered_recipients_per_request | quote }}
+    health_mqtt_monitor_enabled : {{ .Values.notification_api.health.healthMqtt | quote }}
+    health_mongo_monitor_enabled : {{ .Values.notification_api.health.healthMongo | quote }}
+    health_kafka_consumer_group_monitor_enabled : {{ .Values.notification_api.health.healthKafkaConsumer | quote }}
+    health_device_status_backdoor_monitor_enabled : {{ .Values.notification_api.health.healthDMA | quote }}
+    health_dff_feed_backdoor_monitor_enabled : {{ .Values.notification_api.health.healthDFF | quote }}
+    health_kafka_topics_monitor_enabled : {{ .Values.notification_api.health.healthKafkaTopics | quote }}
+    health_redis_monitor_enabled : {{ .Values.notification_api.health.healthRedis | quote }}
+    redis.read.mode: "MASTER"
+    redis.subscription.mode: "MASTER"
+    redis.sentinels: {{ .Values.notification_api.redisSentinels | quote }}
+    redis.cluster.masters: {{ .Values.notification_api.redisCluster | quote }}
+    redis.scan.limit: "10000"
+    redis.scan.interval: "10000"
+    redis.master.name: redis-sentinel
+    redis.idle.conn.timeout: {{ .Values.notification_api.redisIdleConnTimeout | quote }}
+    redis.conn.timeout: {{ .Values.notification_api.redisConnTimeout | quote }}
+    redis.master.conn.pool.size: {{ .Values.notification_api.redisMasterConnPoolSize | quote }}
+    redis.timeout: {{ .Values.notification_api.redisTimeout | quote }}
+    redis.master.conn.min.idle.size: {{ .Values.notification_api.redisMasterConnMinIdlePoolSize | quote }}
+    redis.reconnection.timeout: {{ .Values.notification_api.redisReconnectionTimeout | quote }}
+    ignite_user_management_url : {{ .Values.global.notification.ignite_user_management_url | quote }}
+    idam_server: {{ .Values.global.notification.idam_server | quote }}
+    sender_id_default: {{ .Values.global.notification.sender_id_default | default "NOTICE" | quote }}
+    ignite_core_federated_prefix : {{ .Values.global.notification.ignite_core_federated_prefix | quote }}
+    timezone_default_value: {{ .Values.global.notification.default_timezone | quote }}
+    notification_schedule_max_period_days: {{ .Values.global.notification.notification_schedule_max_period_days | default "365" | quote }}
+    locale_default_value: {{ .Values.global.notification.default_locale | quote }}
+    fixedDelayRate: {{ .Values.notification_api.fixedDelayRate | quote }}
+    filterListPath: {{ .Values.notification_api.filterListPath | quote }}    
+    api_registry_enabled: {{ .Values.notification_api.apiRegistryEnabled | quote }}
+    api_security_enabled: {{ .Values.notification_api.apiSecurityEnabled | quote }}
+    api_registry_service_name   : {{ .Values.notification_api.apiRegistryServiceName | quote }}
+    api_dynamic_routes_enabled: {{ .Values.notification_api.apiDynamicRoutesEnabled | quote }}
+    api_gatewayUrls: {{ .Values.notification_api.apiGatewayUrls | quote }}
+    server_port: {{ .Values.notification_api.serverPort | quote }}
+    spring_application_version: {{ .Values.notification_api.springAppVersion | quote }}
+    spring_application_servicename: {{ .Values.notification_api.springAppServiceName | quote }}
+    openapi_path_include : {{ .Values.notification_api.openApiPathInclude | quote }}        
+    scopes_override_enabled: {{ .Values.notification_api.scopeOverrideEnabled | quote }}   
+    {{- if   .Values.global.notification.spring }}
+    {{- if   .Values.global.notification.spring.profile }}
+    spring_profiles_active: {{ .Values.global.notification.spring.profile }}
+    {{- end }}
+    {{- end }}
+    TZ: {{ .Values.notification_api.tz }}
