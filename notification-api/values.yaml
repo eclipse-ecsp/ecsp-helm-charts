@@ -1,0 +1,116 @@
+replicaCount: 0
+ms: "notification-api"
+image:
+  repository: "docker.io/eclipseecsp"
+  kafkarepository: arti.dev.ignite.harman.com:5061/ignite-core
+  tag: 0.7.0
+  pullPolicy: Always
+
+imagePullSecrets:
+  - name: ghcr-secret
+  - name: artifactory
+
+notification_api:
+  jvmOpts: "-server -Xmx1G -Xms1G -XX:+UseG1GC -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35 -XX:+DisableExplicitGC -Djava.awt.headless=true -Dlogback.configurationFile=/notification-api/conf/logback.xml --add-opens=java.base/java.io=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.math=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED --add-opens=java.base/java.text=ALL-UNNAMED --add-opens=java.sql/java.sql=ALL-UNNAMED"
+  javaOpts: "--add-opens=java.base/java.io=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.math=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED --add-opens=java.base/java.text=ALL-UNNAMED --add-opens=java.sql/java.sql=ALL-UNNAMED"
+  nodeType: "default"
+  key: "hctl.harman.com/node-group"
+  resources:
+    requests:
+      memory: "2Gi"
+      cpu: "100m"
+    limits:
+      memory: "3Gi"
+      cpu: "200m"
+  igniteHistory: "true"
+  logLevel: "ERROR"
+  logAppender: "ASYNC-GELF"
+  pathForGettingServices: "$.ecus.['hu','tbm'].provisionedServices.services[*].applicationId"
+  enableEntitlementValidation: "false"
+  enable_ignite_vehicle_profile: "true"
+  http_vp_vin_url: "http://oss-vehicle-profile-api-int-svc:8080/v1.0/vehicles?clientId="
+  http_vp_platform_ids: ""
+  http_vp_url: http://oss-vehicle-profile-api-int-svc:8080/v1.0/vehicleProfiles/
+  device.association.base.url: http://oss-vehicle-profile-api-int-svc:8080/vehicle-association-service/
+  http.vehicles.url: http://oss-vehicle-profile-api-int-svc:8080/v1.0/vehicles
+  mongodbCollectionShardkeyMap: "accidentrecords:pdId,dmOfflineBufferEntriesnotification:vehicleId,gigyaNotifications:uid,notificationSetUps:userID"
+  bootstrapServers: "kafka-0.kafka-svc.data-platform:9093,kafka-1.kafka-svc.data-platform.local:9093,kafka-2.kafka-svc.data-platform:9093"
+  apiRegistryEnabled: "true"
+  apiSecurityEnabled: "false"
+  apiRegistryServiceName: "http://api-registry-int-svc"
+  apiDynamicRoutesEnabled: "true"
+  apiGatewayUrls: "https://api-gateway3.eks-ignite-dev.ic.aws.harmandev.com"
+  serverPort: "8080"
+  springAppVersion: "1.0"
+  springAppServiceName: "oss-notification-api-int-svc"
+  openApiPathInclude: "/v1/users/**,/v1/vehicles/**,/v2/notification/**,/v1/notification/**,/v1/devices/**,/v3/devices/**,/v2/devices/**,/v2/users/**,/v1/notifications/**"
+  scopeOverrideEnabled: "false"
+  fixedDelayRate: 10000
+  redisIdleConnTimeout: "10000"
+  redisConnTimeout: "20000"
+  redisMasterConnPoolSize: "128"
+  redisMasterConnMinIdlePoolSize: "32"
+  redisTimeout: "20000"
+  redisReconnectionTimeout: "20000"
+  redisDatabase: "0"
+  redisSentinels: ""
+  redisCluster: "redis.data-platform:6379"
+  ext_service:
+    type: NodePort
+    internalPort: 8080
+    externalPort: 30021
+    protocol: TCP
+    name: tcpport
+  health:
+    healthMongo: "false"
+    healthKafkaConsumer: "false"
+    healthKafkaTopics: "false"
+    healthDMA: "false"
+    healthDFF: "false"
+    healthRedis: "false"
+    healthMqtt: "false"
+  tz: UTC
+
+kafka:
+  brokerUrl: "kafka-0.kafka-svc.data-platform:9093,kafka-1.kafka-svc.data-platform:9093,kafka-2.kafka-svc.data-platform:9093"
+  zookeeperConnect: "zk-0.zk-svc.data-platform:2182,zk-1.zk-svc.data-platform:2182,zk-2.zk-svc.data-platform:2182"
+  sslEnable: "false"
+  zookeeperUrl: "zk-svc.data-platform:2182"
+
+global:
+  notification:
+    igniteKmsArn: ""
+    cloud_service_provider: "aws" # Supported values: tencent, aws.
+    max_non_registered_recipients_per_request: "100"
+    default_timezone: "UTC"
+    ignite_user_management_url: "http://oss-uidam-user-management:8080"
+    idam_server: "UIDAM"
+    sender_id_default: "NOTICE"
+    ignite_core_federated_prefix: ""
+    default_locale: "en-US"
+    log:
+      FILE_LOG_ENABLED: "false"
+    api:
+      app_attachments_max_size: "10"
+      app_attachments_max_count: "5"
+
+mongodb:
+  host: "mongodb-sharded-cluster.data-platform"
+  port: "27017"
+  secretName: mongodb-sharded-cluster-credentials
+  databaseName: oss_ignite
+  user: "TO_BE_CHANGED_WITH_MONGODB_USER"
+  password: "TO_BE_CHANGED_WITH_MONGODB_PASS"
+    
+logging:
+  logLevel: "INFO"
+  igniteLogLevel: "ERROR"
+  storageLogLevel: "DEBUG"
+  springLogLevel: "ERROR"
+  svcLogLevel: "INFO"
+  cacheLogLevel: "ERROR"
+  kafkaLogLevel: "ERROR"
+  streamBaseLogLevel: "ERROR"
+  registryCommonLogLevel: "INFO"   
+  graylogHost: "graylog3-tcp.graylog.svc.cluster.local"
+  graylogPort:  "12201"

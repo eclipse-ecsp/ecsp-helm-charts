@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: Service
+metadata:
+    name: oss-notification-api-int-svc
+    labels:
+        app: notification-api
+        group: api
+        ms: {{ .Values.ms | quote }}
+        facing: internal
+        impl: native
+spec:
+    ports:
+        - protocol: TCP
+          port: 8080
+          targetPort: 8080
+          name: tcp
+    selector:
+        app: notification-api
+---
+apiVersion: v1
+kind: Service
+metadata:
+    name: oss-notification-api-ext-svc
+    labels:
+        app: notification-api
+        facing: external
+        impl: native
+spec:
+    type: {{ .Values.notification_api.ext_service.type }}
+    ports:
+        - port: {{ .Values.notification_api.ext_service.internalPort }}
+          nodePort: {{ .Values.notification_api.ext_service.externalPort }}
+          protocol: {{ .Values.notification_api.ext_service.protocol }}
+          name: {{ .Values.notification_api.ext_service.name }}
+    selector:
+        app: notification-api
