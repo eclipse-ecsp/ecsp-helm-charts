@@ -1,0 +1,169 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+    name: oss-notification-sp-config
+    labels:
+        app: notification-sp
+        group: streaming
+        ms: {{ .Values.ms | quote }}
+data:
+    source_topic_name: {{.Values.notification_sp.normal_pr_topic | quote }}
+    aws_region: {{ .Values.global.notification.aws_region | quote }}
+    aws_sns_topic_arn_prefix: {{ .Values.global.notification.awsArnPrefix | default .Values.notification_sp.awsArnPrefix | quote }}
+    aws_sns_endpoint_name: {{ .Values.global.notification.awsSnsEndpoint | default .Values.notification_sp.awsSnsEndpoint | quote }}
+    aws_ses_endpoint_name: {{ .Values.global.notification.aws_ses_endpoint | quote }}
+    aws_ses_bounce_queue: "ses-bounce"
+    aws_ses_bounce_handler_frequency_mins: "4"
+    notification_topic: "notification"
+    mqtt_user_name: "haa_api"
+    mqtt_broker_url: "tcp://oss-hivemq-extension-int-svc:1883"
+    mongodb_name: {{ .Values.mongodb.databaseName | quote }}
+    mongodb_port: {{ .Values.mongodb.port | quote }}
+    mongodb_auth_db: "admin"
+    mongodb_hosts: {{ .Values.mongodb.host | quote }}
+    mongodb_client_cleanup_interval_ms: "600000"
+    mongodb_client_create_retry_count: "3"
+    mongodb_client_close_wait_interval_ms: "300000"
+    mongodb_collection_shardkey_map: {{ .Values.notification_sp.mongodbCollectionShardkeyMap | quote }}
+    encode.type: "Base64"
+    hash.algorithm: "SHA-256"
+    ignite_kmsArn: {{ .Values.global.notification.igniteKmsArn | quote }}
+    start_device_status_consumer: "true"
+    check_user_pdid_association: {{ .Values.notification_sp.check_user_pdid_association | quote }}
+    default_channel_types: {{ .Values.notification_sp.defaultChanneltypes | quote }}
+    state_dir: "/mnt/ebs0/kafka-streams/notification"
+    application_id: {{ .Values.notification_sp.applicationId | quote }}
+    redis_mode: {{ .Values.global.notification.redis_configs.redis_mode | upper | default "SENTINEL" | quote }}
+    {{ if eq (.Values.global.notification.redis_configs.redis_mode | upper | default "SENTINEL") "CLUSTER" }}
+    redis_cluster_endpoints: {{ .Values.global.notification.redis_configs.redis_cluster_endpoints | default "redis-cluster-svc:6379" | quote }}
+    redis_cluster_masters: {{ .Values.global.notification.redis_configs.redis_cluster_masters | default "redis-cluster-svc:6379" | quote }}
+    {{ else if eq (.Values.global.notification.redis_configs.redis_mode | upper | default "SENTINEL") "SENTINEL" }}
+    redis_sentinel_endpoints: {{ .Values.global.notification.redis_configs.redis_sentinel_endpoints | default "redis-ha-redis-ha:26379" |quote }}
+    redis_sentinels: {{ .Values.global.notification.redis_configs.redis_sentinels | default "redis-ha-redis-ha:26379" | quote }}
+    redis_master_name: {{ .Values.global.notification.redis_configs.redis_master_name | default "redis-sentinel" | quote }}
+    {{ end }}
+    redis_read_mode: {{ .Values.global.notification.redis_configs.redis_read_mode | default "SLAVE" | quote }}
+    redis_read_timeout: {{ .Values.global.notification.redis_configs.redis_read_timeout | default "10000" | quote }}
+    redis_read_interval: {{ .Values.global.notification.redis_configs.redis_read_interval | default "10000" | quote }}
+    redis_read_attempts: {{ .Values.global.notification.redis_configs.redis_read_attempts | default "5" | quote }}
+    redis_scan_interval: {{ .Values.global.notification.redis_configs.redis_scan_interval | default "10000" | quote }}
+    redis_master_idle_min: {{ .Values.global.notification.redis_configs.redis_master_idle_min | default "1" | quote }}
+    redis_slave_pool_max_size: {{ .Values.global.notification.redis_configs.redis_slave_pool_max_size | default "5" | quote }}
+    redis_slave_idle_min: {{ .Values.global.notification.redis_configs.redis_slave_idle_min | default "1" | quote }}
+    redis_master_pool_max_size: {{ .Values.global.notification.redis_configs.redis_master_pool_max_size | default "5" | quote }}
+    redis_max_pool_size: {{ .Values.global.notification.redis_configs.redis_max_pool_size | default "5" | quote }}
+    redis_min_idle: {{ .Values.global.notification.redis_configs.redis_min_idle | default "1" | quote }}
+    redis_database: {{ .Values.global.notification.redis_configs.redis_database | default "0" | quote }}
+    redis_address: ""
+    redis_scan_limit: "10000"
+    bootstrap_servers: {{ .Values.kafka.brokerUrl | quote }}
+    kafka_ssl_enable: {{ .Values.kafka.sslEnable | quote }}
+    kafka_broker_url: {{ .Values.kafka.brokerUrl | quote }}
+    zookeeper_connect: {{ .Values.kafka.zookeeperConnect | quote }}
+    bootstrap.servers: {{ .Values.kafka.brokerUrl | quote }}
+    kafka.ssl.enable: {{ .Values.kafka.sslEnable | quote }}
+    kafka.broker.url: {{ .Values.kafka.brokerUrl | quote }}
+    zookeeper.connect: {{ .Values.kafka.zookeeperConnect | quote }}
+    max_poll_records: "100"
+    num_stream_threads: {{ .Values.notification_sp.numStreamThreads | quote }}
+    {{- if .Values.global.notification.channels_supported }}
+    channels_supported: {{ .Values.global.notification.channels_supported | quote }}
+    {{ else }}
+    channels_supported: {{ .Values.notification_sp.channels_supported | quote }}
+    {{- end}}
+    enable_user_consent: {{ .Values.global.notification.enable_user_consent | quote }}
+    JVM_OPTS: {{ .Values.notification_sp.jvmOpts | quote }}
+    LOG_FILE_LOCATION: "-DLOG_FILE_LOCATION=logs/notification-sp.log"
+    outbound_api_additional_headers: {{ .Values.notification_sp.outboundApiAdditionalHeaders | quote }}    
+    event_transformer_classes: {{ .Values.notification_sp.eventTransformerClasses | quote }}
+    mqtt_service_topic_name_prefix: {{ .Values.notification_sp.mqttServiceTopicNamePrefix | quote }}
+    mqtt_topic_to_device_infix: {{ .Values.notification_sp.mqttServiceTopicInfix | quote }}
+    mqtt_service_topic_name: {{ .Values.notification_sp.mqttServiceTopic | quote }}
+    device_messaging_event_transformer_class: {{ .Values.notification_sp.deviceMessagingTransformerClasses | quote }}
+    cloud_service_provider: {{ .Values.global.notification.cloud_service_provider | quote }}
+    http_vp_vin_url: {{ .Values.notification_sp.http_vp_vin_url | quote }}
+    http_vp_platform_ids: {{ .Values.notification_sp.http_vp_platform_ids | quote }}
+    http_vp_url: {{ .Values.notification_sp.http_vp_url | quote}}
+    http_vehicles_url: {{ .Values.notification_sp.http_vehicles_url | quote}}
+    enable_ignite_vehicle_profile: {{ .Values.notification_sp.enable_ignite_vehicle_profile | quote}}
+    path_for_getting_services: {{ .Values.global.notification.pathForGettingServices | default .Values.notification_sp.pathForGettingServices | quote }}
+    APPENDER: ASYNC-GELF
+    FILE_LOG_ENABLED: {{ .Values.global.notification.log.FILE_LOG_ENABLED | quote }}
+    LOG_LEVEL: {{ .Values.global.notification.log.LOG_LEVEL | default "ERROR" | quote }}
+    IGNITE_LOG_LEVEL: {{ .Values.global.notification.log.IGNITE_LOG_LEVEL | default "ERROR" | quote }}
+    STORAGE_LOG_LEVEL: {{ .Values.global.notification.log.STORAGE_LOG_LEVEL | default "ERROR" | quote }}
+    SPRING_LOG_LEVEL: {{ .Values.global.notification.log.SPRING_LOG_LEVEL | default "ERROR" | quote }}
+    SVC_LOG_LEVEL: {{ .Values.global.notification.log.SVC_LOG_LEVEL | default "INFO" | quote }}
+    CACHE_LOG_LEVEL: {{ .Values.global.notification.log.CACHE_LOG_LEVEL | default "ERROR" | quote }}
+    KAFKA_LOG_LEVEL: {{ .Values.global.notification.log.KAFKA_LOG_LEVEL | default "ERROR" | quote }}
+    MQTT_DISPATCHER_LOG_LEVEL: {{ .Values.global.notification.MQTT_DISPATCHER_LOG_LEVEL | default "INFO" | quote }}
+    STREAM_BASE_LOG_LEVEL: {{ .Values.global.notification.log.STREAM_BASE_LOG_LEVEL | default "INFO" | quote }}
+    NEVER_BLOCK_FOR_GRAYLOG: "true"
+    GRAYLOG_HOST: {{ .Values.global.notification.log.graylogHost | quote }}
+    GRAYLOG_PORT: {{ .Values.global.notification.log.graylogPort | quote }}
+    LOG_APPENDER: {{ .Values.notification_sp.logAppender | quote }}
+    pre_processors: {{ .Values.notification_sp.preProcessors | quote }}
+    post_processors: {{ .Values.notification_sp.postProcessors | quote }}
+    locale_default_value: {{ .Values.global.notification.default_locale | quote }}
+    dtc_api_base_url_with_version: {{ .Values.global.notification.dtc_api_base_url_with_version | quote }}
+    brand_default_value: {{ .Values.global.notification.default_brand | quote }}
+    max_non_registered_recipients_per_request: {{ .Values.global.notification.max_non_registered_recipients_per_request | quote }}
+    metrics_prometheus_enabled: "false"
+    health_mqtt_monitor_enabled: {{ .Values.notification_sp.health.healthMqtt | quote }}
+    health_mongo_monitor_enabled: {{ .Values.notification_sp.health.healthMongo | quote }}
+    health_kafka_consumer_group_monitor_enabled: {{ .Values.notification_sp.health.healthKafkaConsumer | quote }}
+    health_device_status_backdoor_monitor_enabled: {{ .Values.notification_sp.health.healthDMA | quote }}
+    health_dff_feed_backdoor_monitor_enabled: {{ .Values.notification_sp.health.healthDFF | quote }}
+    health_kafka_topics_monitor_enabled: {{ .Values.notification_sp.health.healthKafkaTopics | quote }}
+    health_redis_monitor_enabled: {{ .Values.notification_sp.health.healthRedis | quote }}
+    sp_restart_on_failure: {{ .Values.notification_sp.spRestartOnFailure | quote }}
+    available_channel_notifiers: {{ .Values.notification_sp.availableChannelNotifiers | quote }}
+    push_default_sp: {{ .Values.notification_sp.pushDefaultSp | quote }}
+    email_default_sp: {{ .Values.notification_sp.emailDefaultSp | quote }}
+    sms_default_sp: {{ .Values.notification_sp.smsDefaultSp | quote }}
+    ivm_default_sp: {{ .Values.notification_sp.ivmDefaultSp | quote }}
+    portal_default_sp: {{ .Values.notification_sp.portalDefaultSp | quote }}
+    fcm_project_id: {{ .Values.notification_sp.fcmProjectId | quote }}
+    service-json.file.path: {{ .Values.notification_sp.servicejsonFilePath | quote }}
+    ignite_user_management_url: {{ .Values.global.notification.ignite_user_management_url | quote }}
+    idam_server: {{ .Values.global.notification.idam_server | quote }}
+    sender_id_default: {{ .Values.global.notification.sender_id_default | default "NOTICE" | quote }}
+    ignite_core_federated_prefix: {{ .Values.global.notification.ignite_core_federated_prefix | quote }}    
+    timezone_default_value: {{ .Values.global.notification.default_timezone | quote }}
+    ivm_event_ttl_enabled: {{ .Values.notification_sp.ivmTtlEnabled | quote }}
+    ivm_event_device_delivery_cutoff_ms: {{ .Values.notification_sp.ivmDeliveryCutoff | quote }}
+    is_feedback_enabled: {{ .Values.notification_sp.isFeedbackEnabled | quote }}
+    is_default_feedback_topic_enabled: {{ .Values.notification_sp.isDefaultFeedbackTopicEnabled | quote }}
+    default_notification_feedback_topic: {{ .Values.notification_sp.defaultNotificationFeedbackTopic | quote }}
+    {{- if   .Values.global.notification.spring }}
+    {{- if   .Values.global.notification.spring.profile }}
+    spring_profiles_active: {{ .Values.global.notification.spring.profile }}
+    {{- end}}
+    {{- end}}
+    TZ: {{ .Values.notification_sp.tz }}
+    aws_pinpoint_application_id: {{ .Values.notification_sp.awsPinpointAppId | quote }}
+    
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: oss-notification-sp-topics
+  labels:
+    app: notification-sp
+    group: streaming
+    ms: {{ .Values.ms | quote }}
+data:  
+  topics.txt: |+
+    notification|25|2
+    notification-dlq|25|2
+    device-status-notification|25|2
+    vehicle-profile-modified-authorized-users|25|2
+    notification-scheduler-callback|25|2
+    notification-schedule-command|25|2
+    notification-retry|25|2
+    notification-feedback|25|2
+  {{ if .Values.global.notification.channels_supported }}
+  {{ if (contains "apiPush" .Values.global.notification.channels_supported) }}
+    https-integ-high|25|2
+  {{ end }}
+  {{ end }}
