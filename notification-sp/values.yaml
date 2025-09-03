@@ -1,0 +1,161 @@
+replicaCount: 0
+ms: "notification-sp"
+image:
+  repository: "docker.io/eclipseecsp"
+  kafkarepository: arti.dev.ignite.harman.com:5061/ignite-core
+  pullPolicy: Always
+
+imagePullSecrets:
+  - name: ghcr-secret
+  - name: artifactory
+
+kafka_utils:
+  imageTag: "2.8.2"
+
+notification_sp:
+  jvmOpts: "-Xmx4g -Xms4g -XX:NativeMemoryTracking=detail -XX:MetaspaceSize=96m -XX:G1HeapRegionSize=16M -XX:MinMetaspaceFreeRatio=50 -XX:MaxMetaspaceFreeRatio=80 -server -XX:+UseG1GC -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35 -XX:+DisableExplicitGC -Djava.awt.headless=true -Dlogback.configurationFile=/notification/logback.xml -Dfile.encoding=UTF8 -Dpf4j.pluginsDir=/opt/notification/jar/plugins --add-opens=java.base/java.io=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.math=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED --add-opens=java.base/java.text=ALL-UNNAMED --add-opens=java.sql/java.sql=ALL-UNNAMED"
+  nodeType: "default"
+  key: "hctl.harman.com/node-group"
+  serviceName: "notification-sp"
+  replicas: 1
+  resources:
+    requests:
+      memory: "2Gi"
+      cpu: "200m"
+    limits:
+      memory: "3Gi"
+      cpu: "400m"
+  applicationId: "notification-sp"
+  applicationId_cancel_sp: "notification-cancel-sp"
+  applicationId_low_pr: "notification-low-pr-sp"
+  cancel_topic: "campaign-status"
+  low_pr_topic: "campaign"
+  normal_pr_topic: "notification,vehicle-profile-modified-authorized-users"
+  numStreamThreads: "12"
+  numStreamThreads_cancel_sp: "2"
+  numStreamThreads_low_pr: "1"
+  imageName: notification-sp
+  imageTag: 0.7.0
+  awsArnPrefix: "arn:aws:sns:us-west-2:236907965461:"
+  awsSnsEndpoint: "https://sns.us-west-2.amazonaws.com"
+  defaultChanneltypes: ""
+  http_vp_vin_url: "http://oss-vehicle-profile-api-int-svc:8080/v1.0/vehicles?clientId="
+  http_vp_platform_ids: ""
+  eventTransformerClasses: "genericIgniteEventTransformer"
+  deviceMessagingTransformerClasses: "org.eclipse.ecsp.transform.DeviceMessageIgniteEventTransformer"
+  mqttServiceTopicNamePrefix: ""
+  mqttServiceTopicInfix: "/2d"
+  mqttServiceTopic: "ivm"
+  mqttDispatcherLogLevel: "INFO"
+  ivmAckTopic: "events"
+  pathForGettingServices: "$.ecus.['hu','tbm'].provisionedServices.services[*].applicationId"
+  fcmProjectId: "ivehicle-ccfc8"
+  servicejsonFilePath: "/mnt/nc-sp/fcm/fcm-service-account"
+  availableChannelNotifiers: ivm:org.eclipse.ecsp.notification.ivm.IvmNotifierImpl,portal:org.eclipse.ecsp.notification.browser.MqttBrowserNotifier,push:org.eclipse.ecsp.notification.fcm.FcmNotifier,sms:org.eclipse.ecsp.notification.aws.sns.AmazonSmsNotifier,email:org.eclipse.ecsp.notification.aws.ses.AmazonSesNotifier
+  pushDefaultSp: "PUSH:FCM"
+  emailDefaultSp: "EMAIL:AWS_SES"
+  smsDefaultSp: "SMS:AWS_SNS"
+  ivmDefaultSp: "IVM:DEFAULT"
+  portalDefaultSp: "PORTAL:MQTT"
+  channels_supported: email,portal,ivm,push,sms
+  http_vp_url: "http://oss-vehicle-profile-api-int-svc:8080/v1.0/vehicleProfiles/"
+  http_vehicles_url: "http://oss-vehicle-profile-api-int-svc:8080/v1.0/vehicles"
+  enable_ignite_vehicle_profile: "true"
+  check_user_pdid_association: "false"
+  campaignStatusTTL: "1200"
+  mongodbCollectionShardkeyMap: "accidentrecords:pdId,dmOfflineBufferEntriesnotification:vehicleId,gigyaNotifications:uid,notificationSetUps:userID"
+  spRestartOnFailure: "false"
+  image_registry: "docker.io/eclipseecsp"
+  isFeedbackEnabled: "true"
+  isDefaultFeedbackTopicEnabled: "false"
+  defaultNotificationFeedbackTopic: "notification-feedback"
+  preProcessors: "org.eclipse.ecsp.analytics.stream.base.processors.TaskContextInitializer,org.eclipse.ecsp.analytics.stream.base.processors.ProtocolTranslatorPreProcessor,org.eclipse.ecsp.analytics.stream.base.processors.MsgSeqPreProcessor,org.eclipse.ecsp.analytics.stream.base.processors.DeviceMessagingAgentPreProcessor"
+  postProcessors: "org.eclipse.ecsp.analytics.stream.base.processors.SchedulerAgentPostProcessor,org.eclipse.ecsp.analytics.stream.base.processors.DeviceMessagingAgentPostProcessor,org.eclipse.ecsp.analytics.stream.base.processors.ProtocolTranslatorPostProcessor"
+  tz: UTC
+  awsPinpointAppId: ""
+  outboundApiAdditionalHeaders: ""
+  ivmTtlEnabled: "false"
+  ivmDeliveryCutoff: "604800000"
+  logAppender: "STDOUT"
+  health:
+    healthMongo: "false"
+    healthKafkaConsumer: "false"
+    healthKafkaTopics: "false"
+    healthDMA: "false"
+    healthDFF: "false"
+    healthRedis: "false"
+    healthMqtt: "false"
+
+kafka:
+  brokerUrl: "kafka-0.kafka-svc.data-platform:9093,kafka-1.kafka-svc.data-platform:9093,kafka-2.kafka-svc.data-platform:9093"
+  zookeeperConnect: "zk-0.zk-svc.data-platform:2182,zk-1.zk-svc.data-platform:2182,zk-2.zk-svc.data-platform:2182"
+  sslEnable: "false"
+  zookeeperUrl: "zk-svc.data-platform:2182"
+
+global:
+  notification:
+    channels_supported: email,portal,ivm,push,sms
+    aws_region: "us-east-1"
+    awsArnPrefix: "arn:aws:sns:us-west-2:236907965461:"
+    awsSnsEndpoint: "https://sns.us-west-2.amazonaws.com"
+    aws_ses_endpoint: "https://email.us-east-1.amazonaws.com"
+    secrets_vault_enabled: "true"
+    mongodb_vault_enabled: "true"
+    vault_enabled: "true"
+    igniteKmsArn: ""
+    enable_user_consent: "true"
+    cloud_service_provider: "aws"
+    pathForGettingServices: "$.ecus.['hu','tbm'].provisionedServices.services[*].applicationId"
+    default_locale: "en-US"
+    default_brand: "default"
+    max_non_registered_recipients_per_request: "100"
+    ignite_user_management_url: "http://oss-uidam-user-management:8080"
+    idam_server: "UIDAM"
+    sender_id_default: "NOTICE"
+    default_timezone: "UTC"
+    dtc_api_base_url_with_version: ""
+    ignite_core_federated_prefix: ""
+    log:
+      FILE_LOG_ENABLED: "false"
+      LOG_LEVEL: "ERROR"
+      IGNITE_LOG_LEVEL: "ERROR"
+      STORAGE_LOG_LEVEL: "ERROR"
+      SPRING_LOG_LEVEL: "ERROR"
+      SVC_LOG_LEVEL: "INFO"
+      CACHE_LOG_LEVEL: "ERROR"
+      KAFKA_LOG_LEVEL: "ERROR"
+      STREAM_BASE_LOG_LEVEL: "INFO"
+      MQTT_DISPATCHER_LOG_LEVEL: "INFO"
+      graylogHost: "graylog3-tcp.graylog.svc.cluster.local"
+      graylogPort:  "12201"   
+    redis_configs:
+      redis_mode: "CLUSTER"
+      redis_cluster_endpoints: "redis.data-platform:6379"
+      redis_cluster_masters: "redis.data-platform:6379"
+      redis_sentinel_endpoints: "redis-ha-redis-ha:26379"
+      redis_sentinels: "redis-ha-redis-ha:26379"
+      redis_master_name: "redis-sentinel"
+      redis_read_mode: "SLAVE"
+      redis_read_timeout: "10000"
+      redis_read_attempts: "5"
+      redis_read_interval: "10000"
+      redis_scan_interval: "10000"
+      redis_master_idle_min: "1"
+      redis_slave_pool_max_size: "5"
+      redis_slave_idle_min: "1"
+      redis_master_pool_max_size: "5"
+      redis_max_pool_size: "5"
+      redis_min_idle: "1"
+      redis_database: "0"
+
+mongodb:
+  host: "mongodb-sharded-cluster.data-platform"
+  port: "27017"
+  secretName: mongodb-sharded-cluster-credentials
+  databaseName: oss_ignite
+  user: "TO_BE_CHANGED_WITH_MONGODB_USER"
+  password: "TO_BE_CHANGED_WITH_MONGODB_PASS"
+
+mqtt:
+  password: "TO_BE_CHANGED_WITH_MQTT_BROKER_PASS"
+  mqtt_broker_url: "tcp://oss-hivemq-extension-int-svc:1883"
