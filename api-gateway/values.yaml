@@ -11,12 +11,7 @@ api_gateway:
   jvmOpts: "-Xmx2g -Xms2g -XX:+UseG1GC -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35 -XX:+DisableExplicitGC -XX:MetaspaceSize=96m -XX:G1HeapRegionSize=16M -XX:MinMetaspaceFreeRatio=50 -XX:MaxMetaspaceFreeRatio=80 -Dlogback.configurationFile=/api-gateway/conf/logback.xml -DLOG_LEVEL=INFO"
   nodeType: "default"
   replicas: 1
-  imageTag: 1.2.3
-  tokenHeaderConfig:
-    tenantIdRequired: "false"
-    tenantIdRegex: "^[a-zA-Z0-9]+$"
-    accountIdRequired: "false"
-    accountIdRegex: "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+  imageTag: 1.3.2
   requestHeaderFilterConfig:
     removeUnknownHeaders: "true"
     allowHeaders: host, connection, content-type, content-length, accept, user-agent, origin, referer, accept-encoding, accept-language, X-Forwarded-Proto, X-Forwarded-For, X-Forwarded-Port, X-Amzn-Trace-Id, requestId, user-id, scope, override-scope
@@ -55,8 +50,6 @@ api_gateway:
     requests:
       memory: "2Gi"
       cpu: "500m"
-  jwt_publicKeyFiles: "uidam-public-key.pem"
-  jwt_publicKeyFilePath: "/opt/api-gateway/pem_files/"
   gateway_port: "7000"
   gateway_service_name: "http://api-gateway-int-svc"
   registry_service_name: "http://api-registry-int-svc"
@@ -92,6 +85,17 @@ api_gateway:
     prometheus:
       enabled: true
       path: /metrics
+    datadog:
+      enabled: false
+      uri: https://api.datadoghq.eu
+      apiKey: "<TO-BE-UPDATED>"
+      applicationKey: "<TO-BE-UPDATED>"
+      descriptions: true
+      readTimeout: 5s
+      connectTimeout: 5s
+      batchSize: 1000
+      step: 1m
+      hostTag: "api-gateway"
     health:
       enabled: true
       path: /health
@@ -136,6 +140,20 @@ api_gateway:
         buckets: 100ms, 500ms, 1000ms, 3000ms, 5000ms, 8000ms, 10000ms, 15000ms  # slo thresholds in milliseconds
         expiry: 5m
         bufferLength: 10
+    publicKeyCache:
+      enabled: true
+      cacheSize:
+        name: "public_key_cache_size"
+      keySources:
+        name: "public_key_sources_count"
+      refreshSourceCount:
+        name: "public_key_refresh_source_count"
+      refreshSourceTime:
+        name: "public_key_source_refresh_time"
+    commonTags:
+      env: ecsp-dev
+      host: api-gateway
+      application: api-gateway
   accesslog:
     enabled: "true"
     requestHeaders: 
@@ -143,10 +161,37 @@ api_gateway:
       skipHeaders: "Authorization,user-id"
     responseHeaders:
       enabled: "true"
-      skipHeaders: "headername1, headername2"
+      skipHeaders: "<headername1>, <headername2>"
     responseBody:
       enabled: "true"      
-      skipForRoutes: "routeId1, routeid2"       
+      skipForRoutes: "<routeId1>, <routeid2>"
+  jwt:
+    scopePrefixes: "<token_scope_prefix>"
+    keySources:
+    - id: "UIDAM"
+      issuer: "https://uidam-authorization-server:9443"
+      type: "PEM"
+      location: "/opt/api-gateway/pem_files/uidam-public-key.pem"
+      default: true
+    - id: ecsp
+      issuer: https://uidam-authorization-server:9443
+      url: https://uidam-authorization-server:9443/ecsp/oauth2/jwks
+      refreshInterval: "10m"
+      useProviderPrefixedKey: "true"
+    # token claim header validation
+    tokenHeaderValidationConfig:
+      accountId:
+        required: "false"
+        regex: "^[a-zA-Z0-9]+$"
+      tenantId:
+        required: "false"
+        regex: "^[a-zA-Z0-9]+$"
+    claimToHeaderMapping:
+      sub: "x-user-id"
+      email: "user-email"
+      user_id: "user-id"
+      tenantId: "tenantId"
+      accountId: "accountId"       
   extraParams:
 
 
@@ -160,7 +205,7 @@ api_registry:
   jvmOpts: "-Xmx2g -Xms2g -XX:+UseG1GC -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35 -XX:+DisableExplicitGC -XX:MetaspaceSize=96m -XX:G1HeapRegionSize=16M -XX:MinMetaspaceFreeRatio=50 -XX:MaxMetaspaceFreeRatio=80 -Dlogback.configurationFile=/opt/api-registry/conf/logback.xml -DLOG_LEVEL=INFO"
   nodeType: "default"
   replicas: 1
-  imageTag: 1.2.3
+  imageTag: 1.3.2
   serviceName: api-registry
   database:
     ## supported types - sql, nosql
@@ -189,6 +234,17 @@ api_registry:
     prometheus:
       enabled: true
       path: /metrics
+    datadog:
+      enabled: false
+      uri: https://api.datadoghq.eu
+      apiKey: "TO-BE-UPDATED"
+      applicationKey: "TO-BE-UPDATED"
+      descriptions: true
+      readTimeout: 5s
+      connectTimeout: 5s
+      batchSize: 1000
+      step: 1m
+      hostTag: "api-registry"
     health:
       enabled: true
       path: /health

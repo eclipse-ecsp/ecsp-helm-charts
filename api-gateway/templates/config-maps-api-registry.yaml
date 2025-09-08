@@ -65,15 +65,33 @@ data:
   api-registry_metrics_service-health_prefix: {{ .Values.api_registry.metrics.serviceHealth.prefix | quote }}
   api-registry_metrics_service-routes_prefix: {{ .Values.api_registry.metrics.serviceRoutes.prefix | quote }}
   management_server_port: {{ .Values.api_registry.metrics.port | quote }}
-{{- if .Values.api_registry.metrics.prometheus.enabled }}
+{{- if and (.Values.api_registry.metrics.enabled) (.Values.api_registry.metrics.prometheus.enabled) }}
   management_endpoint_prometheus_access: "read-only"
+  management_metrics_export_prometheus_enabled: "true"
 {{- else }}
   management_endpoint_prometheus_access: "none"
+  management_metrics_export_prometheus_enabled: "false"
 {{- end }}
-{{- if .Values.api_registry.metrics.health.enabled }}
+{{- if and (.Values.api_registry.metrics.enabled) (.Values.api_registry.metrics.health.enabled) }}
   management_endpoint_health_access: "read-only"
+  management_health_probes_enabled: "true"
 {{- else }}
   management_endpoint_health_access: "none"
+  management_health_probes_enabled: "false"
+{{- end }}
+{{- if and (.Values.api_registry.metrics.enabled) (.Values.api_registry.metrics.datadog.enabled) }}
+  api_gateway_datadog_enabled: "true"
+  management_datadog_metrics_export_enabled: "true"
+  management_datadog_metrics_export_uri: {{ .Values.api_registry.metrics.datadog.uri | quote }}
+  management_datadog_metrics_export_descriptions: {{ .Values.api_registry.metrics.datadog.descriptions | quote }}
+  management_datadog_metrics_export_read-timeout: {{ .Values.api_registry.metrics.datadog.readTimeout | quote }}
+  management_datadog_metrics_export_connect-timeout: {{ .Values.api_registry.metrics.datadog.connectTimeout | quote }}
+  management_datadog_metrics_export_batch-size: {{ .Values.api_registry.metrics.datadog.batchSize | quote }}
+  management_datadog_metrics_export_step: {{ .Values.api_registry.metrics.datadog.step | quote }}
+  management_datadog_metrics_export_host-tag: {{ .Values.api_registry.metrics.datadog.hostTag | quote }}
+{{- else }}
+  api_gateway_datadog_enabled: "false"
+  management_datadog_metrics_export_enabled: "false"
 {{- end }}
   management_endpoints_access_default: "none"
   management_endpoint_health_show-components: "ALWAYS"
@@ -85,7 +103,6 @@ data:
   management_endpoints_jmx_exposure_exclude: "*"
   management_metrics_enabled: {{ .Values.api_registry.metrics.enabled | quote }}
   management_metrics_tags_application: {{ .Values.api_registry.serviceName | quote }}
-  management_metrics_export_prometheus_enabled: {{ .Values.api_registry.metrics.prometheus.enabled | quote }}
   management_observations_http_client_requests_name: {{ .Values.api_registry.metrics.httpClientRequests.prefix | quote }}
   management_observations_http_server_requests_name: {{ .Values.api_registry.metrics.httpServerRequests.prefix | quote }}
   management_health_probes_enabled: {{ .Values.api_registry.metrics.health.enabled | quote }}
