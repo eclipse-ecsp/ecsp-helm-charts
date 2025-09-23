@@ -7,10 +7,6 @@ image:
 fullnameOverride: api-gateway
 registryFullnameOverride: api-registry
 
-# Ingress configuration
-ingress:
-  host: "api-gateway"
-
 api_gateway:
   jvmOpts: "-Xmx2g -Xms2g -XX:+UseG1GC -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35 -XX:+DisableExplicitGC -XX:MetaspaceSize=96m -XX:G1HeapRegionSize=16M -XX:MinMetaspaceFreeRatio=50 -XX:MaxMetaspaceFreeRatio=80 -Dlogback.configurationFile=/api-gateway/conf/logback.xml -DLOG_LEVEL=INFO"
   nodeType: "default"
