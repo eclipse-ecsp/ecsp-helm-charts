@@ -2,6 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ include "api-gateway.fullname" . }}-config
+  namespace: {{ .Release.Namespace }}
   labels:
     app: {{ include "api-gateway.fullname" . }}
     group: api
@@ -13,10 +14,11 @@ data:
   GRAYLOG_PORT: {{ .Values.logging.graylogPort | quote }}
   api_userId_field: {{ .Values.api_gateway.userIdField | quote }}
   api_gateway_port: {{ .Values.api_gateway.gateway_port | quote }}
-  api_gateway_service_name: {{ .Values.api_gateway.gateway_service_name | quote }}
-  api_registry_port: {{ .Values.api_gateway.registry_port | quote }}
+  api_gateway_service_name: "http://{{ .Values.api_gateway.gateway_service_name }}"
   api_registry_enabled: {{ .Values.api_gateway.apiRegistryEnabled | quote }}
-  api_registry_service_name: {{ .Values.api_gateway.registry_service_name | quote }}
+  api_registry_service_name: "http://{{ .Values.api_gateway.registry_service_name }}"
+  api_registry_base-url: "http://{{ .Values.api_gateway.registry_service_name }}:{{ .Values.api_gateway.registry_port }}"
+  api_registry_port: {{ .Values.api_gateway.registry_port | quote }}
   api_isFilterOverrideEnabled: {{ .Values.api_gateway.isFilterOverrideEnabled | quote }}
   spring.cloud.gateway.httpserver.max-header-size: "16384"
   api_userId_field: {{ .Values.api_gateway.userIdField | quote }}
@@ -33,7 +35,7 @@ data:
 {{- end }}
   spring_main_allow-circular-references: "true"
   springdoc_swagger-ui_oauth2RedirectUrl: "https://{{ .Values.ingress.host }}.{{ .Values.api_gateway.environmentDomainName }}"
-  spring_cloud_kubernetes_discovery_discovery-server-url: "http://api-registry-int-svc:7000"
+  spring_cloud_kubernetes_discovery_discovery-server-url: "http://{{ .Values.api_gateway.registry_service_name }}:{{ .Values.api_gateway.registry_port }}"
   spring_cloud_gateway_server_webflux_globalcors_cors-configurations_config_allowedOriginPattern: {{ .Values.api_gateway.globalCorsConfigurations.allowedOriginPatterns | quote }}
   spring_cloud_gateway_server_webflux_globalcors_cors-configurations_config_maxAge: {{ .Values.api_gateway.globalCorsConfigurations.maxAge | quote }}
   spring_cloud_gateway_server_webflux_globalcors_cors-configurations_config_allowedMethods: {{ .Values.api_gateway.globalCorsConfigurations.allowedMethods | quote }}
@@ -49,7 +51,7 @@ data:
   spring.cloud.gateway.filter.redis.cache.enabled: "false"
   spring.cloud.gateway.filter.local-response-cache.enabled: {{ .Values.api_gateway.cachingEnabled | quote }}
 {{- end }}
-  spring_data_redis_cluster_nodes:  {{ .Values.api_gateway.redis.clusterNodes | quote }}
+  spring_data_redis_cluster_nodes: {{ .Values.api_gateway.redis.clusterNodes | quote }}
   RATE_LIMIT_REPLENISH_RATE: {{ .Values.api_gateway.rate_limit_replenish_rate | quote }}
   RATE_LIMIT_BURST_CAPACITY: {{ .Values.api_gateway.rate_limit_burst_capacity | quote }}
   api_dynamic_routes_enabled: "true"

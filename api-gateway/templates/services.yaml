@@ -2,9 +2,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: api-gateway-int-svc
+  name: {{ include "api-gateway.fullname" . }}-int-svc
+  namespace: {{ .Release.Namespace }}
   labels:
-    app: api-gateway
+    app: {{ include "api-gateway.fullname" . }}
     group: api
     facing: internal
     impl: internal
@@ -12,7 +13,7 @@ metadata:
 spec:
   ports:
   - protocol: TCP
-    port: 7000
+    port: {{ .Values.api_gateway.gateway_port }}
     targetPort: 8080
     name: tcp
   - protocol: TCP
@@ -21,15 +22,16 @@ spec:
     name: metrics
   type: ClusterIP
   selector:
-    app: api-gateway
+    app: {{ include "api-gateway.fullname" . }}
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   labels:
-    app: api-gateway
+    app: {{ include "api-gateway.fullname" . }}
     ms: {{ .Values.ms | quote }}
-  name: api-gateway
+  name: {{ include "api-gateway.fullname" . }}
+  namespace: {{ .Release.Namespace }}
 spec:
   endpoints:
   - honorLabels: true
@@ -40,4 +42,4 @@ spec:
     - {{ .Release.Namespace }}  
   selector:
     matchLabels:
-      app: api-gateway
+      app: {{ include "api-gateway.fullname" . }}

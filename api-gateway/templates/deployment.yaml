@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "api-gateway.fullname" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
    app: {{ include "api-gateway.fullname" . }}
    group: api
@@ -28,11 +29,11 @@ spec:
                 operator: In
                 values: [{{ .Values.api_gateway.nodeType | quote }}]
       containers:
-      - name: api-gateway
+      - name: {{ include "api-gateway.fullname" . }}
         image: {{ .Values.image.repository }}/api-gateway:{{ .Values.api_gateway.imageTag }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         ports:
-        - containerPort: 7000
+        - containerPort: {{ .Values.api_gateway.gateway_port }}
           name: tcp
         livenessProbe:
           httpGet:
@@ -73,17 +74,17 @@ spec:
         - name: management_datadog_metrics_export_api-key
           valueFrom:
             secretKeyRef:
-              name: api-gateway-datadog-credentials
+              name: {{ include "api-gateway.fullname" . }}-datadog-credentials
               key: api-key
         - name: management_datadog_metrics_export_application-key
           valueFrom:
             secretKeyRef:
-              name: api-gateway-datadog-credentials
+              name: {{ include "api-gateway.fullname" . }}-datadog-credentials
               key: application-key
         {{- end }}
         envFrom:
         - configMapRef:
-            name: api-gateway-config
+            name: {{ include "api-gateway.fullname" . }}-config
         volumeMounts:
           - mountPath: /opt/api-gateway/logs
             name: logs
@@ -102,7 +103,7 @@ spec:
         - name: public-keys
           secret:
             optional: true
-            secretName: api-gateway-public-key
+            secretName: {{ include "api-gateway.fullname" . }}-public-key
 {{- if .Values.api_gateway.customPlugins.enabled }}            
       initContainers:
       - name: custom-plugins

@@ -1,6 +1,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
+  namespace: {{ .Release.Namespace }}
   annotations:
     {{- if not .Values.api_gateway.springdoc_swagger_ui_enable }}
     alb.ingress.kubernetes.io/actions.block-page: |
