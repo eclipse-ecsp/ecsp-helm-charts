@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "api-registry.fullname" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
    app: {{ include "api-registry.fullname" . }}
    group: api
@@ -29,7 +30,7 @@ spec:
                 operator: In
                 values: [{{ .Values.api_registry.nodeType | quote }}]
       containers:
-      - name: api-registry
+      - name: {{ include "api-registry.fullname" . }}
         image: {{ .Values.image.repository }}/api-registry:{{ .Values.api_registry.imageTag }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         ports:
@@ -87,12 +88,12 @@ spec:
         - name: management_datadog_metrics_export_api-key
           valueFrom:
             secretKeyRef:
-              name: api-registry-datadog-credentials
+              name: {{ include "api-registry.fullname" . }}-datadog-credentials
               key: api-key
         - name: management_datadog_metrics_export_application-key
           valueFrom:
             secretKeyRef:
-              name: api-registry-datadog-credentials
+              name: {{ include "api-registry.fullname" . }}-datadog-credentials
               key: application-key
         {{- end }}
         envFrom:
