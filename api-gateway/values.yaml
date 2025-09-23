@@ -60,7 +60,7 @@ api_gateway:
   registry_port: "7000"
   rate_limit_replenish_rate: "50"
   rate_limit_burst_capacity: "100"
-  environmentDomainName: "harman.com" # Change this to your domain name
+  environmentDomainName: "TO-BE-UPDATED" # Change this to your domain name
   userIdField: "user_id"
   springdoc_swagger_ui_oauth2RedirectUrl: "http://api-gateway-int-svc:7000/"
   nodeAffinityKey: "TO-BE-UPDATED" #  Change this to your node affinity key
