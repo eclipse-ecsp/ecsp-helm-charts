@@ -1,0 +1,75 @@
+{{- if contains "ecsp" .Values.multiTenant.tenantIds }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "uidam-user-management.fullname" . }}-tenant-ecsp
+  labels: {{- include "uidam-user-management.labels" . | nindent 4 }}
+data:
+  # ECSP Tenant Specific Configuration
+  ECSP_TENANT_ID: {{ .Values.multiTenant.tenants.ecsp.tenantId | quote }}
+  ECSP_TENANT_NAME: {{ .Values.multiTenant.tenants.ecsp.tenantName | quote }}
+  
+  # ECSP Account Configuration
+  ECSP_TENANT_ACCOUNT_NAME: {{ .Values.multiTenant.tenants.ecsp.account.accountName | quote }}
+  ECSP_TENANT_ACCOUNT_TYPE: {{ .Values.multiTenant.tenants.ecsp.account.accountType | quote }}
+  
+  # ECSP User Configuration
+  ECSP_USER_PASSWORD_ENCODER: {{ .Values.multiTenant.tenants.ecsp.user.passwordEncoder | quote }}
+  ECSP_MAX_ALLOWED_LOGIN_ATTEMPTS: {{ .Values.multiTenant.tenants.ecsp.user.maxAllowedLoginAttempts | quote }}
+  ECSP_USER_STATUS_LIFE_CYCLE_ENABLED: {{ .Values.multiTenant.tenants.ecsp.user.isUserStatusLifeCycleEnabled | quote }}
+  ECSP_EXTERNAL_USER_PERMITTED_ROLES: {{ .Values.multiTenant.tenants.ecsp.user.externalUserPermittedRoles | quote }}
+  ECSP_EXTERNAL_USER_DEFAULT_STATUS: {{ .Values.multiTenant.tenants.ecsp.user.externalUserDefaultStatus | quote }}
+  ECSP_USER_DEFAULT_ACCOUNT_NAME: {{ .Values.multiTenant.tenants.ecsp.user.userDefaultAccountName | quote }}
+  ECSP_ADDITIONAL_ATTR_CHECK_ENABLED_FOR_SIGN_UP: {{ .Values.multiTenant.tenants.ecsp.user.additionalAttrCheckEnabledForSignUp | quote }}
+  
+  # ECSP Auth Configuration
+  ECSP_AUTH_ADMIN_SCOPE: {{ .Values.multiTenant.tenants.ecsp.auth.adminScope | quote }}
+  
+  # ECSP Email Verification
+  ECSP_EMAIL_VERIFICATION_ENABLED: {{ .Values.multiTenant.tenants.ecsp.emailVerification.enabled | quote }}
+  ECSP_EMAIL_VERIFICATION_URL: {{ .Values.multiTenant.tenants.ecsp.emailVerification.url | quote }}
+  ECSP_EMAIL_VERIFICATION_NOTIFICATION_ID: {{ .Values.multiTenant.tenants.ecsp.emailVerification.notificationId | quote }}
+  ECSP_EMAIL_VERIFICATION_EXP_DAYS: {{ .Values.multiTenant.tenants.ecsp.emailVerification.expDays | quote }}
+  ECSP_EMAIL_VERIFICATION_REGEX_PATTERN_EXCLUDE: {{ .Values.multiTenant.tenants.ecsp.emailVerification.emailRegexPatternExclude | quote }}
+  ECSP_EMAIL_VERIFICATION_AUTH_SERVER_RESPONSE_URL: {{ .Values.multiTenant.tenants.ecsp.emailVerification.authServerResponseUrl | quote }}
+  
+  # ECSP Notification Configuration
+  ECSP_NOTIFICATION_API_URL: {{ .Values.multiTenant.tenants.ecsp.notification.apiUrl | quote }}
+  ECSP_NOTIFICATION_ID: {{ .Values.multiTenant.tenants.ecsp.notification.notificationId | quote }}
+  
+  # ECSP Auth Server Configuration
+  ECSP_AUTH_SERVER_HOSTNAME: {{ .Values.multiTenant.tenants.ecsp.authServer.hostName | quote }}
+  ECSP_AUTH_SERVER_TOKEN_URL: {{ .Values.multiTenant.tenants.ecsp.authServer.tokenUrl | quote }}
+  ECSP_AUTH_SERVER_REVOKE_TOKEN_URL: {{ .Values.multiTenant.tenants.ecsp.authServer.revokeTokenUrl | quote }}
+  ECSP_AUTH_SERVER_CLIENT_ID: {{ .Values.multiTenant.tenants.ecsp.authServer.clientId | quote }}
+  
+  # ECSP Client Registration Configuration
+  ECSP_CLIENT_REGISTRATION_DEFAULT_STATUS: {{ .Values.multiTenant.tenants.ecsp.clientRegistration.defaultStatus | quote }}
+  ECSP_CLIENT_REGISTRATION_REFRESH_TOKEN_VALIDITY: {{ .Values.multiTenant.tenants.ecsp.clientRegistration.refreshTokenValidity | quote }}
+  ECSP_CLIENT_REGISTRATION_ACCESS_TOKEN_VALIDITY: {{ .Values.multiTenant.tenants.ecsp.clientRegistration.accessTokenValidity | quote }}
+  ECSP_CLIENT_REGISTRATION_AUTHORIZATION_CODE_VALIDITY: {{ .Values.multiTenant.tenants.ecsp.clientRegistration.authorizationCodeValidity | quote }}
+  ECSP_CLIENT_REGISTRATION_HASH_ALGORITHM: {{ .Values.multiTenant.tenants.ecsp.clientRegistration.hashAlgorithm | quote }}
+  
+  # ECSP Recovery Configuration
+  ECSP_RECOVERY_SECRET_EXPIRES_IN_MINUTES: {{ .Values.multiTenant.tenants.ecsp.recovery.secretExpiresInMinutes | quote }}
+  ECSP_RECOVERY_PASSWORD_RECOVERY_NOTIFICATION_ID: {{ .Values.multiTenant.tenants.ecsp.recovery.passwordRecoveryNotificationId | quote }}
+  ECSP_RECOVERY_AUTH_SERVER_RESET_RESPONSE_URL: {{ .Values.multiTenant.tenants.ecsp.recovery.authServerResetResponseUrl | quote }}
+  
+  # ECSP Captcha Configuration
+  ECSP_CAPTCHA_ENFORCE_AFTER_NO_OF_FAILURES: {{ .Values.multiTenant.tenants.ecsp.captcha.enforceAfterNoOfFailures | quote }}
+  
+  # ECSP Database Configuration
+  ECSP_POSTGRES_DATASOURCE: {{ .Values.multiTenant.tenants.ecsp.database.jdbcUrl | quote }}
+  ECSP_DATABASE_MAX_POOL_SIZE: {{ .Values.multiTenant.tenants.ecsp.database.maxPoolSize | quote }}
+  ECSP_DATABASE_MAX_IDLE_TIME: {{ .Values.multiTenant.tenants.ecsp.database.maxIdleTime | quote }}
+  ECSP_DATABASE_CONNECTION_TIMEOUT_MS: {{ .Values.multiTenant.tenants.ecsp.database.connectionTimeoutMs | quote }}
+  ECSP_DATABASE_DEFAULT_SCHEMA: {{ .Values.multiTenant.tenants.ecsp.database.defaultSchema | quote }}
+  ECSP_DATABASE_CACHE_PREP_STMTS: {{ .Values.multiTenant.tenants.ecsp.database.cachePrepStmts | quote }}
+  ECSP_DATABASE_PREP_STMT_CACHE_SIZE: {{ .Values.multiTenant.tenants.ecsp.database.prepStmtCacheSize | quote }}
+  ECSP_DATABASE_PREP_STMT_CACHE_SQL_LIMIT: {{ .Values.multiTenant.tenants.ecsp.database.prepStmtCacheSqlLimit | quote }}
+  
+  # ECSP Liquibase Configuration
+  ECSP_LIQUIBASE_CHANGE_LOG: {{ .Values.multiTenant.tenants.ecsp.liquibase.changeLog | quote }}
+  ECSP_LIQUIBASE_DEFAULT_SCHEMA: {{ .Values.multiTenant.tenants.ecsp.liquibase.defaultSchema | quote }}
+  ECSP_LIQUIBASE_PARAMETERS_SCHEMA: {{ .Values.multiTenant.tenants.ecsp.liquibase.parametersSchema | quote }}
+{{- end }}

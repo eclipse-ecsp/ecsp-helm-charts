@@ -4,31 +4,88 @@ metadata:
   name: {{ include "uidam-authorization-server.fullname" . }}
   labels: {{- include "uidam-authorization-server.labels" . | nindent 4 }}
 data:
+  # Global Configuration
   SPRING_AUTH_PROXY_PORT_HTTPS: "9443"
   SPRING_AUTH_PROXY_PORT: "9000"
-  POSTGRES_DATASOURCE: "jdbc:postgresql://{{ .Values.postgres.host }}:{{ .Values.postgres.port}}/{{ .Values.postgres.databaseName }}"
+  POSTGRES_DATASOURCE: "jdbc:postgresql://{{ .Values.postgresql.host }}:{{ .Values.postgresql.port}}/{{ .Values.postgres.uidam_dbname }}"
   SPRING_AUTH_PROXY_HOSTNAME: {{ (first .Values.ingress.hosts).hostPrefix }}.{{ .Values.environmentDomainName }}
   UI_TEMPLATE_PATH: {{ .Values.uiTemplatePath  | quote}}
   UI_STATIC_PATH: {{ .Values.uiStaticPath  | quote}}
-  GRAYLOG_ENABLED: {{ .Values.logging.GRAYLOG_ENABLED | quote }}
-  GRAYLOG_HOST: {{ .Values.logging.GRAYLOG_HOST | quote }}
-  GRAYLOG_PORT: {{ .Values.logging.GRAYLOG_PORT | quote }}
-  NEVER_BLOCK_FOR_GRAYLOG: {{ .Values.logging.NEVER_BLOCK_FOR_GRAYLOG | quote }}
-  LOG_FOLDER: {{ .Values.logging.LOG_FOLDER | quote }}
-  LOG_LEVEL: {{ .Values.logging.LOG_LEVEL | quote }}
-  IGNITE_LOG_LEVEL: {{ .Values.logging.IGNITE_LOG_LEVEL | quote }}
-  SVC_LOG_LEVEL: {{ .Values.logging.SVC_LOG_LEVEL | quote }}
-  STORAGE_LOG_LEVEL: {{ .Values.logging.STORAGE_LOG_LEVEL | quote }}
-  SPRING_LOG_LEVEL: {{ .Values.logging.SPRING_LOG_LEVEL | quote }}
-  LOG_APPENDER: {{ .Values.logging.LOG_APPENDER | quote }}
+  GRAYLOG_ENABLED: {{ .Values.graylog.enabled | quote }}
+  GRAYLOG_HOST: graylog3-tcp.graylog.svc.cluster.local
+  GRAYLOG_PORT: "12201"
+  NEVER_BLOCK_FOR_GRAYLOG: "false"
+  LOG_FOLDER: logs/
+  LOG_LEVEL: {{ .Values.logging.logLevel | quote }}
+  IGNITE_LOG_LEVEL: {{ .Values.logging.igniteLogLevel | quote }}
+  SVC_LOG_LEVEL: {{ .Values.logging.svcLogLevel | quote }}
+  STORAGE_LOG_LEVEL: {{ .Values.logging.storageLogLevel | quote }}
+  SPRING_LOG_LEVEL: {{ .Values.logging.springLogLevel | quote }}
+  LOG_APPENDER: "STDOUT"
 
-  CACHE_EXPIRE_MINS: {{ .Values.tenant.cache.expiration | quote }}
-  CACHE_MAX_SIZE: {{ .Values.tenant.cache.maxsize | quote }}
-  CACHE_CLIENT_IDS: {{ .Values.tenant.cache.clientids | quote }}                                                                 
-  ###Tenant Configuration###
+  # MultiTenant Global Configuration
+  {{- if .Values.multiTenant }}
+  MULTI_TENANT_ENABLED: {{ .Values.multiTenant.enabled | quote }}
+  TENANT_IDS: {{ .Values.multiTenant.tenantIds | quote }}
+  DEFAULT_TENANT: {{ .Values.multiTenant.defaultTenant | quote }}
+  {{- end }}
+
+  # UIDAM Configuration
+  UIDAM_DEFAULT_DB_SCHEMA: {{ .Values.uidam.defaultDbSchema | quote }}
+
+  # Security Configuration
+  SECURITY_CLIENT_BCRYPT_STRENGTH: {{ .Values.security.client.bcryptStrength | quote }}
+
+  # UI Configuration
+  UI_TEMPLATE_PATH_CONFIG: {{ .Values.ui.templatePath | quote }}
+  UI_STATIC_PATH_CONFIG: {{ .Values.ui.staticPath | quote }}
+
+  # Cache Configuration
+  CACHE_EXPIRE_MINS: {{ .Values.cache.expireMinutes | quote }}
+  CACHE_MAX_SIZE: {{ .Values.cache.maxSize | quote }}
+  CACHE_CLIENT_IDS: {{ .Values.cache.clientIds | quote }}
+
+  # Cleanup Job Configuration
+  CLEANUP_JOB_BATCH_SIZE: {{ .Values.cleanupJob.batchSize | quote }}
+  CLEANUP_JOB_SCHEDULING_RATE_CRON: {{ .Values.cleanupJob.schedulingRateCron | quote }}
+  CLEANUP_JOB_RETRY_ATTEMPTS: {{ .Values.cleanupJob.retryAttempts | quote }}
+  CLEANUP_JOB_TOKEN_EXPIRES_DAYS: {{ .Values.cleanupJob.tokenExpiresDays | quote }}
+
+  # JKS Configuration
+  JKS_ENABLED: {{ .Values.jks.enabled | quote }}
+
+  # User Management Integration
+  USER_MANAGEMENT_BASE_URL: {{ .Values.userManagement.baseUrl | quote }}
+
+  # Server Configuration
+  SERVER_SERVLET_SESSION_TIMEOUT: {{ .Values.server.servlet.sessionTimeout | quote }}
+
+  # User Session Configuration
+  USER_SESSION_FORCE_LOGIN: {{ .Values.user.session.forceLogin | quote }}
+
+  # Health Configuration
+  HEALTH_SERVICE_EXECUTOR_INITIAL_DELAY: {{ .Values.health.service.executorInitialDelay | quote }}
+  HEALTH_SERVICE_RETRY_INTERVAL_MILLIS: {{ .Values.health.service.retryIntervalMillis | quote }}
+  HEALTH_POSTGRESDB_MONITOR_ENABLED: {{ .Values.health.postgresdb.monitor.enabled | quote }}
+  HEALTH_POSTGRESDB_RESTART_ON_FAILURE: {{ .Values.health.postgresdb.monitor.restartOnFailure | quote }}
+
+  # CORS Configuration
+  CORS_ALLOWED_ORIGIN_PATTERNS: {{ .Values.cors.allowedOriginPatterns | quote }}
+  CORS_ALLOWED_METHODS: {{ .Values.cors.allowedMethods | quote }}
+
+  # Logout Configuration
+  LOGOUT_REDIRECT_WHITELISTED_CUSTOM_HOSTS: {{ .Values.logout.redirect.whitelistedCustomHosts | quote }}
+
+  # Legacy tenant configuration for backward compatibility
+  CACHE_EXPIRE_MINS_LEGACY: {{ .Values.tenant.cache.expiration | quote }}
+  CACHE_MAX_SIZE_LEGACY: {{ .Values.tenant.cache.maxsize | quote }}
+  CACHE_CLIENT_IDS_LEGACY: {{ .Values.tenant.cache.clientids | quote }}  # Legacy tenant configuration for backward compatibility
+  CACHE_EXPIRE_MINS_LEGACY: {{ .Values.tenant.cache.expiration | quote }}
+  CACHE_MAX_SIZE_LEGACY: {{ .Values.tenant.cache.maxsize | quote }}
+  CACHE_CLIENT_IDS_LEGACY: {{ .Values.tenant.cache.clientids | quote }}
   TENANT_ID: {{ .Values.tenant.tenantId | quote }}
   TENANT_NAME: {{ .Values.tenant.tenantName | quote }}
-  JKS_ENABLED: {{ .Values.tenant.jksEnabled | quote }}
+  JKS_ENABLED_LEGACY: {{ .Values.tenant.jksEnabled | quote }}
   TENANT_ALIAS: {{ .Values.tenant.alias | quote }}
   TENANT_ACCOUNT_ID: {{ .Values.tenant.account.accountId | quote }}
   TENANT_ACCOUNT_NAME: {{ .Values.tenant.account.accountName | quote }}
@@ -42,64 +99,57 @@ data:
   TENANT_USER_CAPTCHA_AFTER_INVALID_FAILURES: {{ .Values.tenant.user.captchaAfterInvalidFailures | quote }}
   TENANT_USER_CAPTCHA_REQUIRED: {{ .Values.tenant.user.captchaRequired | quote }}
   TENANT_USER_MAX_ALLOWED_LOGIN_ATTEMPTS: {{ .Values.tenant.user.maxAllowedLoginAttempts | quote }}
+  TENANT_USER_DEFAULT_ROLE: {{ .Values.tenant.user.defaultRole | quote }}
+  TENANT_SIGN_UP_ENABLED: {{ .Values.tenant.user.signUpEnabled | quote }}
   TENANT_CAPTCHA_RECAPTCHA_VERIFY_URL: {{ .Values.tenant.captcha.recaptchaVerifyUrl | quote }}
   TENANT_CAPTCHA_RECAPTCHA_KEY_SITE: {{ .Values.tenant.captcha.recaptchaKeySite | quote }}
   TENANT_PASSWORD_RECOVERY_URL: https://{{ (first .Values.ingress.hosts).hostPrefix }}.{{ .Values.environmentDomainName }}/recovery
-
-  # External IDP Configuration
-  # External IDP Registered Clients
-  {{- if .Values.tenant.externalIdpEnabled }}
-  {{- if .Values.tenant.externalIdpRegisteredClients }}
-  {{- range $index, $client := .Values.tenant.externalIdpRegisteredClients }}
-  TENANT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_CLIENT_NAME: {{ $client.clientName | quote }}
-  TENANT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_REGISTRATION_ID: {{ $client.registrationId | quote }}
-  TENANT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_CLIENT_ID: {{ $client.clientId | quote }}
-  TENANT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_CLIENT_SECRET: {{ $client.clientSecret | quote }}
-  TENANT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_CLIENT_AUTHENTICATION_METHOD: {{ $client.clientAuthenticationMethod | quote }}
-  TENANT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_SCOPE: {{ $client.scope | quote }}
-  TENANT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_AUTHORIZATION_URI: {{ $client.authorizationUri | quote }}
-  TENANT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_TOKEN_URI: {{ $client.tokenUri | quote }}
-  TENANT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_USER_INFO_URI: {{ $client.userInfoUri | quote }}
-  TENANT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_USER_NAME_ATTRIBUTE_NAME: {{ $client.userNameAttributeName | quote }}
-  TENANT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_JWK_SET_URI: {{ $client.jwkSetUri | quote }}
-  TENANT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_TOKEN_INFO_SOURCE: {{ $client.tokenInfoSource | quote }}
-  TENANT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_CREATE_USER_MODE: {{ $client.createUserMode | quote }}
-  TENANT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_DEFAULT_USER_ROLES: {{ $client.defaultUserRoles | quote }}
-
-  {{- if $client.claimMappings }}
-  TENANT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_CLAIM_MAPPINGS: {{ $client.claimMappings | quote }}
-  {{- end }}
-
-  {{- if $client.conditions }}
-  TENANT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_CONDITIONS_CLAIM_KEY: {{ $client.conditions.claimKey | quote }}
-  TENANT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_CONDITIONS_EXPECTED_VALUE: {{ $client.conditions.expectedValue | quote }}
-  TENANT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_CONDITIONS_OPERATOR: {{ $client.conditions.operator | quote }}
-  {{- end }}
-
-  {{- end }}
-  {{- end }}
-  {{- end }}
-  
   TENANT_EXTERNAL_IDP_ENABLED: {{ .Values.tenant.externalIdpEnabled | quote}}
   CREATE_FEDRATED_USER_ENDPOINT: {{ .Values.tenant.externalUrls.createFedratedUserEndpoint | quote }}
   TENANT_INTERNAL_LOGIN_ENABLED: {{ .Values.tenant.internalLoginEnabled | quote}}
   USER_MANAGEMENT_ENV: {{ .Values.tenant.externalUrls.userManagementUrl | quote}}
   CLIENT_BY_CLIENT_ID_ENDPOINT: {{ .Values.tenant.externalUrls.clientByClientIdEndpoint | quote}}
   USER_BY_USERNAME_ENDPOINT: {{ .Values.tenant.externalUrls.userByUsernameEndpoint | quote}}
+  ADD_USER_EVENTS_ENDPOINT: {{ .Values.tenant.externalUrls.addUserEventsEndpoint | quote}}
+  USER_RECOVERY_NOTIFICATION_ENDPOINT: {{ .Values.tenant.externalUrls.recoveryNotificationEndpoint | quote }}
+  USER_UPDATE_PASSWORD_USING_RECOVERY_SECRET_ENDPOINT: {{ .Values.tenant.externalUrls.updatePasswordUsingSecretEndpoint | quote }}
+  CREATE_USER_ENDPOINT: {{ .Values.tenant.externalUrls.selfCreateUserEndpoint | quote }}
+  PASSWORD_POLICY_ENDPOINT: {{ .Values.tenant.externalUrls.passwordPolicyEndpoint | quote }}
+  CREATE_FEDRATED_USER_ENDPOINT: {{ .Values.tenant.externalUrls.createFedratedUserEndpoint | quote }}
   KEYSTORE_FILE_NAME: {{ .Values.tenant.keyStore.keyStoreFilename | quote}}
   KEYSTORE_ALIAS: {{ .Values.tenant.keyStore.keyAlias | quote }}
   KEYSTORE_TYPE: {{ .Values.tenant.keyStore.keyType | quote}}
   JWT_PUBLIC_KEY: {{ .Values.tenant.cert.jwtPublicKey | quote }}
   JWT_PRIVATE_KEY: {{ .Values.tenant.cert.jwtPrivateKey | quote }}
   JWT_KEY_ID: {{ .Values.tenant.cert.jwtKeyId | quote }}
-  
   JWT_ADDITIONAL_CLAIM_ATTRIBUTES: {{ .Values.tenant.user.jwtAdditionalClaimAttributes | quote }}
+  JWT_PUBLIC_KEY_PEM_PATH: {{ .Values.tenant.keyStore.jwtPubKeyPem | quote }}
 
+  UIDAM_DEFAULT_DB_SCHEMA: {{ .Values.uidam.db_schema }}
+  
   ###Fixed Session Timeout###
   server_servlet_session_timeout: {{ .Values.server_servlet_session_timeout | quote }}
+  session_recreation_policy: {{ .Values.session_recreation_policy | quote }}
   ###Force user to login always in Auth Code/PKCE flow###
   user_session_force_login: {{ .Values.user_session_force_login | quote }}
-  SESSION_RECREATION_POLICY: "ALWAYS"
+
+  # Metrics configuration (used in application.properties)
+  metrics_prometheus_enabled: {{ .Values.metrics.prometheus.enabled | default "false" | quote }}
+  prometheus_agent_port: {{ .Values.metrics.prometheus.agent.port | default "9100" | quote }}
+  prometheus_agent_port_exposed: {{ .Values.metrics.prometheus.agent.port_exposed | default "9100" | quote }}
+  metrics_prometheus_path: {{ .Values.metrics.prometheus.path | default "/prometheus" | quote }}
+  metrics_basePath: {{ .Values.metrics.basePath | default "/actuator" | quote }}
+  metrics_datadog_enabled: {{ .Values.metrics.datadog.enabled | default "false" | quote }}
+  metrics_datadog_descriptions: {{ .Values.metrics.datadog.descriptions | default "true" | quote }}
+  metrics_datadog_uri: {{ .Values.metrics.datadog.uri | default "https://api.datadoghq.com" | quote }}
+  metrics_datadog_step: {{ .Values.metrics.datadog.step | default "60s" | quote }}
+  metrics_datadog_readTimeout: {{ .Values.metrics.datadog.readTimeout | default "10000" | quote }}
+  metrics_datadog_connectTimeout: {{ .Values.metrics.datadog.connectTimeout | default "10000" | quote }}
+  metrics_datadog_batchSize: {{ .Values.metrics.datadog.batchSize | default "20" | quote }}
+  # Metrics Tags
+  management_metrics_tags_env: {{ .Values.metrics.tags.envName | default "dev" | quote }}
+  management_metrics_tags_product: {{ .Values.metrics.tags.product | default "UIDAM" | quote }}
+  management_metrics_tags_service: {{ .Values.metrics.tags.service | default "UIDAM-Authorization-Server" | quote }}
 
   ###DAO Configuration###
   health_postgresdb_monitor_enabled: {{ .Values.health.postgresdb.monitor.enabled | quote }}

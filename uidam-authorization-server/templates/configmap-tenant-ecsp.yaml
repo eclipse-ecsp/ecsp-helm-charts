@@ -1,0 +1,93 @@
+{{- if contains "ecsp" .Values.multiTenant.tenantIds }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "uidam-authorization-server.fullname" . }}-tenant-ecsp
+  labels: {{- include "uidam-authorization-server.labels" . | nindent 4 }}
+data:
+  # ECSP Tenant Specific Configuration
+  ECSP_TENANT_ID: {{ .Values.multiTenant.tenants.ecsp.tenantId | quote }}
+  ECSP_TENANT_NAME: {{ .Values.multiTenant.tenants.ecsp.tenantName | quote }}
+  ECSP_JKS_ENABLED: {{ .Values.multiTenant.tenants.ecsp.jksEnabled | quote }}
+  ECSP_TENANT_EXTERNAL_IDP_ENABLED: {{ .Values.multiTenant.tenants.ecsp.externalIdpEnabled | quote }}
+  ECSP_TENANT_INTERNAL_LOGIN_ENABLED: {{ .Values.multiTenant.tenants.ecsp.internalLoginEnabled | quote }}
+  ECSP_TENANT_EXTERNAL_IDP_CLIENT_NAME: {{ .Values.multiTenant.tenants.ecsp.externalIdpClientName | quote }}
+  
+  # ECSP Account Configuration
+  ECSP_TENANT_ACCOUNT_ID: {{ .Values.multiTenant.tenants.ecsp.account.accountId | quote }}
+  ECSP_TENANT_ACCOUNT_NAME: {{ .Values.multiTenant.tenants.ecsp.account.accountName | quote }}
+  ECSP_TENANT_ACCOUNT_TYPE: {{ .Values.multiTenant.tenants.ecsp.account.accountType | quote }}
+  ECSP_ACCOUNT_FIELD_ENABLED: {{ .Values.multiTenant.tenants.ecsp.account.accountFieldEnabled | quote }}
+  
+  # ECSP Client Configuration
+  ECSP_TENANT_CLIENT_ACCESS_TOKEN_TTL: {{ .Values.multiTenant.tenants.ecsp.client.accessTokenTtl | quote }}
+  ECSP_TENANT_CLIENT_ID_TOKEN_TTL: {{ .Values.multiTenant.tenants.ecsp.client.idTokenTtl | quote }}
+  ECSP_TENANT_CLIENT_REFRESH_TOKEN_TTL: {{ .Values.multiTenant.tenants.ecsp.client.refreshTokenTtl | quote }}
+  ECSP_TENANT_CLIENT_AUTH_CODE_TTL: {{ .Values.multiTenant.tenants.ecsp.client.authCodeTtl | quote }}
+  ECSP_TENANT_OAUTH_SCOPE_CUSTOMIZATION: {{ .Values.multiTenant.tenants.ecsp.client.oauthScopeCustomization | quote }}
+  ECSP_TENANT_CLIENT_REUSE_REFRESH_TOKEN: {{ .Values.multiTenant.tenants.ecsp.client.reuseRefreshToken | quote }}
+  
+  # ECSP User Configuration
+  ECSP_TENANT_USER_CAPTCHA_AFTER_INVALID_FAILURES: {{ .Values.multiTenant.tenants.ecsp.user.captchaAfterInvalidFailures | quote }}
+  ECSP_TENANT_USER_CAPTCHA_REQUIRED: {{ .Values.multiTenant.tenants.ecsp.user.captchaRequired | quote }}
+  ECSP_TENANT_USER_MAX_ALLOWED_LOGIN_ATTEMPTS: {{ .Values.multiTenant.tenants.ecsp.user.maxAllowedLoginAttempts | quote }}
+  ECSP_TENANT_USER_DEFAULT_ROLE: {{ .Values.multiTenant.tenants.ecsp.user.defaultRole | quote }}
+  ECSP_TENANT_SIGN_UP_ENABLED: {{ .Values.multiTenant.tenants.ecsp.user.signUpEnabled | quote }}
+  ECSP_JWT_ADDITIONAL_CLAIM_ATTRIBUTES: {{ .Values.multiTenant.tenants.ecsp.user.jwtAdditionalClaimAttributes | quote }}
+  
+  # ECSP Keystore Configuration
+  ECSP_KEYSTORE_FILE_NAME: {{ .Values.multiTenant.tenants.ecsp.keyStore.keyStoreFilename | quote }}
+  ECSP_KEYSTORE_ALIAS: {{ .Values.multiTenant.tenants.ecsp.keyStore.keyAlias | quote }}
+  ECSP_KEYSTORE_TYPE: {{ .Values.multiTenant.tenants.ecsp.keyStore.keyType | quote }}
+  ECSP_JWT_PUBLIC_KEY_PEM_PATH: {{ .Values.multiTenant.tenants.ecsp.keyStore.jwtPubKeyPem | quote }}
+  ECSP_KEYSTORE_JKS_ENCODED_CONTENT: {{ .Values.multiTenant.tenants.ecsp.keyStore.jksEncodedContent | quote }}
+
+  # ECSP Certificate Configuration
+  ECSP_JWT_PUBLIC_KEY: {{ .Values.multiTenant.tenants.ecsp.cert.jwtPublicKey | quote }}
+  ECSP_JWT_PRIVATE_KEY: {{ .Values.multiTenant.tenants.ecsp.cert.jwtPrivateKey | quote }}
+  ECSP_JWT_KEY_ID: {{ .Values.multiTenant.tenants.ecsp.cert.jwtKeyId | quote }}
+  
+  # ECSP Captcha Configuration
+  ECSP_TENANT_CAPTCHA_RECAPTCHA_VERIFY_URL: {{ .Values.multiTenant.tenants.ecsp.captcha.recaptchaVerifyUrl | quote }}
+  ECSP_TENANT_CAPTCHA_RECAPTCHA_KEY_SITE: {{ .Values.multiTenant.tenants.ecsp.captcha.recaptchaKeySite | quote }}
+  
+  # ECSP Database Configuration
+  ECSP_POSTGRES_DATASOURCE: {{ .Values.multiTenant.tenants.ecsp.database.jdbc_url | quote }}
+  
+  # ECSP Contact Information
+  ECSP_TENANT_PASSWORD_RECOVERY_URL: https://{{ (first .Values.ingress.hosts).hostPrefix }}.{{ .Values.environmentDomainName }}/ecsp/recovery
+  ECSP_TENANT_CONTACT_NAME: ""
+  ECSP_TENANT_PHONE_NUMBER: ""
+  ECSP_TENANT_EMAIL: ""
+  
+  # ECSP External URLs
+  ECSP_USER_MANAGEMENT_ENV: {{ .Values.multiTenant.tenants.ecsp.externalUrls.userManagementUrl | quote }}
+  ECSP_CLIENT_BY_CLIENT_ID_ENDPOINT: {{ .Values.multiTenant.tenants.ecsp.externalUrls.clientByClientIdEndpoint | quote }}
+  ECSP_USER_BY_USERNAME_ENDPOINT: {{ .Values.multiTenant.tenants.ecsp.externalUrls.userByUsernameEndpoint | quote }}
+  ECSP_ADD_USER_EVENTS_ENDPOINT: {{ .Values.multiTenant.tenants.ecsp.externalUrls.addUserEventsEndpoint | quote }}
+  ECSP_USER_RECOVERY_NOTIFICATION_ENDPOINT: {{ .Values.multiTenant.tenants.ecsp.externalUrls.recoveryNotificationEndpoint | quote }}
+  ECSP_USER_UPDATE_PASSWORD_USING_RECOVERY_SECRET_ENDPOINT: {{ .Values.multiTenant.tenants.ecsp.externalUrls.updatePasswordUsingSecretEndpoint | quote }}
+  ECSP_CREATE_USER_ENDPOINT: {{ .Values.multiTenant.tenants.ecsp.externalUrls.selfCreateUserEndpoint | quote }}
+  ECSP_PASSWORD_POLICY_ENDPOINT: {{ .Values.multiTenant.tenants.ecsp.externalUrls.passwordPolicyEndpoint | quote }}
+  ECSP_CREATE_FEDRATED_USER_ENDPOINT: {{ .Values.multiTenant.tenants.ecsp.externalUrls.createFedratedUserEndpoint | quote }}
+  
+  {{- if .Values.multiTenant.tenants.ecsp.externalIdpRegisteredClients }}
+  # ECSP External IDP Registered Clients
+  {{- range $index, $client := .Values.multiTenant.tenants.ecsp.externalIdpRegisteredClients }}
+  ECSP_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_CLIENT_NAME: {{ $client.clientName | quote }}
+  ECSP_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_REGISTRATION_ID: {{ $client.registrationId | quote }}
+  ECSP_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_CLIENT_ID: {{ $client.clientId | quote }}
+  ECSP_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_CLIENT_AUTHENTICATION_METHOD: {{ $client.clientAuthenticationMethod | quote }}
+  ECSP_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_SCOPE: {{ $client.scope | quote }}
+  ECSP_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_AUTHORIZATION_URI: {{ $client.authorizationUri | quote }}
+  ECSP_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_TOKEN_URI: {{ $client.tokenUri | quote }}
+  ECSP_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_USER_INFO_URI: {{ $client.userInfoUri | quote }}
+  ECSP_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_USER_NAME_ATTRIBUTE_NAME: {{ $client.userNameAttributeName | quote }}
+  ECSP_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_JWK_SET_URI: {{ $client.jwkSetUri | quote }}
+  ECSP_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_TOKEN_INFO_SOURCE: {{ $client.tokenInfoSource | quote }}
+  ECSP_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_CREATE_USER_MODE: {{ $client.createUserMode | quote }}
+  ECSP_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_DEFAULT_USER_ROLES: {{ $client.defaultUserRoles | quote }}
+  ECSP_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_CLAIM_MAPPINGS: {{ $client.claimMappings | quote }}
+  {{- end }}
+  {{- end }}
+{{- end }}

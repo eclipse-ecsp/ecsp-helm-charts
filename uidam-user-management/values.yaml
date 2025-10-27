@@ -66,6 +66,154 @@ affinity: {}
 distributedTracing:
   enabled: false
 
+# Multi-tenant configuration
+multiTenant:
+  # Global tenant settings
+  tenantIds: "ecsp,sdp"
+  defaultTenant: "ecsp"
+  enabled: false
+  
+  # Tenant-specific configurations
+  tenants:
+    ecsp:
+      tenantId: "ecsp"
+      tenantName: "ECSP"
+      account:
+        accountName: "ecsp"
+        accountType: "Root"
+      user:
+        passwordEncoder: "SHA-256"
+        maxAllowedLoginAttempts: 3
+        isUserStatusLifeCycleEnabled: false
+        externalUserPermittedRoles: "VEHICLE_OWNER"
+        externalUserDefaultStatus: ""
+        userDefaultAccountName: "userdefaultaccount"
+        additionalAttrCheckEnabledForSignUp: false
+      auth:
+        adminScope: "UIDAMSystem"
+      emailVerification:
+        enabled: false
+        url: "https://api-gateway.{{ .Values.environmentDomainName }}/ecsp/v1/emailVerification/%s"
+        notificationId: "UIDAM_USER_VERIFY_ACCOUNT"
+        expDays: 7
+        emailRegexPatternExclude: ""
+        authServerResponseUrl: "https://uidam-authorization-server.{{ .Values.environmentDomainName }}/ecsp/emailVerification/verify"
+      notification:
+        apiUrl: "http://notification-api:8080/v1/notifications/nonRegisteredUsers"
+        notificationId: "uidamCustomEmailTemplate5"
+      authServer:
+        hostName: "https://uidam-authorization-server"
+        tokenUrl: "/ecsp/oauth2/token"
+        revokeTokenUrl: "/ecsp/revoke/revokeByAdmin"
+        clientId: "token-mgmt"
+      clientRegistration:
+        defaultStatus: "approved"
+        refreshTokenValidity: 3600
+        accessTokenValidity: 3600
+        authorizationCodeValidity: 300
+        hashAlgorithm: "SHA-256"
+      recovery:
+        secretExpiresInMinutes: 15
+        passwordRecoveryNotificationId: "UIDAM_USER_PASSWORD_RECOVERY"
+        authServerResetResponseUrl: "https://uidam-authorization-server.{{ .Values.environmentDomainName }}/ecsp/recovery/reset/"
+      captcha:
+        enforceAfterNoOfFailures: 1
+      database:
+        jdbcUrl: "jdbc:postgresql://postgresql:5432/ecsp_db"
+        maxPoolSize: 30
+        maxIdleTime: 0
+        connectionTimeoutMs: 60000
+        defaultSchema: "uidam"
+        cachePrepStmts: true
+        prepStmtCacheSize: 250
+        prepStmtCacheSqlLimit: 2048
+      liquibase:
+        changeLog: "classpath:database.schema/master.xml"
+        defaultSchema: "uidam"
+        parametersSchema: "uidam"
+    
+    sdp:
+      tenantId: "sdp"
+      tenantName: "SDP"
+      account:
+        accountName: "sdp"
+        accountType: "Root"
+      user:
+        passwordEncoder: "SHA-256"
+        maxAllowedLoginAttempts: 3
+        isUserStatusLifeCycleEnabled: false
+        externalUserPermittedRoles: "VEHICLE_OWNER"
+        externalUserDefaultStatus: ""
+        userDefaultAccountName: "userdefaultaccount"
+        additionalAttrCheckEnabledForSignUp: false
+      auth:
+        adminScope: "UIDAMSystem"
+      emailVerification:
+        enabled: false
+        url: "https://api-gateway.{{ .Values.environmentDomainName }}/sdp/v1/emailVerification/%s"
+        notificationId: "UIDAM_USER_VERIFY_ACCOUNT"
+        expDays: 7
+        emailRegexPatternExclude: ""
+        authServerResponseUrl: "https://uidam-authorization-server.{{ .Values.environmentDomainName }}/sdp/emailVerification/verify"
+      notification:
+        apiUrl: "http://notification-api:8080/v1/notifications/nonRegisteredUsers"
+        notificationId: "uidamCustomEmailTemplate5"
+      authServer:
+        hostName: "https://uidam-authorization-server"
+        tokenUrl: "/sdp/oauth2/token"
+        revokeTokenUrl: "/sdp/revoke/revokeByAdmin"
+        clientId: "token-mgmt"
+      clientRegistration:
+        defaultStatus: "approved"
+        refreshTokenValidity: 3600
+        accessTokenValidity: 3600
+        authorizationCodeValidity: 300
+        hashAlgorithm: "SHA-256"
+      recovery:
+        secretExpiresInMinutes: 15
+        passwordRecoveryNotificationId: "UIDAM_USER_PASSWORD_RECOVERY"
+        authServerResetResponseUrl: "https://uidam-authorization-server.{{ .Values.environmentDomainName }}/sdp/recovery/reset/"
+      captcha:
+        enforceAfterNoOfFailures: 1
+      database:
+        jdbcUrl: "jdbc:postgresql://postgresql:5432/sdp_db"
+        maxPoolSize: 30
+        maxIdleTime: 0
+        connectionTimeoutMs: 60000
+        defaultSchema: "uidam"
+        cachePrepStmts: true
+        prepStmtCacheSize: 250
+        prepStmtCacheSqlLimit: 2048
+      liquibase:
+        changeLog: "classpath:database.schema/master.xml"
+        defaultSchema: "uidam"
+        parametersSchema: "uidam"
+
+# Global secrets - These are shared across all tenants
+secrets:
+  liquibase_clientsecret: "ChangeMe"
+  liquibase_userpwd: "ChangeMe"
+  liquibase_usersalt: "ChangeMe"
+
+# Tenant-specific secrets
+tenantSecrets:
+  ecsp:
+    revokeTokenClientSecret: "ChangeMe"
+    clientSecretKey: "ChangeMe"
+    clientSecretSalt: "ChangeMe"
+    liquibase_clientsecret: "ChangeMe"
+    liquibase_userpwd: "ChangeMe"
+    liquibase_usersalt: "ChangeMe"
+  
+  sdp:
+    revokeTokenClientSecret: "ChangeMe"
+    clientSecretKey: "ChangeMe"
+    clientSecretSalt: "ChangeMe"
+    liquibase_clientsecret: "ChangeMe"
+    liquibase_userpwd: "ChangeMe"
+    liquibase_usersalt: "ChangeMe"
+
+# Legacy configuration for backward compatibility
 userManagementUrl: uidam-user-management:8080
 environmentDomainName: TO-BE-UPDATED
 
@@ -91,11 +239,11 @@ postgres:
   expected99thPercentileMs: "60000"
   max_pool_size: "30"
   liquibase:
-    clientsecret: TO-BE-UPDATED
-    userpwd: TO-BE-UPDATED
-    usersalt: TO-BE-UPDATED
+    clientsecret: ChangeMe
+    userpwd: ChangeMe
+    usersalt: ChangeMe
 
-
+max_pool_size: "30"
 
 health:
   postgresdb:
@@ -123,9 +271,9 @@ auth:
 
 user_status_life_cycle_enabled: "false"
 revoke_token_client_id: "token-mgmt"
-revokeTokenClientSecret: TO-BE-UPDATED
-clientsecretkey: TO-BE-UPDATED
-clientsecretsalt: TO-BE-UPDATED
+revokeTokenClientSecret: ChangeMe
+clientsecretkey: ChangeMe
+clientsecretsalt: ChangeMe
 userDefaultAccountName: "userdefaultaccount"
 external_user_permitted_roles: "VEHICLE_OWNER"
 external_user_default_status: ""
@@ -134,7 +282,6 @@ minPasswordLength: "10"
 maxPasswordLength: "15"
 passwordUpdateTimeInterval: "1"
 additional_attr_check_enabled_for_sign_up: false
-userDefaultAccountName: "userdefaultaccount"
 uidam:
   db_schema: "eclipseecsp"
   account_id: "TO-BE-UPDATED"
