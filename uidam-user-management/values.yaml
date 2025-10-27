@@ -243,6 +243,18 @@ postgres:
     userpwd: ChangeMe
     usersalt: ChangeMe
 
+postgresql:
+  host: postgresql
+  connection: postgresql
+  port: 5432
+  secretName: uidam-user-management-credentials
+  userName: ChangeMe
+  password: ChangeMe
+  initializer:
+    image:
+      repository: docker.io/eclipseecsp/postgresql-initializer
+      tag: 1.0.0
+
 max_pool_size: "30"
 
 health:

@@ -164,7 +164,7 @@ data:
   prometheus_agent_port_exposed: {{ .Values.metrics.prometheus.agent.port_exposed | quote }}
   postgres_connection_timeout_ms: {{ .Values.postgres.connecion_timeout_ms | quote }}
   postgres_expected99thPercentileMs: {{ .Values.postgres.expected99thPercentileMs | quote }}
-  postgresdb_metrics_enabled: {{ .Values.metrics.postgresdb.enabled | quote}}
-  postgresdb_metrics_executor_shutdown_buffer_ms: {{ .Values.metrics.postgresdb.executor_shutdown_buffer_ms | quote }}
-  postgresdb_metrics_thread_freq_ms: {{ .Values.metrics.postgresdb.thread.freq_ms | quote }}
-  postgresdb_metrics_thread_initial_delay_ms: {{ .Values.metrics.postgresdb.thread.intial_delay_ms | quote }}
+  postgresdb_metrics_enabled: {{ .Values.postgresdb.metrics.enabled | quote}}
+  postgresdb_metrics_executor_shutdown_buffer_ms: {{ .Values.postgresdb.metrics.executor_shutdown_buffer_ms | quote }}
+  postgresdb_metrics_thread_freq_ms: {{ .Values.postgresdb.metrics.thread.freq_ms | quote }}
+  postgresdb_metrics_thread_initial_delay_ms: {{ .Values.postgresdb.metrics.thread.intial_delay_ms | quote }}
