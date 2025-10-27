@@ -13,6 +13,13 @@ spec:
       {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- if and .Values.multiTenant (contains "ecsp" .Values.multiTenant.tenantIds) }}
+        checksum/config-ecsp: {{ include (print $.Template.BasePath "/configmap-tenant-ecsp.yaml") . | sha256sum }}
+        {{- end }}
+        {{- if and .Values.multiTenant (contains "sdp" .Values.multiTenant.tenantIds) }}
+        checksum/config-sdp: {{ include (print $.Template.BasePath "/configmap-tenant-sdp.yaml") . | sha256sum }}
+        {{- end }}
       labels: {{- include "uidam-authorization-server.selectorLabels" . | nindent 8 }}
     spec:
       {{- with .Values.imagePullSecrets }}
@@ -31,8 +38,8 @@ spec:
           protocol: TCP
         livenessProbe:
           httpGet:
-            path: /actuator/health/liveness
-            port: 9443       
+            path: "{{ .Values.metrics.basePath }}/health/liveness"
+            port: {{ .Values.metrics.prometheus.agent.port }}     
             scheme: HTTPS   
           initialDelaySeconds: 30    
           periodSeconds: 10
@@ -40,9 +47,9 @@ spec:
           failureThreshold: 3  
         readinessProbe:
           httpGet:
-            path: /actuator/health/readiness
-            port: 9443       
-            scheme: HTTPS   
+            path: "{{ .Values.metrics.basePath }}/health/readiness"
+            port: {{ .Values.metrics.prometheus.agent.port }}
+            scheme: HTTPS
           initialDelaySeconds: 30    
           periodSeconds: 10
           timeoutSeconds: 5
@@ -50,6 +57,14 @@ spec:
         envFrom:
         - configMapRef:
             name: {{ include "uidam-authorization-server.fullname" . }}
+        {{- if and .Values.multiTenant (contains "ecsp" .Values.multiTenant.tenantIds) }}
+        - configMapRef:
+            name: {{ include "uidam-authorization-server.fullname" . }}-tenant-ecsp
+        {{- end }}
+        {{- if and .Values.multiTenant (contains "sdp" .Values.multiTenant.tenantIds) }}
+        - configMapRef:
+            name: {{ include "uidam-authorization-server.fullname" . }}-tenant-sdp
+        {{- end }}
         volumeMounts:
           - name: uidam-jks
             mountPath: /etc/uidam/keystore
@@ -62,59 +77,102 @@ spec:
           - name: POSTGRESQL_CONFIG_FILE
             value: /data/uidam-authorization-server-postgres-config.yml
           - name: POSTGRESQL_HOST
-            value: "{{ .Values.postgres.host }}"
+            value: "{{ .Values.postgresql.host }}"
           - name: POSTGRESQL_PORT
-            value: "{{ .Values.postgres.port }}"
+            value: "{{ .Values.postgresql.port }}"
+          # Global secrets from main secret
           - name: POSTGRES_USERNAME
             valueFrom:
               secretKeyRef:
-                name: "{{ .Values.postgres.secretName }}"
+                name: "{{ .Values.postgresql.secretName }}"
                 key: username
           - name: POSTGRES_PASSWORD
             valueFrom:
               secretKeyRef:
-                name: "{{ .Values.postgres.secretName }}"
+                name: "{{ .Values.postgresql.secretName }}"
                 key: password
-          - name: TENANT_CLIENT_SECRET_ENCRYPTION_KEY
-            valueFrom:
-              secretKeyRef:
-                name: "{{ .Values.postgres.secretName }}"
-                key: clientsecretkey
-          - name: TENANT_CAPTCHA_RECAPTCHA_KEY_SECRET
-            valueFrom:
-              secretKeyRef:
-                name: "{{ .Values.postgres.secretName }}"
-                key: ignite.recaptcha.key.secret   
-          - name: TENANT_CLIENT_SECRET_ENCRYPTION_SALT
-            valueFrom:
-              secretKeyRef:
-                name: "{{ .Values.postgres.secretName }}"
-                key: clientsecretsalt
           - name: KEYSTORE_PASS
             valueFrom:
               secretKeyRef:
-                name: "{{ .Values.postgres.secretName }}"
-                key: keystorePassword       
-          - name: TENANT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_0_CLIENT_SECRET
+                name: "{{ .Values.postgresql.secretName }}"
+                key: keystorePassword
+
+          # ECSP tenant secrets
+          {{- if and .Values.multiTenant (contains "ecsp" .Values.multiTenant.tenantIds) }}
+          - name: ECSP_POSTGRES_USERNAME
             valueFrom:
               secretKeyRef:
-                name: "{{ .Values.postgres.secretName }}"
-                key: clientSecret 
-          - name: TENANT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_1_CLIENT_SECRET
+                name: {{ include "uidam-authorization-server.fullname" . }}-tenant-ecsp-credentials
+                key: username
+          - name: ECSP_POSTGRES_PASSWORD
             valueFrom:
               secretKeyRef:
-                name: "{{ .Values.postgres.secretName }}"
-                key: clientSecret    
-          - name: TENANT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_2_CLIENT_SECRET
+                name: {{ include "uidam-authorization-server.fullname" . }}-tenant-ecsp-credentials
+                key: password
+          - name: ECSP_KEYSTORE_PASS
             valueFrom:
               secretKeyRef:
-                name: "{{ .Values.postgres.secretName }}"
-                key: clientSecret       
-          - name: TENANT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_3_CLIENT_SECRET
+                name: {{ include "uidam-authorization-server.fullname" . }}-tenant-ecsp-credentials
+                key: keystorePassword
+          - name: ECSP_TENANT_CLIENT_SECRET_ENCRYPTION_KEY
             valueFrom:
               secretKeyRef:
-                name: "{{ .Values.postgres.secretName }}"
-                key: clientSecret             
+                name: {{ include "uidam-authorization-server.fullname" . }}-tenant-ecsp-credentials
+                key: clientsecretkey
+          - name: ECSP_TENANT_CLIENT_SECRET_ENCRYPTION_SALT
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "uidam-authorization-server.fullname" . }}-tenant-ecsp-credentials
+                key: clientsecretsalt
+          - name: ECSP_TENANT_CAPTCHA_RECAPTCHA_KEY_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "uidam-authorization-server.fullname" . }}-tenant-ecsp-credentials
+                key: ignite.recaptcha.key.secret
+          - name: ECSP_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_0_CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "uidam-authorization-server.fullname" . }}-tenant-ecsp-credentials
+                key: googleIDPSecret
+          {{- end }}
+          # SDP tenant secrets
+          {{- if and .Values.multiTenant (contains "sdp" .Values.multiTenant.tenantIds) }}
+          - name: SDP_POSTGRES_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "uidam-authorization-server.fullname" . }}-tenant-sdp-credentials
+                key: username
+          - name: SDP_POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "uidam-authorization-server.fullname" . }}-tenant-sdp-credentials
+                key: password
+          - name: SDP_KEYSTORE_PASS
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "uidam-authorization-server.fullname" . }}-tenant-sdp-credentials
+                key: keystorePassword
+          - name: SDP_TENANT_CLIENT_SECRET_ENCRYPTION_KEY
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "uidam-authorization-server.fullname" . }}-tenant-sdp-credentials
+                key: clientsecretkey
+          - name: SDP_TENANT_CLIENT_SECRET_ENCRYPTION_SALT
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "uidam-authorization-server.fullname" . }}-tenant-sdp-credentials
+                key: clientsecretsalt
+          - name: SDP_TENANT_CAPTCHA_RECAPTCHA_KEY_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "uidam-authorization-server.fullname" . }}-tenant-sdp-credentials
+                key: ignite.recaptcha.key.secret
+          - name: SDP_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_0_CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "uidam-authorization-server.fullname" . }}-tenant-sdp-credentials
+                key: googleIDPSecret
+          {{- end }}             
       {{- with .Values.nodeSelector }}
       nodeSelector: {{- toYaml . | nindent 8 }}
       {{- end }}

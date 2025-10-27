@@ -1,0 +1,75 @@
+{{- if contains "sdp" .Values.multiTenant.tenantIds }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "uidam-user-management.fullname" . }}-tenant-sdp
+  labels: {{- include "uidam-user-management.labels" . | nindent 4 }}
+data:
+  # SDP Tenant Specific Configuration
+  SDP_TENANT_ID: {{ .Values.multiTenant.tenants.sdp.tenantId | quote }}
+  SDP_TENANT_NAME: {{ .Values.multiTenant.tenants.sdp.tenantName | quote }}
+  
+  # SDP Account Configuration
+  SDP_TENANT_ACCOUNT_NAME: {{ .Values.multiTenant.tenants.sdp.account.accountName | quote }}
+  SDP_TENANT_ACCOUNT_TYPE: {{ .Values.multiTenant.tenants.sdp.account.accountType | quote }}
+  
+  # SDP User Configuration
+  SDP_USER_PASSWORD_ENCODER: {{ .Values.multiTenant.tenants.sdp.user.passwordEncoder | quote }}
+  SDP_MAX_ALLOWED_LOGIN_ATTEMPTS: {{ .Values.multiTenant.tenants.sdp.user.maxAllowedLoginAttempts | quote }}
+  SDP_USER_STATUS_LIFE_CYCLE_ENABLED: {{ .Values.multiTenant.tenants.sdp.user.isUserStatusLifeCycleEnabled | quote }}
+  SDP_EXTERNAL_USER_PERMITTED_ROLES: {{ .Values.multiTenant.tenants.sdp.user.externalUserPermittedRoles | quote }}
+  SDP_EXTERNAL_USER_DEFAULT_STATUS: {{ .Values.multiTenant.tenants.sdp.user.externalUserDefaultStatus | quote }}
+  SDP_USER_DEFAULT_ACCOUNT_NAME: {{ .Values.multiTenant.tenants.sdp.user.userDefaultAccountName | quote }}
+  SDP_ADDITIONAL_ATTR_CHECK_ENABLED_FOR_SIGN_UP: {{ .Values.multiTenant.tenants.sdp.user.additionalAttrCheckEnabledForSignUp | quote }}
+  
+  # SDP Auth Configuration
+  SDP_AUTH_ADMIN_SCOPE: {{ .Values.multiTenant.tenants.sdp.auth.adminScope | quote }}
+  
+  # SDP Email Verification
+  SDP_EMAIL_VERIFICATION_ENABLED: {{ .Values.multiTenant.tenants.sdp.emailVerification.enabled | quote }}
+  SDP_EMAIL_VERIFICATION_URL: {{ .Values.multiTenant.tenants.sdp.emailVerification.url | quote }}
+  SDP_EMAIL_VERIFICATION_NOTIFICATION_ID: {{ .Values.multiTenant.tenants.sdp.emailVerification.notificationId | quote }}
+  SDP_EMAIL_VERIFICATION_EXP_DAYS: {{ .Values.multiTenant.tenants.sdp.emailVerification.expDays | quote }}
+  SDP_EMAIL_VERIFICATION_REGEX_PATTERN_EXCLUDE: {{ .Values.multiTenant.tenants.sdp.emailVerification.emailRegexPatternExclude | quote }}
+  SDP_EMAIL_VERIFICATION_AUTH_SERVER_RESPONSE_URL: {{ .Values.multiTenant.tenants.sdp.emailVerification.authServerResponseUrl | quote }}
+  
+  # SDP Notification Configuration
+  SDP_NOTIFICATION_API_URL: {{ .Values.multiTenant.tenants.sdp.notification.apiUrl | quote }}
+  SDP_NOTIFICATION_ID: {{ .Values.multiTenant.tenants.sdp.notification.notificationId | quote }}
+  
+  # SDP Auth Server Configuration
+  SDP_AUTH_SERVER_HOSTNAME: {{ .Values.multiTenant.tenants.sdp.authServer.hostName | quote }}
+  SDP_AUTH_SERVER_TOKEN_URL: {{ .Values.multiTenant.tenants.sdp.authServer.tokenUrl | quote }}
+  SDP_AUTH_SERVER_REVOKE_TOKEN_URL: {{ .Values.multiTenant.tenants.sdp.authServer.revokeTokenUrl | quote }}
+  SDP_AUTH_SERVER_CLIENT_ID: {{ .Values.multiTenant.tenants.sdp.authServer.clientId | quote }}
+  
+  # SDP Client Registration Configuration
+  SDP_CLIENT_REGISTRATION_DEFAULT_STATUS: {{ .Values.multiTenant.tenants.sdp.clientRegistration.defaultStatus | quote }}
+  SDP_CLIENT_REGISTRATION_REFRESH_TOKEN_VALIDITY: {{ .Values.multiTenant.tenants.sdp.clientRegistration.refreshTokenValidity | quote }}
+  SDP_CLIENT_REGISTRATION_ACCESS_TOKEN_VALIDITY: {{ .Values.multiTenant.tenants.sdp.clientRegistration.accessTokenValidity | quote }}
+  SDP_CLIENT_REGISTRATION_AUTHORIZATION_CODE_VALIDITY: {{ .Values.multiTenant.tenants.sdp.clientRegistration.authorizationCodeValidity | quote }}
+  SDP_CLIENT_REGISTRATION_HASH_ALGORITHM: {{ .Values.multiTenant.tenants.sdp.clientRegistration.hashAlgorithm | quote }}
+  
+  # SDP Recovery Configuration
+  SDP_RECOVERY_SECRET_EXPIRES_IN_MINUTES: {{ .Values.multiTenant.tenants.sdp.recovery.secretExpiresInMinutes | quote }}
+  SDP_RECOVERY_PASSWORD_RECOVERY_NOTIFICATION_ID: {{ .Values.multiTenant.tenants.sdp.recovery.passwordRecoveryNotificationId | quote }}
+  SDP_RECOVERY_AUTH_SERVER_RESET_RESPONSE_URL: {{ .Values.multiTenant.tenants.sdp.recovery.authServerResetResponseUrl | quote }}
+  
+  # SDP Captcha Configuration
+  SDP_CAPTCHA_ENFORCE_AFTER_NO_OF_FAILURES: {{ .Values.multiTenant.tenants.sdp.captcha.enforceAfterNoOfFailures | quote }}
+  
+  # SDP Database Configuration
+  SDP_POSTGRES_DATASOURCE: {{ .Values.multiTenant.tenants.sdp.database.jdbcUrl | quote }}
+  SDP_DATABASE_MAX_POOL_SIZE: {{ .Values.multiTenant.tenants.sdp.database.maxPoolSize | quote }}
+  SDP_DATABASE_MAX_IDLE_TIME: {{ .Values.multiTenant.tenants.sdp.database.maxIdleTime | quote }}
+  SDP_DATABASE_CONNECTION_TIMEOUT_MS: {{ .Values.multiTenant.tenants.sdp.database.connectionTimeoutMs | quote }}
+  SDP_DATABASE_DEFAULT_SCHEMA: {{ .Values.multiTenant.tenants.sdp.database.defaultSchema | quote }}
+  SDP_DATABASE_CACHE_PREP_STMTS: {{ .Values.multiTenant.tenants.sdp.database.cachePrepStmts | quote }}
+  SDP_DATABASE_PREP_STMT_CACHE_SIZE: {{ .Values.multiTenant.tenants.sdp.database.prepStmtCacheSize | quote }}
+  SDP_DATABASE_PREP_STMT_CACHE_SQL_LIMIT: {{ .Values.multiTenant.tenants.sdp.database.prepStmtCacheSqlLimit | quote }}
+  
+  # SDP Liquibase Configuration
+  SDP_LIQUIBASE_CHANGE_LOG: {{ .Values.multiTenant.tenants.sdp.liquibase.changeLog | quote }}
+  SDP_LIQUIBASE_DEFAULT_SCHEMA: {{ .Values.multiTenant.tenants.sdp.liquibase.defaultSchema | quote }}
+  SDP_LIQUIBASE_PARAMETERS_SCHEMA: {{ .Values.multiTenant.tenants.sdp.liquibase.parametersSchema | quote }}
+{{- end }}

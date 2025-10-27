@@ -23,6 +23,13 @@ data:
   REGISTRY_COMMON_LOG_LEVEL: ERROR
   LOG_APPENDER: "STDOUT"
 
+  # MultiTenant Global Configuration
+  {{- if .Values.multiTenant }}
+  MULTI_TENANT_ENABLED: {{ .Values.multiTenant.enabled | quote }}
+  TENANT_IDS: {{ .Values.multiTenant.tenantIds | quote }}
+  DEFAULT_TENANT: {{ .Values.multiTenant.defaultTenant | quote }}
+  {{- end }}
+
   ###AUTHORIZATION_SERVER_SERVICE_CONF
   CLIENT_ID: {{ .Values.revoke_token_client_id | quote }}
   AUTH_SERVER_TOKEN_URL: {{ .Values.auth.server.host }}.{{ .Values.environmentDomainName }}{{ .Values.auth.server.token_url }}

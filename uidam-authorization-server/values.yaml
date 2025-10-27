@@ -23,6 +23,231 @@ securityContext: {}
   # runAsNonRoot: true
   # runAsUser: 1000
 
+logging:
+  level: INFO
+  logLevel: "INFO"
+  igniteLogLevel: "ERROR"
+  svcLogLevel: "INFO"
+  storageLogLevel: "ERROR"
+  springLogLevel: "ERROR"
+
+graylog:
+  enabled: "false"
+
+# Multi-tenant configuration
+multiTenant:
+  # Global tenant settings
+  tenantIds: "ecsp,sdp"
+  defaultTenant: "ecsp"
+  enabled: false
+  
+  # Tenant-specific configurations
+  tenants:
+    ecsp:
+      tenantId: "ecsp"
+      tenantName: "ECSP"
+      jksEnabled: true
+      externalIdpEnabled: true
+      internalLoginEnabled: true
+      externalIdpClientName: "federated-user-client"
+      account:
+        accountId: "TO-BE-UPDATED"
+        accountName: "ecsp"
+        accountType: "Root"
+        accountFieldEnabled: true
+      client:
+        accessTokenTtl: 3600
+        idTokenTtl: 3600
+        refreshTokenTtl: 3600
+        authCodeTtl: 300
+        oauthScopeCustomization: false
+        reuseRefreshToken: false
+      user:
+        captchaAfterInvalidFailures: 1
+        captchaRequired: false
+        maxAllowedLoginAttempts: 3
+        defaultRole: "VEHICLE_OWNER"
+        signUpEnabled: true
+        jwtAdditionalClaimAttributes: "accountType, accountName"
+      externalUrls:
+        userManagementUrl: "http://uidam-user-management:8080"
+        clientByClientIdEndpoint: "/v1/oauth2/client/{clientId}"
+        userByUsernameEndpoint: "/v1/users/{userName}/byUserName"
+        recoveryNotificationEndpoint: "/v1/users/{userName}/recovery/forgotpassword"
+        updatePasswordUsingSecretEndpoint: "/v1/users/recovery/set-password"
+        addUserEventsEndpoint: "/v1/users/{id}/events"
+        selfCreateUserEndpoint: "/v1/users/self"
+        passwordPolicyEndpoint: "/v1/users/password-policy"
+        createFedratedUserEndpoint: "/v1/users/federated"
+      keyStore:
+        keyStoreFilename: "uidamauthserver.jks"
+        keyAlias: "uidam-auth-server"
+        keyType: "JKS"
+        jwtPubKeyPem: "/app/uidam-pub-key-pem"
+        jksEncodedContent: "ChangeMe"
+      cert:
+        jwtPublicKey: "app.pub"
+        jwtPrivateKey: "app.key"
+        jwtKeyId: "TO-BE-UPDATED"
+      captcha:
+        recaptchaVerifyUrl: "https://www.google.com/recaptcha/api/siteverify"
+        recaptchaKeySite: "ChangeMe"
+      database:
+        jdbc_url: "jdbc:postgresql://postgresql:5432/ecsp_db"
+      externalIdpRegisteredClients:
+        - clientName: Google
+          registrationId: google
+          clientId: xxx
+          clientAuthenticationMethod: client_secret_basic
+          scope: "openid, profile, email, address, phone"
+          authorizationUri: "https://accounts.google.com/o/oauth2/v2/auth"
+          tokenUri: "https://www.googleapis.com/oauth2/v4/token"
+          userInfoUri: "https://www.googleapis.com/oauth2/v3/userinfo"
+          userNameAttributeName: "sub"
+          jwkSetUri: "https://www.googleapis.com/oauth2/v3/certs"
+          tokenInfoSource: "FETCH_INTERNAL_USER"
+          createUserMode: "CREATE_INTERNAL_USER"
+          defaultUserRoles: "VEHICLE_OWNER"
+          claimMappings: "firstName#given_name,lastName#family_name,email#email"
+    
+    sdp:
+      tenantId: "sdp"
+      tenantName: "SDP"
+      jksEnabled: true
+      externalIdpEnabled: false
+      internalLoginEnabled: true
+      externalIdpClientName: "federated-user-client"
+      account:
+        accountId: "TO-BE-UPDATED"
+        accountName: "sdp"
+        accountType: "Root"
+        accountFieldEnabled: true
+      client:
+        accessTokenTtl: 3600
+        idTokenTtl: 3600
+        refreshTokenTtl: 3600
+        authCodeTtl: 300
+        oauthScopeCustomization: false
+        reuseRefreshToken: false
+      user:
+        captchaAfterInvalidFailures: 1
+        captchaRequired: false
+        maxAllowedLoginAttempts: 3
+        defaultRole: "VEHICLE_OWNER"
+        signUpEnabled: true
+        jwtAdditionalClaimAttributes: "accountType, accountName"
+      externalUrls:
+        userManagementUrl: "http://uidam-user-management:8080"
+        clientByClientIdEndpoint: "/v1/oauth2/client/{clientId}"
+        userByUsernameEndpoint: "/v1/users/{userName}/byUserName"
+        recoveryNotificationEndpoint: "/v1/users/{userName}/recovery/forgotpassword"
+        updatePasswordUsingSecretEndpoint: "/v1/users/recovery/set-password"
+        addUserEventsEndpoint: "/v1/users/{id}/events"
+        selfCreateUserEndpoint: "/v1/users/self"
+        passwordPolicyEndpoint: "/v1/users/password-policy"
+        createFedratedUserEndpoint: "/v1/users/federated"
+      keyStore:
+        keyStoreFilename: "uidamauthserver.jks"
+        keyAlias: "uidam-auth-server"
+        keyType: "JKS"
+        jwtPubKeyPem: "/app/uidam-pub-key-pem"
+        jksEncodedContent: "ChangeMe"
+      cert:
+        jwtPublicKey: "app.pub"
+        jwtPrivateKey: "app.key"
+        jwtKeyId: "TO-BE-UPDATED"
+      captcha:
+        recaptchaVerifyUrl: "https://www.google.com/recaptcha/api/siteverify"
+        recaptchaKeySite: "ChangeMe"
+      database:
+        jdbc_url: "jdbc:postgresql://postgresql:5432/sdp_db"
+      externalIdpRegisteredClients:
+        - clientName: Google
+          registrationId: google
+          clientId: xxx
+          clientAuthenticationMethod: client_secret_basic
+          scope: "openid, profile, email, address, phone"
+          authorizationUri: "https://accounts.google.com/o/oauth2/v2/auth"
+          tokenUri: "https://www.googleapis.com/oauth2/v4/token"
+          userInfoUri: "https://www.googleapis.com/oauth2/v3/userinfo"
+          userNameAttributeName: "sub"
+          jwkSetUri: "https://www.googleapis.com/oauth2/v3/certs"
+          tokenInfoSource: "FETCH_INTERNAL_USER"
+          createUserMode: "CREATE_INTERNAL_USER"
+          defaultUserRoles: "VEHICLE_OWNER"
+          claimMappings: "firstName#given_name,lastName#family_name,email#email"
+
+# Application Configuration
+uidam:
+  defaultDbSchema: "uidam"
+  oauth2:
+    tokenHashAlgorithm: "SHA-256"
+
+# Security Configuration  
+security:
+  client:
+    bcryptStrength: "high"
+
+# UI Configuration
+ui:
+  templatePath: "classpath:/templates/"
+  staticPath: "classpath:/static"
+
+# Cache Configuration
+cache:
+  expireMinutes: "60"
+  maxSize: "100"
+  clientIds: "token-mgmt,device-mgmt"
+
+# Cleanup Job Configuration
+cleanupJob:
+  batchSize: "50000"
+  schedulingRateCron: "0 0 */6 * * *"
+  retryAttempts: "3"
+  tokenExpiresDays: "1"
+
+# JKS Configuration
+jks:
+  enabled: "true"
+
+# User Management Integration
+userManagement:
+  baseUrl: "http://uidam-user-management:8080"
+
+# Server Configuration
+server:
+  servlet:
+    sessionTimeout: "5m"
+
+# User Session Configuration
+user:
+  session:
+    forceLogin: "true"
+    executorInitialDelay: "10000"
+    retryIntervalMillis: "120000"
+
+# Health Configuration
+health:
+  service:
+    executorInitialDelay: "10000"
+    retryIntervalMillis: "120000"
+  postgresdb:
+    monitor:
+      enabled: "false"
+      restartOnFailure: "false"
+      restart_on_failure: "false"
+
+# CORS Configuration
+cors:
+  allowedOriginPatterns: "*.example.com"
+  allowedMethods: "GET,HEAD,POST"
+
+# Logout Configuration
+logout:
+  redirect:
+    whitelistedCustomHosts: "localhost,127.0.0.1"
+
+# Legacy tenant configuration for backward compatibility
 tenant:
   tenantId: "TO-BE-UPDATED"
   tenantName: "TO-BE-UPDATED"
@@ -210,23 +435,48 @@ postgres:
   expected99thPercentileMs: "60000"
   max_pool_size: "30"
 
+postgresql:
+  host: postgresql
+  connection: postgresql
+  port: 5432
+  secretName: uidam-authorization-server-credentials
+  userName: ChangeMe
+  password: ChangeMe
+  initializer:
+    image:
+      repository: docker.io/eclipseecsp/postgresql-initializer
+      tag: 1.0.0
+
 server_servlet_session_timeout: "5m"
-user_session_force_login: "true"  
+user_session_force_login: "true"
 
+max_pool_size: "30"
 
-
-health:
-  postgresdb:
-    monitor:
-      enabled: "false"
-      restart_on_failure: "true"
 metrics:
+  basePath: "/actuator"
   prometheus:
     enabled: "false"
+    path: /prometheus
     agent:
       port: "9100"
       port_exposed: "9100"
-  postgresdb:
+  datadog:
+    enabled: "false"
+    uri: "https://api.datadoghq.com"
+    apiKey: "ChangeMe"
+    applicationKey: "ChangeMe"
+    descriptions: "true"
+    readTimeout: "5s"
+    connectTimeout: "5s"
+    batchSize: "1000"
+    step: "1m"
+  tags:
+    envName: "dev"
+    product: "UIDAM"
+    service: "UIDAM-Authorization-Server"
+
+postgresdb:
+  metrics:
     enabled: "false"
     executor_shutdown_buffer_ms: "2000"
     thread:
@@ -237,15 +487,46 @@ jks_file: TO-BE-UPDATED
 nfsServerUrl:
 sharedStoragePvcName: uidam-shared-storage
 app_key: |
+  -----BEGIN PRIVATE KEY-----
   TO-BE-UPDATED
+  -----END PRIVATE KEY-----
 app_pub: |
+  -----BEGIN PUBLIC KEY-----
   TO-BE-UPDATED
+  -----END PUBLIC KEY-----
 uidam_pub: |
+  -----BEGIN PUBLIC KEY-----
   TO-BE-UPDATED
+  -----END PUBLIC KEY-----
 
+# Global secrets - These are shared across all tenants
 secrets:
-  keystorePassword: "TO-BE-UPDATED"
-  igniteRecaptchaKeySecret: "TO-BE-UPDATED"
-  clientsecretkey: "TO-BE-UPDATED"
-  clientsecretsalt: "TO-BE-UPDATED"
-  clientSecret: "TO-BE-UPDATED"
+  keystorePassword: "ChangeMe"
+  igniteRecaptchaKeySecret: "ChangeMe"
+  clientsecretkey: "ChangeMe"
+  clientsecretsalt: "ChangeMe"
+  clientSecret: "ChangeMe"
+
+# Tenant-specific secrets
+tenantSecrets:
+  ecsp:
+    keystorePassword: "ChangeMe"
+    igniteRecaptchaKeySecret: "ChangeMe"
+    clientsecretkey: "ChangeMe"
+    clientsecretsalt: "ChangeMe"
+    clientSecret: "ChangeMe"
+    googleIDPSecret: "ChangeMe"
+    githubIDPSecret: "ChangeMe"
+    cognitoIDPSecret: "ChangeMe"
+    azureIDPSecret: "ChangeMe"
+  
+  sdp:
+    keystorePassword: "ChangeMe"
+    igniteRecaptchaKeySecret: "ChangeMe"
+    clientsecretkey: "ChangeMe"
+    clientsecretsalt: "ChangeMe"
+    clientSecret: "ChangeMe"
+    googleIDPSecret: "ChangeMe"
+    githubIDPSecret: "ChangeMe"
+    cognitoIDPSecret: "ChangeMe"
+    azureIDPSecret: "ChangeMe"

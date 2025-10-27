@@ -1,0 +1,93 @@
+{{- if contains "sdp" .Values.multiTenant.tenantIds }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "uidam-authorization-server.fullname" . }}-tenant-sdp
+  labels: {{- include "uidam-authorization-server.labels" . | nindent 4 }}
+data:
+  # SDP Tenant Specific Configuration
+  SDP_TENANT_ID: {{ .Values.multiTenant.tenants.sdp.tenantId | quote }}
+  SDP_TENANT_NAME: {{ .Values.multiTenant.tenants.sdp.tenantName | quote }}
+  SDP_JKS_ENABLED: {{ .Values.multiTenant.tenants.sdp.jksEnabled | quote }}
+  SDP_TENANT_EXTERNAL_IDP_ENABLED: {{ .Values.multiTenant.tenants.sdp.externalIdpEnabled | quote }}
+  SDP_TENANT_INTERNAL_LOGIN_ENABLED: {{ .Values.multiTenant.tenants.sdp.internalLoginEnabled | quote }}
+  SDP_TENANT_EXTERNAL_IDP_CLIENT_NAME: {{ .Values.multiTenant.tenants.sdp.externalIdpClientName | quote }}
+  
+  # SDP Account Configuration
+  SDP_TENANT_ACCOUNT_ID: {{ .Values.multiTenant.tenants.sdp.account.accountId | quote }}
+  SDP_TENANT_ACCOUNT_NAME: {{ .Values.multiTenant.tenants.sdp.account.accountName | quote }}
+  SDP_TENANT_ACCOUNT_TYPE: {{ .Values.multiTenant.tenants.sdp.account.accountType | quote }}
+  SDP_ACCOUNT_FIELD_ENABLED: {{ .Values.multiTenant.tenants.sdp.account.accountFieldEnabled | quote }}
+  
+  # SDP Client Configuration
+  SDP_TENANT_CLIENT_ACCESS_TOKEN_TTL: {{ .Values.multiTenant.tenants.sdp.client.accessTokenTtl | quote }}
+  SDP_TENANT_CLIENT_ID_TOKEN_TTL: {{ .Values.multiTenant.tenants.sdp.client.idTokenTtl | quote }}
+  SDP_TENANT_CLIENT_REFRESH_TOKEN_TTL: {{ .Values.multiTenant.tenants.sdp.client.refreshTokenTtl | quote }}
+  SDP_TENANT_CLIENT_AUTH_CODE_TTL: {{ .Values.multiTenant.tenants.sdp.client.authCodeTtl | quote }}
+  SDP_TENANT_OAUTH_SCOPE_CUSTOMIZATION: {{ .Values.multiTenant.tenants.sdp.client.oauthScopeCustomization | quote }}
+  SDP_TENANT_CLIENT_REUSE_REFRESH_TOKEN: {{ .Values.multiTenant.tenants.sdp.client.reuseRefreshToken | quote }}
+  
+  # SDP User Configuration
+  SDP_TENANT_USER_CAPTCHA_AFTER_INVALID_FAILURES: {{ .Values.multiTenant.tenants.sdp.user.captchaAfterInvalidFailures | quote }}
+  SDP_TENANT_USER_CAPTCHA_REQUIRED: {{ .Values.multiTenant.tenants.sdp.user.captchaRequired | quote }}
+  SDP_TENANT_USER_MAX_ALLOWED_LOGIN_ATTEMPTS: {{ .Values.multiTenant.tenants.sdp.user.maxAllowedLoginAttempts | quote }}
+  SDP_TENANT_USER_DEFAULT_ROLE: {{ .Values.multiTenant.tenants.sdp.user.defaultRole | quote }}
+  SDP_TENANT_SIGN_UP_ENABLED: {{ .Values.multiTenant.tenants.sdp.user.signUpEnabled | quote }}
+  SDP_JWT_ADDITIONAL_CLAIM_ATTRIBUTES: {{ .Values.multiTenant.tenants.sdp.user.jwtAdditionalClaimAttributes | quote }}
+  
+  # SDP Keystore Configuration
+  SDP_KEYSTORE_FILE_NAME: {{ .Values.multiTenant.tenants.sdp.keyStore.keyStoreFilename | quote }}
+  SDP_KEYSTORE_ALIAS: {{ .Values.multiTenant.tenants.sdp.keyStore.keyAlias | quote }}
+  SDP_KEYSTORE_TYPE: {{ .Values.multiTenant.tenants.sdp.keyStore.keyType | quote }}
+  SDP_JWT_PUBLIC_KEY_PEM_PATH: {{ .Values.multiTenant.tenants.sdp.keyStore.jwtPubKeyPem | quote }}
+  SDP_KEYSTORE_JKS_ENCODED_CONTENT: {{ .Values.multiTenant.tenants.sdp.keyStore.jksEncodedContent | quote }}
+
+  # SDP Certificate Configuration
+  SDP_JWT_PUBLIC_KEY: {{ .Values.multiTenant.tenants.sdp.cert.jwtPublicKey | quote }}
+  SDP_JWT_PRIVATE_KEY: {{ .Values.multiTenant.tenants.sdp.cert.jwtPrivateKey | quote }}
+  SDP_JWT_KEY_ID: {{ .Values.multiTenant.tenants.sdp.cert.jwtKeyId | quote }}
+  
+  # SDP Captcha Configuration
+  SDP_TENANT_CAPTCHA_RECAPTCHA_VERIFY_URL: {{ .Values.multiTenant.tenants.sdp.captcha.recaptchaVerifyUrl | quote }}
+  SDP_TENANT_CAPTCHA_RECAPTCHA_KEY_SITE: {{ .Values.multiTenant.tenants.sdp.captcha.recaptchaKeySite | quote }}
+  
+  # SDP Database Configuration
+  SDP_POSTGRES_DATASOURCE: {{ .Values.multiTenant.tenants.sdp.database.jdbc_url | quote }}
+  
+  # SDP Contact Information
+  SDP_TENANT_PASSWORD_RECOVERY_URL: https://{{ (first .Values.ingress.hosts).hostPrefix }}.{{ .Values.environmentDomainName }}/sdp/recovery
+  SDP_TENANT_CONTACT_NAME: ""
+  SDP_TENANT_PHONE_NUMBER: ""
+  SDP_TENANT_EMAIL: ""
+  
+  # SDP External URLs
+  SDP_USER_MANAGEMENT_ENV: {{ .Values.multiTenant.tenants.sdp.externalUrls.userManagementUrl | quote }}
+  SDP_CLIENT_BY_CLIENT_ID_ENDPOINT: {{ .Values.multiTenant.tenants.sdp.externalUrls.clientByClientIdEndpoint | quote }}
+  SDP_USER_BY_USERNAME_ENDPOINT: {{ .Values.multiTenant.tenants.sdp.externalUrls.userByUsernameEndpoint | quote }}
+  SDP_ADD_USER_EVENTS_ENDPOINT: {{ .Values.multiTenant.tenants.sdp.externalUrls.addUserEventsEndpoint | quote }}
+  SDP_USER_RECOVERY_NOTIFICATION_ENDPOINT: {{ .Values.multiTenant.tenants.sdp.externalUrls.recoveryNotificationEndpoint | quote }}
+  SDP_USER_UPDATE_PASSWORD_USING_RECOVERY_SECRET_ENDPOINT: {{ .Values.multiTenant.tenants.sdp.externalUrls.updatePasswordUsingSecretEndpoint | quote }}
+  SDP_CREATE_USER_ENDPOINT: {{ .Values.multiTenant.tenants.sdp.externalUrls.selfCreateUserEndpoint | quote }}
+  SDP_PASSWORD_POLICY_ENDPOINT: {{ .Values.multiTenant.tenants.sdp.externalUrls.passwordPolicyEndpoint | quote }}
+  SDP_CREATE_FEDRATED_USER_ENDPOINT: {{ .Values.multiTenant.tenants.sdp.externalUrls.createFedratedUserEndpoint | quote }}
+  
+  {{- if .Values.multiTenant.tenants.sdp.externalIdpRegisteredClients }}
+  # SDP External IDP Registered Clients
+  {{- range $index, $client := .Values.multiTenant.tenants.sdp.externalIdpRegisteredClients }}
+  SDP_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_CLIENT_NAME: {{ $client.clientName | quote }}
+  SDP_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_REGISTRATION_ID: {{ $client.registrationId | quote }}
+  SDP_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_CLIENT_ID: {{ $client.clientId | quote }}
+  SDP_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_CLIENT_AUTHENTICATION_METHOD: {{ $client.clientAuthenticationMethod | quote }}
+  SDP_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_SCOPE: {{ $client.scope | quote }}
+  SDP_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_AUTHORIZATION_URI: {{ $client.authorizationUri | quote }}
+  SDP_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_TOKEN_URI: {{ $client.tokenUri | quote }}
+  SDP_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_USER_INFO_URI: {{ $client.userInfoUri | quote }}
+  SDP_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_USER_NAME_ATTRIBUTE_NAME: {{ $client.userNameAttributeName | quote }}
+  SDP_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_JWK_SET_URI: {{ $client.jwkSetUri | quote }}
+  SDP_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_TOKEN_INFO_SOURCE: {{ $client.tokenInfoSource | quote }}
+  SDP_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_CREATE_USER_MODE: {{ $client.createUserMode | quote }}
+  SDP_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_DEFAULT_USER_ROLES: {{ $client.defaultUserRoles | quote }}
+  SDP_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_CLAIM_MAPPINGS: {{ $client.claimMappings | quote }}
+  {{- end }}
+  {{- end }}
+{{- end }}
