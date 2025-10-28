@@ -80,9 +80,6 @@ data:
   CACHE_EXPIRE_MINS_LEGACY: {{ .Values.tenant.cache.expiration | quote }}
   CACHE_MAX_SIZE_LEGACY: {{ .Values.tenant.cache.maxsize | quote }}
   CACHE_CLIENT_IDS_LEGACY: {{ .Values.tenant.cache.clientids | quote }}  # Legacy tenant configuration for backward compatibility
-  CACHE_EXPIRE_MINS_LEGACY: {{ .Values.tenant.cache.expiration | quote }}
-  CACHE_MAX_SIZE_LEGACY: {{ .Values.tenant.cache.maxsize | quote }}
-  CACHE_CLIENT_IDS_LEGACY: {{ .Values.tenant.cache.clientids | quote }}
   TENANT_ID: {{ .Values.tenant.tenantId | quote }}
   TENANT_NAME: {{ .Values.tenant.tenantName | quote }}
   JKS_ENABLED_LEGACY: {{ .Values.tenant.jksEnabled | quote }}

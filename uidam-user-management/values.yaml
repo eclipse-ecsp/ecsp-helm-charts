@@ -7,7 +7,7 @@ replicaCount: 1
 image:
   repository: docker.io/eclipseecsp/uidam-user-management
   pullPolicy: IfNotPresent
-  tag: 1.0.0
+  tag: 1.2.3
 
 nameOverride: ""
 fullnameOverride: ""
@@ -235,7 +235,7 @@ postgres:
     cachePrepStmts: "true"
     prepStmtCacheSize: "250"
     prepStmtCacheSqlLimit: "2048"
-  connecion_timeout_ms: "60000"
+  connection_timeout_ms: "60000"
   expected99thPercentileMs: "60000"
   max_pool_size: "30"
   liquibase:
