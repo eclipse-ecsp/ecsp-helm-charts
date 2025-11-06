@@ -102,7 +102,7 @@ data:
   postgres_data_source_properties_prepStmtCacheSqlLimit: {{ .Values.postgres.data_source_properties.prepStmtCacheSqlLimit | quote }}
   prometheus_agent_port: {{ .Values.metrics.prometheus.agent.port | quote }}
   prometheus_agent_port_exposed: {{ .Values.metrics.prometheus.agent.port_exposed | quote }}
-  postgres_connection_timeout_ms: {{ .Values.postgres.connecion_timeout_ms | quote }}
+  postgres_connection_timeout_ms: {{ .Values.postgres.connection_timeout_ms | quote }}
   postgres_expected99thPercentileMs: {{ .Values.postgres.expected99thPercentileMs | quote }}
   postgresdb_metrics_enabled: {{ .Values.metrics.postgresdb.enabled | quote}}
   postgresdb_metrics_executor_shutdown_buffer_ms: {{ .Values.metrics.postgresdb.executor_shutdown_buffer_ms | quote }}
