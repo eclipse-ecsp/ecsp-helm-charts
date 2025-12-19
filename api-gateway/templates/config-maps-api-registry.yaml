@@ -110,6 +110,13 @@ data:
   server_tomcat_mbeanregistry_enabled: {{ .Values.api_registry.metrics.prometheus.enabled | quote }}
   metrics_prometheus_enabled: "false"
   management_health_db_enabled: "false"
+  # rate limit configuration
+  api-registry_rate-limit_key-resolvers: {{ .Values.gateway_common.rateLimit.keyResolvers | quote }}
+  api-registry_rate-limit_max-replenish-rate: {{ .Values.gateway_common.rateLimit.maxReplenishRate | quote }}
+  api-registry_rate-limit_max-burst-capacity: {{ .Values.gateway_common.rateLimit.maxBurstCapacity | quote }}
+  api-registry_rate-limit_max-requested-tokens: {{ .Values.gateway_common.rateLimit.maxRequestedTokens | quote }}
+## virtual threads configuration
+  spring.threads.virtual.enabled: {{ .Values.gateway_common.virtualThreadsEnabled | quote }}
 {{- if .Values.api_registry.extraParams }}
 {{ toYaml .Values.api_registry.extraParams | indent 2 }}
 {{- end }}

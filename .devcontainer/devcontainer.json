@@ -1,0 +1,10 @@
+{
+	"name": "ecsp-helm-chart-dev-container",
+	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
+	"image": "mcr.microsoft.com/devcontainers/base:noble",
+	"features": {
+		"ghcr.io/devcontainers/features/kubectl-helm-minikube:1": {},
+		"ghcr.io/devcontainers/features/docker-in-docker:2": {}
+	},
+	"postAttachCommand": "minikube start"
+}

@@ -7,11 +7,19 @@ image:
 fullnameOverride: api-gateway
 registryFullnameOverride: api-registry
 
+gateway_common:
+  virtualThreadsEnabled: "true"
+  rateLimit:
+    maxReplenishRate: 10000
+    maxBurstCapacity: 10000
+    maxRequestedTokens: 1000
+    keyResolvers: "client-ip, clientIpKeyResolver, header, headerKeyResolver, route-path, routePathKeyResolver, route-name, routeNameKeyResolver" 
+
 api_gateway:
   jvmOpts: "-Xmx2g -Xms2g -XX:+UseG1GC -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35 -XX:+DisableExplicitGC -XX:MetaspaceSize=96m -XX:G1HeapRegionSize=16M -XX:MinMetaspaceFreeRatio=50 -XX:MaxMetaspaceFreeRatio=80 -Dlogback.configurationFile=/api-gateway/conf/logback.xml -DLOG_LEVEL=INFO"
   nodeType: "default"
   replicas: 1
-  imageTag: 1.3.4
+  imageTag: 1.4.0
   requestHeaderFilterConfig:
     removeUnknownHeaders: "true"
     allowHeaders: host, connection, content-type, content-length, accept, user-agent, origin, referer, accept-encoding, accept-language, X-Forwarded-Proto, X-Forwarded-For, X-Forwarded-Port, X-Amzn-Trace-Id, requestId, user-id, scope, override-scope
@@ -34,6 +42,7 @@ api_gateway:
     enabled: false
     libraryPath: "/external-libs"
     pluginClasses: "TO-BE-UPDATED" # Change this to your plugin fully qualified class name
+    pluginPackages: "TO-BE-UPDATED" # Change this to your plugin package name
     artifactoryUsername: TO-BE-UPDATED
     artifactoryPassword: TO-BE-UPDATED
     plugins:
@@ -191,7 +200,17 @@ api_gateway:
       email: "user-email"
       user_id: "user-id"
       tenantId: "tenantId"
-      accountId: "accountId"       
+      accountId: "accountId"    
+  rateLimit:
+    enabled: true
+    defaults:
+      replenishRate: 50
+      burstCapacity: 100
+      requestedTokens: 1
+      denyEmptyKey: "true"
+      emptyKeyStatus: 400
+      includeHeaders: "true"
+      keyResolver: client-ip          
   extraParams:
 
 
@@ -205,7 +224,7 @@ api_registry:
   jvmOpts: "-Xmx2g -Xms2g -XX:+UseG1GC -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35 -XX:+DisableExplicitGC -XX:MetaspaceSize=96m -XX:G1HeapRegionSize=16M -XX:MinMetaspaceFreeRatio=50 -XX:MaxMetaspaceFreeRatio=80 -Dlogback.configurationFile=/opt/api-registry/conf/logback.xml -DLOG_LEVEL=INFO"
   nodeType: "default"
   replicas: 1
-  imageTag: 1.3.4
+  imageTag: 1.4.0
   serviceName: api-registry
   database:
     ## supported types - sql, nosql
