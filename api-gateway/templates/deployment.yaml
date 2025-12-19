@@ -122,12 +122,12 @@ spec:
         - name: ARTIFACTORY_USERNAME
           valueFrom:
             secretKeyRef:
-              name: artifactory-credentials
+              name: {{ include "api-gateway.fullname" . }}-artifactory-credentials
               key: artifactory-username
         - name: ARTIFACTORY_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: artifactory-credentials
+              name: {{ include "api-gateway.fullname" . }}-artifactory-credentials
               key: artifactory-password
         volumeMounts:
           - name: custom-plugins

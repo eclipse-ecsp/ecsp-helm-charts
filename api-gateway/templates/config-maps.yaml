@@ -204,6 +204,45 @@ data:
 {{- range $i, $tokenHeader := .Values.api_gateway.jwt.claimToHeaderMapping }}
   jwt_token-claim-to-header-mapping_{{ $i }}: {{ $tokenHeader | quote }}
 {{- end }}
+# rate limit configuration
+  api_gateway_rate-limit_enabled: {{ .Values.api_gateway.rateLimit.enabled | quote }}
+  api_gateway_rate-limit_key-resolvers: {{ .Values.gateway_common.rateLimit.keyResolvers | quote }}
+  api_gateway_rate-limit_max-replenish-rate: {{ .Values.gateway_common.rateLimit.maxReplenishRate | quote }}
+  api_gateway_rate-limit_max-burst-capacity: {{ .Values.gateway_common.rateLimit.maxBurstCapacity | quote }}
+  api_gateway_rate-limit_max-requested-tokens: {{ .Values.gateway_common.rateLimit.maxRequestedTokens | quote }}
+  api_gateway_rate-limit_defaults_replenish-rate: {{ .Values.api_gateway.rateLimit.defaults.replenishRate | quote }}
+  api_gateway_rate-limit_defaults_burst-capacity: {{ .Values.api_gateway.rateLimit.defaults.burstCapacity | quote }}
+  api_gateway_rate-limit_defaults_requested-tokens: {{ .Values.api_gateway.rateLimit.defaults.requestedTokens | quote }}
+  api_gateway_rate-limit_defaults_deny-empty-key: {{ .Values.api_gateway.rateLimit.defaults.denyEmptyKey | quote }}
+  api_gateway_rate-limit_defaults_empty-key-status: {{ .Values.api_gateway.rateLimit.defaults.emptyKeyStatus | quote }}
+  api_gateway_rate-limit_defaults_include-headers: {{ .Values.api_gateway.rateLimit.defaults.includeHeaders | quote }}
+  api_gateway_rate-limit_defaults_key-resolver: {{ .Values.api_gateway.rateLimit.defaults.keyResolver | quote }}
+{{- range $i, $override := .Values.api_gateway.rateLimit.overrides }}
+  {{- if $override.routeId }}
+  api_gateway_rate-limit_overrides_{{$i}}_route-id: {{ $override.routeId | quote }}
+  {{- end }}
+  {{- if $override.service }}
+  api_gateway_rate-limit_overrides_{{$i}}_service: {{ $override.service | quote }}
+  {{- end }}
+  api_gateway_rate-limit_overrides_{{$i}}_replenish-rate: {{ $override.replenishRate | quote }}
+  api_gateway_rate-limit_overrides_{{$i}}_burst-capacity: {{ $override.burstCapacity | quote }}
+  api_gateway_rate-limit_overrides_{{$i}}_requested-tokens: {{ $override.requestedTokens | quote }}
+  api_gateway_rate-limit_overrides_{{$i}}_key-resolver: {{ $override.keyResolver | quote }}
+  {{- if $override.denyEmptyKey }}
+  api_gateway_rate-limit_overrides_{{$i}}_deny-empty-key: {{ $override.denyEmptyKey | quote }}
+  {{- end }}
+  {{- if $override.emptyKeyStatus }}
+  api_gateway_rate-limit_overrides_{{$i}}_empty-key-status: {{ $override.emptyKeyStatus | quote }}
+  {{- end }}
+  {{- if $override.includeHeaders }}
+  api_gateway_rate-limit_overrides_{{$i}}_include-headers: {{ $override.includeHeaders | quote }}
+  {{- end }}
+  {{- range $argKey, $argValue := $override.args }}
+  api_gateway_rate-limit_overrides_{{$i}}_args_{{$argKey}}: {{ $argValue | quote }}
+  {{- end }}
+{{- end }}  
+## virtual threads configuration
+  spring.threads.virtual.enabled: {{ .Values.gateway_common.virtualThreadsEnabled | quote }}
 # extra params
 {{- if .Values.api_gateway.extraParams }}
 {{ toYaml .Values.api_gateway.extraParams | indent 2 }}
