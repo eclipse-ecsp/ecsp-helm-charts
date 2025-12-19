@@ -1,0 +1,110 @@
+# Default values for uidam-portal.
+replicaCount: 1
+
+image:
+  repository: docker.io/eclipseecsp/uidam-portal
+  pullPolicy: IfNotPresent
+  tag: "1.0.0"
+
+nameOverride: ""
+fullnameOverride: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+logging:
+  level: INFO
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 80
+
+ingress:
+  enabled: true
+  className: alb
+  groupName: ic
+  scheme: internal
+  targetType: ip
+  inboundCidrs: []
+  tls:
+    enabled: true
+    sslRedirect: false
+  additionalAnnotations: {}
+  hosts:
+  - hostPrefix: uidam-portal
+    paths:
+    - /
+
+resources:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+# Node selector for pod placement
+nodeSelector: {}
+
+tolerations: []
+
+# Pod affinity/anti-affinity rules
+affinity: {}
+
+# Environment-specific configuration
+environmentDomainName: local
+
+# Backend API endpoints configuration
+apiEndpoints:
+  authorizationServer: "https://uidam-authorization-server.local/sdp"
+  userManagement: "http://uidam-user-management:8080"
+
+# OAuth configuration for the portal
+oauth:
+  clientId: "uidam-portal-client"
+  # clientSecret should be provided via Kubernetes secret
+  usePKCE: false
+
+# Application configuration
+app:
+  title: "UIDAM Admin Portal"
+  logLevel: "info"
+  apiTimeout: 30000
+  apiRetryAttempts: 3
+  apiRetryDelay: 1000
+  tokenStorageKey: "uidam_admin_token"
+  refreshTokenStorageKey: "uidam_admin_refresh_token"
+
+# Nginx configuration
+nginx:
+  clientMaxBodySize: "10m"
+  workerProcesses: "auto"
+  workerConnections: "1024"
+
+# Secrets configuration - these will be managed via Kubernetes secrets
+secrets:
+  clientSecret: "ChangeMe"
+
+# PostgreSQL configuration
+postgresql:
+  host: postgresql
+  port: "5432"
+  secretName: uidam-portal-credentials
+
+# Metrics configuration
+metrics:
+  basePath: "/actuator"
+  prometheus:
+    agent:
+      port: 9443
