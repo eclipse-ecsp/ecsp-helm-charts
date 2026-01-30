@@ -25,11 +25,15 @@ data:
 
   # MultiTenant Global Configuration
   {{- if .Values.multiTenant }}
-  MULTI_TENANT_ENABLED: {{ .Values.multiTenant.enabled | quote }}
+  TENANT_MULTITENANT_ENABLED: {{ .Values.multiTenant.enabled | quote }}
   TENANT_IDS: {{ .Values.multiTenant.tenantIds | quote }}
   DEFAULT_TENANT: {{ .Values.multiTenant.defaultTenant | quote }}
   {{- end }}
 
+    # Tenant configuration validation
+  TENANT_CONFIG_VALIDATION_ENABLED: {{ .Values.multiTenant.configValidationEnabled | quote }}
+  UIDAM_TENANT_CONFIG_DBNAME_VALIDATION: {{ .Values.multiTenant.dbNameValidationStrategy | quote }}
+  
   ###AUTHORIZATION_SERVER_SERVICE_CONF
   CLIENT_ID: {{ .Values.revoke_token_client_id | quote }}
   AUTH_SERVER_TOKEN_URL: {{ .Values.auth.server.host }}.{{ .Values.environmentDomainName }}{{ .Values.auth.server.token_url }}

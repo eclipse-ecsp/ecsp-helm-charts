@@ -923,3 +923,59 @@ Failed to load JWT keys - Verify certificate configuration
 **Document Version:** 1.0  
 **Last Updated:** October 27, 2025  
 **Component Version:** 1.2.2
+
+---
+
+## Helm Chart Structure Updates (v1.2.3)
+
+### New and Updated Template Files
+
+The following files have been added or updated in the Helm chart to support improved multi-tenant secret and config management:
+
+- `templates/configmap-tenant-default.yaml`: Default ConfigMap for tenant-specific configuration. Used as a template for new tenants.
+- `templates/secret-tenant-default.yaml`: Default Secret for tenant-specific secrets. All values are set to `"ChangeMe"` by default and must be updated for production use.
+- `templates/configmap.yaml`: Updated to match the latest structure and logic from the reference implementation.
+- `templates/deployment.yaml`: Updated to match the latest structure and logic from the reference implementation.
+
+### values.yaml Changes
+
+- The `tenantSecrets` section now includes all required secrets for each tenant, with all values set to `"ChangeMe"` by default. **You must update these to secure values before deploying to production.**
+- The global `secrets` section is also initialized with `"ChangeMe"` values for all keys.
+
+#### Example (values.yaml):
+
+```yaml
+secrets:
+  keystorePassword: "ChangeMe"
+  igniteRecaptchaKeySecret: "ChangeMe"
+  clientsecretkey: "ChangeMe"
+  clientsecretsalt: "ChangeMe"
+  clientSecret: "ChangeMe"
+
+tenantSecrets:
+  ecsp:
+    keystorePassword: "ChangeMe"
+    igniteRecaptchaKeySecret: "ChangeMe"
+    clientsecretkey: "ChangeMe"
+    clientsecretsalt: "ChangeMe"
+    clientSecret: "ChangeMe"
+    googleIDPSecret: "ChangeMe"
+    githubIDPSecret: "ChangeMe"
+    cognitoIDPSecret: "ChangeMe"
+    azureIDPSecret: "ChangeMe"
+  sdp:
+    keystorePassword: "ChangeMe"
+    igniteRecaptchaKeySecret: "ChangeMe"
+    clientsecretkey: "ChangeMe"
+    clientsecretsalt: "ChangeMe"
+    clientSecret: "ChangeMe"
+    googleIDPSecret: "ChangeMe"
+    githubIDPSecret: "ChangeMe"
+    cognitoIDPSecret: "ChangeMe"
+    azureIDPSecret: "ChangeMe"
+```
+
+> **Important:**
+> - All `"ChangeMe"` values are placeholders. Replace them with strong, unique secrets for each environment and tenant.
+> - The new `configmap-tenant-default.yaml` and `secret-tenant-default.yaml` templates are used to bootstrap tenant-specific resources.
+> - The main `configmap.yaml` and `deployment.yaml` have been updated for improved multi-tenant support and to match the latest reference implementation.

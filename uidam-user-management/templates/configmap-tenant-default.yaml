@@ -1,0 +1,79 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "uidam-user-management.fullname" . }}-tenant-default
+  labels: {{- include "uidam-user-management.labels" . | nindent 4 }}
+data:
+  # DEFAULT Tenant Specific Configuration
+  DEFAULT_TENANT_ID: {{ .Values.multiTenant.tenants.default.tenantId | quote }}
+  DEFAULT_TENANT_NAME: {{ .Values.multiTenant.tenants.default.tenantName | quote }}
+  # DEFAULT Account Configuration
+  DEFAULT_ACCOUNT_NAME: {{ .Values.multiTenant.tenants.default.account.accountName | quote }}
+  DEFAULT_ACCOUNT_TYPE: {{ .Values.multiTenant.tenants.default.account.accountType | quote }}
+  # DEFAULT User Management Configuration
+  DEFAULT_PASSWORD_ENCODER: {{ .Values.multiTenant.tenants.default.user.passwordEncoder | quote }}
+  DEFAULT_MAX_ALLOWED_LOGIN_ATTEMPTS: {{ .Values.multiTenant.tenants.default.user.maxAllowedLoginAttempts | quote }}
+  DEFAULT_IS_USER_STATUS_LIFE_CYCLE_ENABLED: {{ .Values.multiTenant.tenants.default.user.isUserStatusLifeCycleEnabled | quote }}
+  DEFAULT_EXTERNAL_USER_PERMITTED_ROLES: {{ .Values.multiTenant.tenants.default.user.externalUserPermittedRoles | quote }}
+  DEFAULT_EXTERNAL_USER_DEFAULT_STATUS: {{ .Values.multiTenant.tenants.default.user.externalUserDefaultStatus | quote }}
+  DEFAULT_USER_DEFAULT_ACCOUNT_NAME: {{ .Values.multiTenant.tenants.default.user.userDefaultAccountName | quote }}
+  DEFAULT_ADDITIONAL_ATTR_CHECK_ENABLED_FOR_SIGN_UP: {{ .Values.multiTenant.tenants.default.user.additionalAttrCheckEnabledForSignUp | quote }}
+  # DEFAULT Authentication Configuration
+  DEFAULT_AUTH_ADMIN_SCOPE: {{ .Values.multiTenant.tenants.default.auth.adminScope | quote }}
+  # DEFAULT Email Verification Configuration
+  DEFAULT_IS_EMAIL_VERIFICATION_ENABLED: {{ .Values.multiTenant.tenants.default.emailVerification.enabled | quote }}
+  DEFAULT_EMAIL_VERIFICATION_URL: "https://api-gateway3.{{ .Values.environmentDomainName }}/default/v1/emailVerification/%s"
+  DEFAULT_EMAIL_VERIFICATION_NOTIFICATION_ID: {{ .Values.multiTenant.tenants.default.emailVerification.notificationId | quote }}
+  DEFAULT_EMAIL_VERIFICATION_EXP_DAYS: {{ .Values.multiTenant.tenants.default.emailVerification.expDays | quote }}
+  DEFAULT_EMAIL_REGEX_PATTERN_EXCLUDE: {{ .Values.multiTenant.tenants.default.emailVerification.emailRegexPatternExclude | quote }}
+  DEFAULT_AUTH_SERVER_EMAIL_VERIFICATION_RESPONSE_URL: "https://uidam-authorization-server.{{ .Values.environmentDomainName }}/default/emailVerification/verify"
+  DEFAULT_TENANT_EMAIL_LOGO_PATH: {{ .Values.multiTenant.tenants.default.emailVerification.emailLogoPath | default "images/default-logo.svg" | quote }}
+  DEFAULT_TENANT_EMAIL_COPYRIGHT: {{ .Values.multiTenant.tenants.default.emailVerification.emailCopyright | default "Copyright \u00a9 2023 HARMAN International. All Rights Reserved." | quote }}
+  # DEFAULT Notification Configuration
+  DEFAULT_NOTIFICATION_API_URL: {{ .Values.multiTenant.tenants.default.notification.apiUrl | quote }}
+  DEFAULT_NOTIFICATION_ID: {{ .Values.multiTenant.tenants.default.notification.notificationId | quote }}
+  # DEFAULT Template Engine Configuration
+  DEFAULT_NOTIFICATION_TEMPLATE_ENGINE: {{ .Values.multiTenant.tenants.default.notification.template.engine | default "thymeleaf" | quote }}
+  DEFAULT_NOTIFICATION_TEMPLATE_FORMAT: {{ .Values.multiTenant.tenants.default.notification.template.format | default "HTML" | quote }}
+  DEFAULT_NOTIFICATION_TEMPLATE_RESOLVER: {{ .Values.multiTenant.tenants.default.notification.template.resolver | default "CLASSPATH" | quote }}
+  DEFAULT_NOTIFICATION_TEMPLATE_PREFIX: {{ .Values.multiTenant.tenants.default.notification.template.prefix | default "/notification/" | quote }}
+  DEFAULT_NOTIFICATION_TEMPLATE_SUFFIX: {{ .Values.multiTenant.tenants.default.notification.template.suffix | default ".html" | quote }}
+  # DEFAULT Email Provider Configuration
+  DEFAULT_NOTIFICATION_EMAIL_PROVIDER: {{ .Values.multiTenant.tenants.default.notification.email.provider | default "internal" | quote }}
+  DEFAULT_NOTIFICATION_EMAIL_PROVIDER_HOST: {{ .Values.multiTenant.tenants.default.notification.email.host | default "smtp.gmail.com" | quote }}
+  DEFAULT_NOTIFICATION_EMAIL_PROVIDER_PORT: {{ .Values.multiTenant.tenants.default.notification.email.port | default "587" | quote }}
+  DEFAULT_NOTIFICATION_EMAIL_PROPERTIES_MAIL_SMTP_AUTH: {{ .Values.multiTenant.tenants.default.notification.email.smtpAuth | default "true" | quote }}
+  DEFAULT_NOTIFICATION_EMAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: {{ .Values.multiTenant.tenants.default.notification.email.smtpStartTls | default "true" | quote }}
+  DEFAULT_NOTIFICATION_EMAIL_PROPERTIES_MAIL_SMTP_STARTTLS_REQUIRED: {{ .Values.multiTenant.tenants.default.notification.email.smtpStartTlsRequired | default "true" | quote }}
+  DEFAULT_NOTIFICATION_EMAIL_PROPERTIES_MAIL_SMTP_SSL_ENABLE: {{ .Values.multiTenant.tenants.default.notification.email.smtpSSLEnabled | default "false" | quote }}
+  DEFAULT_NOTIFICATION_EMAIL_PROPERTIES_MAIL_DEBUG: {{ .Values.multiTenant.tenants.default.notification.email.smtpDebug | default "false" | quote }}
+  # DEFAULT Authorization Server Configuration
+  DEFAULT_AUTHORIZATION_SERVER_URL: {{ .Values.multiTenant.tenants.default.authServer.hostName }}.{{ .Values.environmentDomainName }}
+  DEFAULT_AUTH_SERVER_TOKEN_URL: {{ .Values.multiTenant.tenants.default.authServer.tokenUrl | quote }}
+  DEFAULT_AUTH_SERVER_REVOKE_TOKEN_URL: {{ .Values.multiTenant.tenants.default.authServer.revokeTokenUrl | quote }}
+  DEFAULT_CLIENT_ID: {{ .Values.multiTenant.tenants.default.authServer.clientId | quote }}
+  # DEFAULT Client Registration Configuration
+  DEFAULT_CLIENT_REGISTRATION_DEFAULT_STATUS: {{ .Values.multiTenant.tenants.default.clientRegistration.defaultStatus | quote }}
+  DEFAULT_CLIENT_REFRESH_TOKEN_VALIDITY: {{ .Values.multiTenant.tenants.default.clientRegistration.refreshTokenValidity | quote }}
+  DEFAULT_CLIENT_ACCESS_TOKEN_VALIDITY: {{ .Values.multiTenant.tenants.default.clientRegistration.accessTokenValidity | quote }}
+  DEFAULT_CLIENT_AUTHORIZATION_CODE_VALIDITY: {{ .Values.multiTenant.tenants.default.clientRegistration.authorizationCodeValidity | quote }}
+  DEFAULT_CLIENT_HASH_ALGORITHM: {{ .Values.multiTenant.tenants.default.clientRegistration.hashAlgorithm | quote }}
+  # DEFAULT Password Recovery Configuration
+  DEFAULT_RECOVERY_SECRET_EXPIRES_IN_MINUTES: {{ .Values.multiTenant.tenants.default.recovery.secretExpiresInMinutes | quote }}
+  DEFAULT_PASSWORD_RECOVERY_NOTIFICATION_ID: {{ .Values.multiTenant.tenants.default.recovery.passwordRecoveryNotificationId | quote }}
+  DEFAULT_AUTH_SERVER_RESET_RESPONSE_URL: "https://uidam-authorization-server.{{ .Values.environmentDomainName }}/default/recovery/reset/"
+  # DEFAULT Captcha Configuration
+  DEFAULT_CAPTCHA_ENFORCE_AFTER_NO_OF_FAILURES: {{ .Values.multiTenant.tenants.default.captcha.enforceAfterNoOfFailures | quote }}
+  # DEFAULT Database Configuration
+  DEFAULT_POSTGRES_DATASOURCE: {{ .Values.multiTenant.tenants.default.database.jdbcUrl | quote }}
+  DEFAULT_DATABASE_MAX_POOL_SIZE: {{ .Values.multiTenant.tenants.default.database.maxPoolSize | quote }}
+  DEFAULT_DATABASE_MAX_IDLE_TIME: {{ .Values.multiTenant.tenants.default.database.maxIdleTime | quote }}
+  DEFAULT_DATABASE_CONNECTION_TIMEOUT_MS: {{ .Values.multiTenant.tenants.default.database.connectionTimeoutMs | quote }}
+  DEFAULT_DATABASE_DEFAULT_SCHEMA: {{ .Values.multiTenant.tenants.default.database.defaultSchema | quote }}
+  DEFAULT_DATABASE_CACHE_PREP_STMTS: {{ .Values.multiTenant.tenants.default.database.cachePrepStmts | quote }}
+  DEFAULT_DATABASE_PREP_STMT_CACHE_SIZE: {{ .Values.multiTenant.tenants.default.database.prepStmtCacheSize | quote }}
+  DEFAULT_DATABASE_PREP_STMT_CACHE_SQL_LIMIT: {{ .Values.multiTenant.tenants.default.database.prepStmtCacheSqlLimit | quote }}
+  DEFAULT_DATABASE_DRIVER: "org.postgresql.Driver"
+  # DEFAULT Liquibase Configuration
+  DEFAULT_LIQUIBASE_CHANGE_LOG: {{ .Values.multiTenant.tenants.default.liquibase.changeLog | quote }}
+# Updated to match latest opensource-perf-app structure and logic for tenant default configmap

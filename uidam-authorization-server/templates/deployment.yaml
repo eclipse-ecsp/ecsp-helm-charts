@@ -20,6 +20,7 @@ spec:
         {{- if and .Values.multiTenant (contains "sdp" .Values.multiTenant.tenantIds) }}
         checksum/config-sdp: {{ include (print $.Template.BasePath "/configmap-tenant-sdp.yaml") . | sha256sum }}
         {{- end }}
+        checksum/config-default: {{ include (print $.Template.BasePath "/configmap-tenant-default.yaml") . | sha256sum }}
       labels: {{- include "uidam-authorization-server.selectorLabels" . | nindent 8 }}
     spec:
       {{- with .Values.imagePullSecrets }}
@@ -40,7 +41,7 @@ spec:
           httpGet:
             path: "{{ .Values.metrics.basePath }}/health/liveness"
             port: {{ .Values.metrics.prometheus.agent.port }}     
-            scheme: HTTPS   
+            scheme: HTTP   
           initialDelaySeconds: 30    
           periodSeconds: 10
           timeoutSeconds: 5
@@ -49,7 +50,7 @@ spec:
           httpGet:
             path: "{{ .Values.metrics.basePath }}/health/readiness"
             port: {{ .Values.metrics.prometheus.agent.port }}
-            scheme: HTTPS
+            scheme: HTTP
           initialDelaySeconds: 30    
           periodSeconds: 10
           timeoutSeconds: 5
@@ -65,6 +66,8 @@ spec:
         - configMapRef:
             name: {{ include "uidam-authorization-server.fullname" . }}-tenant-sdp
         {{- end }}
+        - configMapRef:
+            name: {{ include "uidam-authorization-server.fullname" . }}-tenant-default
         volumeMounts:
           - name: uidam-jks
             mountPath: /etc/uidam/keystore
@@ -172,7 +175,38 @@ spec:
               secretKeyRef:
                 name: {{ include "uidam-authorization-server.fullname" . }}-tenant-sdp-credentials
                 key: googleIDPSecret
-          {{- end }}             
+          {{- end }}
+          # DEFAULT tenant secrets
+          - name: DEFAULT_POSTGRES_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "uidam-authorization-server.fullname" . }}-tenant-default-credentials
+                key: username
+          - name: DEFAULT_POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "uidam-authorization-server.fullname" . }}-tenant-default-credentials
+                key: password
+          - name: DEFAULT_KEYSTORE_PASS
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "uidam-authorization-server.fullname" . }}-tenant-default-credentials
+                key: keystorePassword
+          - name: DEFAULT_TENANT_CLIENT_SECRET_ENCRYPTION_KEY
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "uidam-authorization-server.fullname" . }}-tenant-default-credentials
+                key: clientsecretkey
+          - name: DEFAULT_TENANT_CLIENT_SECRET_ENCRYPTION_SALT
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "uidam-authorization-server.fullname" . }}-tenant-default-credentials
+                key: clientsecretsalt
+          - name: DEFAULT_TENANT_CAPTCHA_RECAPTCHA_KEY_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "uidam-authorization-server.fullname" . }}-tenant-default-credentials
+                key: ignite.recaptcha.key.secret
       {{- with .Values.nodeSelector }}
       nodeSelector: {{- toYaml . | nindent 8 }}
       {{- end }}
@@ -189,4 +223,4 @@ spec:
         - name: app-keys
           configMap:
             name: {{ include "uidam-authorization-server.fullname" . }}-app
-          
+

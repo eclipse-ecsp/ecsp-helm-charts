@@ -1,0 +1,63 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "uidam-authorization-server.fullname" . }}-tenant-default
+  labels: {{- include "uidam-authorization-server.labels" . | nindent 4 }}
+data:
+  # DEFAULT Tenant Specific Configuration
+  DEFAULT_TENANT_ID: {{ .Values.multiTenant.tenants.default.tenantId | quote }}
+  DEFAULT_TENANT_NAME: {{ .Values.multiTenant.tenants.default.tenantName | quote }}
+  DEFAULT_JKS_ENABLED: {{ .Values.multiTenant.tenants.default.jksEnabled | quote }}
+  DEFAULT_TENANT_EXTERNAL_IDP_ENABLED: {{ .Values.multiTenant.tenants.default.externalIdpEnabled | quote }}
+  DEFAULT_TENANT_INTERNAL_LOGIN_ENABLED: {{ .Values.multiTenant.tenants.default.internalLoginEnabled | quote }}
+  DEFAULT_TENANT_EXTERNAL_IDP_CLIENT_NAME: {{ .Values.multiTenant.tenants.default.externalIdpClientName | quote }}
+  # DEFAULT Account Configuration
+  DEFAULT_TENANT_ACCOUNT_ID: {{ .Values.multiTenant.tenants.default.account.accountId | quote }}
+  DEFAULT_TENANT_ACCOUNT_NAME: {{ .Values.multiTenant.tenants.default.account.accountName | quote }}
+  DEFAULT_TENANT_ACCOUNT_TYPE: {{ .Values.multiTenant.tenants.default.account.accountType | quote }}
+  DEFAULT_ACCOUNT_FIELD_ENABLED: {{ .Values.multiTenant.tenants.default.account.accountFieldEnabled | quote }}
+  # DEFAULT Client Configuration
+  DEFAULT_TENANT_CLIENT_ACCESS_TOKEN_TTL: {{ .Values.multiTenant.tenants.default.client.accessTokenTtl | quote }}
+  DEFAULT_TENANT_CLIENT_ID_TOKEN_TTL: {{ .Values.multiTenant.tenants.default.client.idTokenTtl | quote }}
+  DEFAULT_TENANT_CLIENT_REFRESH_TOKEN_TTL: {{ .Values.multiTenant.tenants.default.client.refreshTokenTtl | quote }}
+  DEFAULT_TENANT_CLIENT_AUTH_CODE_TTL: {{ .Values.multiTenant.tenants.default.client.authCodeTtl | quote }}
+  DEFAULT_TENANT_OAUTH_SCOPE_CUSTOMIZATION: {{ .Values.multiTenant.tenants.default.client.oauthScopeCustomization | quote }}
+  DEFAULT_TENANT_CLIENT_REUSE_REFRESH_TOKEN: {{ .Values.multiTenant.tenants.default.client.reuseRefreshToken | quote }}
+  # DEFAULT User Configuration
+  DEFAULT_TENANT_USER_CAPTCHA_AFTER_INVALID_FAILURES: {{ .Values.multiTenant.tenants.default.user.captchaAfterInvalidFailures | quote }}
+  DEFAULT_TENANT_USER_CAPTCHA_REQUIRED: {{ .Values.multiTenant.tenants.default.user.captchaRequired | quote }}
+  DEFAULT_TENANT_USER_MAX_ALLOWED_LOGIN_ATTEMPTS: {{ .Values.multiTenant.tenants.default.user.maxAllowedLoginAttempts | quote }}
+  DEFAULT_TENANT_USER_DEFAULT_ROLE: {{ .Values.multiTenant.tenants.default.user.defaultRole | quote }}
+  DEFAULT_TENANT_SIGN_UP_ENABLED: {{ .Values.multiTenant.tenants.default.user.signUpEnabled | quote }}
+  DEFAULT_JWT_ADDITIONAL_CLAIM_ATTRIBUTES: {{ .Values.multiTenant.tenants.default.user.jwtAdditionalClaimAttributes | quote }}
+  # DEFAULT Keystore Configuration
+  DEFAULT_KEYSTORE_FILE_NAME: {{ .Values.multiTenant.tenants.default.keyStore.keyStoreFilename | quote }}
+  DEFAULT_KEYSTORE_ALIAS: {{ .Values.multiTenant.tenants.default.keyStore.keyAlias | quote }}
+  DEFAULT_KEYSTORE_TYPE: {{ .Values.multiTenant.tenants.default.keyStore.keyType | quote }}
+  DEFAULT_JWT_PUBLIC_KEY_PEM_PATH: {{ .Values.multiTenant.tenants.default.keyStore.jwtPubKeyPem | quote }}
+  DEFAULT_KEYSTORE_JKS_ENCODED_CONTENT: {{ .Values.multiTenant.tenants.default.keyStore.jksEncodedContent | quote }}
+  # DEFAULT Certificate Configuration
+  DEFAULT_JWT_PUBLIC_KEY: {{ .Values.multiTenant.tenants.default.cert.jwtPublicKey | quote }}
+  DEFAULT_JWT_PRIVATE_KEY: {{ .Values.multiTenant.tenants.default.cert.jwtPrivateKey | quote }}
+  DEFAULT_JWT_KEY_ID: {{ .Values.multiTenant.tenants.default.cert.jwtKeyId | quote }}
+  # DEFAULT Captcha Configuration
+  DEFAULT_TENANT_CAPTCHA_RECAPTCHA_VERIFY_URL: {{ .Values.multiTenant.tenants.default.captcha.recaptchaVerifyUrl | quote }}
+  DEFAULT_TENANT_CAPTCHA_RECAPTCHA_KEY_SITE: {{ .Values.multiTenant.tenants.default.captcha.recaptchaKeySite | quote }}
+  # DEFAULT Database Configuration
+  DEFAULT_POSTGRES_DATASOURCE: {{ .Values.multiTenant.tenants.default.database.jdbc_url | quote }}
+  # DEFAULT Contact Information
+  DEFAULT_TENANT_PASSWORD_RECOVERY_URL: https://{{ (first .Values.ingress.hosts).hostPrefix }}.{{ .Values.environmentDomainName }}/default/recovery
+  DEFAULT_TENANT_CONTACT_NAME: ""
+  DEFAULT_TENANT_PHONE_NUMBER: ""
+  DEFAULT_TENANT_EMAIL: ""
+  # DEFAULT External URLs
+  DEFAULT_USER_MANAGEMENT_ENV: {{ .Values.multiTenant.tenants.default.externalUrls.userManagementUrl | quote }}
+  DEFAULT_CLIENT_BY_CLIENT_ID_ENDPOINT: {{ .Values.multiTenant.tenants.default.externalUrls.clientByClientIdEndpoint | quote }}
+  DEFAULT_USER_BY_USERNAME_ENDPOINT: {{ .Values.multiTenant.tenants.default.externalUrls.userByUsernameEndpoint | quote }}
+  DEFAULT_ADD_USER_EVENTS_ENDPOINT: {{ .Values.multiTenant.tenants.default.externalUrls.addUserEventsEndpoint | quote }}
+  DEFAULT_USER_RECOVERY_NOTIFICATION_ENDPOINT: {{ .Values.multiTenant.tenants.default.externalUrls.recoveryNotificationEndpoint | quote }}
+  DEFAULT_USER_UPDATE_PASSWORD_USING_RECOVERY_SECRET_ENDPOINT: {{ .Values.multiTenant.tenants.default.externalUrls.updatePasswordUsingSecretEndpoint | quote }}
+  DEFAULT_CREATE_USER_ENDPOINT: {{ .Values.multiTenant.tenants.default.externalUrls.selfCreateUserEndpoint | quote }}
+  DEFAULT_PASSWORD_POLICY_ENDPOINT: {{ .Values.multiTenant.tenants.default.externalUrls.passwordPolicyEndpoint | quote }}
+  DEFAULT_CREATE_FEDRATED_USER_ENDPOINT: {{ .Values.multiTenant.tenants.default.externalUrls.createFedratedUserEndpoint | quote }}
+# Updated to match latest opensource-perf-app structure and logic for tenant default configmap

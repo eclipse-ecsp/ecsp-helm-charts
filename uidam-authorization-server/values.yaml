@@ -40,8 +40,9 @@ multiTenant:
   tenantIds: "ecsp,sdp"
   defaultTenant: "ecsp"
   enabled: false
-  
-  # Tenant-specific configurations
+  # Tenant configuration validation
+  configValidationEnabled: false
+  dbNameValidationStrategy: "NONE"
   tenants:
     ecsp:
       tenantId: "ecsp"
@@ -109,7 +110,6 @@ multiTenant:
           createUserMode: "CREATE_INTERNAL_USER"
           defaultUserRoles: "VEHICLE_OWNER"
           claimMappings: "firstName#given_name,lastName#family_name,email#email"
-    
     sdp:
       tenantId: "sdp"
       tenantName: "SDP"
@@ -176,6 +176,58 @@ multiTenant:
           createUserMode: "CREATE_INTERNAL_USER"
           defaultUserRoles: "VEHICLE_OWNER"
           claimMappings: "firstName#given_name,lastName#family_name,email#email"
+    default:
+      tenantId: "default"
+      tenantName: "Default Tenant"
+      jksEnabled: true
+      externalIdpEnabled: false
+      internalLoginEnabled: true
+      externalIdpClientName: "federated-user-client"
+      account:
+        accountId: "TO-BE-UPDATED"
+        accountName: "default"
+        accountType: "Root"
+        accountFieldEnabled: true
+      client:
+        accessTokenTtl: 3600
+        idTokenTtl: 3600
+        refreshTokenTtl: 3600
+        authCodeTtl: 300
+        oauthScopeCustomization: false
+        reuseRefreshToken: false
+      user:
+        captchaAfterInvalidFailures: 1
+        captchaRequired: false
+        maxAllowedLoginAttempts: 3
+        defaultRole: "VEHICLE_OWNER"
+        signUpEnabled: true
+        jwtAdditionalClaimAttributes: "accountType, accountName"
+      externalUrls:
+        userManagementUrl: "http://uidam-user-management:8080"
+        clientByClientIdEndpoint: "/v1/oauth2/client/{clientId}"
+        userByUsernameEndpoint: "/v1/users/{userName}/byUserName"
+        recoveryNotificationEndpoint: "/v1/users/{userName}/recovery/forgotpassword"
+        updatePasswordUsingSecretEndpoint: "/v1/users/recovery/set-password"
+        addUserEventsEndpoint: "/v1/users/{id}/events"
+        selfCreateUserEndpoint: "/v1/users/self"
+        passwordPolicyEndpoint: "/v1/users/password-policy"
+        createFedratedUserEndpoint: "/v1/users/federated"
+      keyStore:
+        keyStoreFilename: "uidamauthserver.jks"
+        keyAlias: "uidam-auth-server"
+        keyType: "JKS"
+        jwtPubKeyPem: "/app/uidam-pub-key-pem"
+        jksEncodedContent: "ChangeMe"
+      cert:
+        jwtPublicKey: "app.pub"
+        jwtPrivateKey: "app.key"
+        jwtKeyId: "TO-BE-UPDATED"
+      captcha:
+        recaptchaVerifyUrl: "https://www.google.com/recaptcha/api/siteverify"
+        recaptchaKeySite: "ChangeMe"
+      database:
+        jdbc_url: "jdbc:postgresql://postgresql:5432/default_db"
+      externalIdpRegisteredClients: []
 
 # Application Configuration
 uidam:
@@ -519,8 +571,17 @@ tenantSecrets:
     githubIDPSecret: "ChangeMe"
     cognitoIDPSecret: "ChangeMe"
     azureIDPSecret: "ChangeMe"
-  
   sdp:
+    keystorePassword: "ChangeMe"
+    igniteRecaptchaKeySecret: "ChangeMe"
+    clientsecretkey: "ChangeMe"
+    clientsecretsalt: "ChangeMe"
+    clientSecret: "ChangeMe"
+    googleIDPSecret: "ChangeMe"
+    githubIDPSecret: "ChangeMe"
+    cognitoIDPSecret: "ChangeMe"
+    azureIDPSecret: "ChangeMe"
+  default:
     keystorePassword: "ChangeMe"
     igniteRecaptchaKeySecret: "ChangeMe"
     clientsecretkey: "ChangeMe"

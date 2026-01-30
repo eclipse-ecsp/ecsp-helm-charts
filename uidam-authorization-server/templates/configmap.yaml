@@ -25,11 +25,19 @@ data:
 
   # MultiTenant Global Configuration
   {{- if .Values.multiTenant }}
-  MULTI_TENANT_ENABLED: {{ .Values.multiTenant.enabled | quote }}
+  TENANT_MULTITENANT_ENABLED: {{ .Values.multiTenant.enabled | quote }}
   TENANT_IDS: {{ .Values.multiTenant.tenantIds | quote }}
   DEFAULT_TENANT: {{ .Values.multiTenant.defaultTenant | quote }}
   {{- end }}
 
+  # Tenant configuration validation
+  TENANT_CONFIG_VALIDATION_ENABLED: {{ .Values.multiTenant.configValidationEnabled | quote }}
+  UIDAM_TENANT_CONFIG_DBNAME_VALIDATION: {{ .Values.multiTenant.dbNameValidationStrategy | quote }}
+
+  # Default Tenant Configuration (only properties with "ChangeMe" values in tenant-default.properties)
+  DEFAULT_POSTGRES_DATASOURCE: "jdbc:postgresql://{{ .Values.postgresql.host }}:{{ .Values.postgresql.port}}/{{ .Values.postgres.uidam_dbname }}"
+  DEFAULT_KEYSTORE_JKS_ENCODED_CONTENT: {{ .Values.multiTenant.tenants.sdp.keyStore.jksEncodedContent | quote }}
+  
   # UIDAM Configuration
   UIDAM_DEFAULT_DB_SCHEMA: {{ .Values.uidam.defaultDbSchema | quote }}
 
