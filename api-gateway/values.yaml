@@ -26,7 +26,7 @@ api_gateway:
   imageTag: 1.5.3
   requestHeaderFilterConfig:
     removeUnknownHeaders: "true"
-    allowHeaders: host, connection, content-type, content-length, accept, user-agent, origin, referer, accept-encoding, accept-language, X-Forwarded-Proto, X-Forwarded-For, X-Forwarded-Port, X-Amzn-Trace-Id, requestId, scope, override-scope, X-Tenant-ID, Authorization
+    allowHeaders: host, connection, content-type, content-length, accept, user-agent, origin, referer, accept-encoding, accept-language, X-Forwarded-Proto, X-Forwarded-For, X-Forwarded-Port, X-Amzn-Trace-Id, requestId, scope, user-id, override-scope, X-Tenant-ID, Authorization
     skipValidationForApis: /api-docs/**,^(\/[a-zA-Z0-9-]+)?\/v3/api-docs/**
     appendHeadersIfMissing: correlationId
     globalHeaders:
