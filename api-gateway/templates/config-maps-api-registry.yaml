@@ -14,7 +14,7 @@ data:
   GRAYLOG_PORT: {{ .Values.logging.graylogPort | quote }}
   api_security_enabled: "true"
   api_gatewayUrls: "https://{{ .Values.ingress.host }}.{{ .Values.api_gateway.environmentDomainName }}"
-  api_health_monitor: "0 */1 * ? * *"
+  api_health_monitor: {{ .Values.api_registry.api_health_monitor | quote }}
   health_service_failure_retry_thrshold: "2"
   health_service_failure_retry_interval_millis: "2000"
   LOG_LEVEL: {{ .Values.logging.logLevel | quote }}
@@ -32,8 +32,17 @@ data:
   service_name: {{ .Values.api_registry.serviceName | quote }}
 {{- if eq .Values.api_registry.database.type "sql" }}
   # postgres configs
-  postgres_driver_class_name: org.postgresql.Driver
-  postgres_jdbc_url: jdbc:postgresql://{{ .Values.api_registry.database.host }}:{{ .Values.api_registry.database.port }}/{{ .Values.api_registry.database.databaseName }}
+  multitenancy_enabled: "false"
+  tenants_profile_default_cache-prep-stmts: {{ .Values.api_registry.database.config.sqlCachePrepStmts | quote }}
+  tenants_profile_default_connection-timeout-ms: {{ .Values.api_registry.database.config.sqlConnectionTimeout | quote }}
+  tenants_profile_default_driver-class-name: "org.postgresql.Driver"
+  tenants_profile_default_jdbc-url: "jdbc:postgresql://{{ .Values.api_registry.database.host }}:{{ .Values.api_registry.database.port }}/{{ .Values.api_registry.database.databaseName }}"
+  tenants_profile_default_expected99th-percentile-ms-value: {{ .Values.api_registry.database.config.sqlExpected99thPercentileMsValue | quote }}
+  tenants_profile_default_max-idle-time: {{ .Values.api_registry.database.config.sqlMaxIdleTime | quote }}
+  tenants_profile_default_pool-name: {{ .Values.api_registry.database.config.sqlConnPoolName | quote }}
+  tenants_profile_default_postgres-cred-refresh-enabled: {{ .Values.api_registry.database.config.sqlCredRefreshEnabled | quote }}
+  tenants_profile_default_prep-stmt-cache-size: {{ .Values.api_registry.database.config.sqlPrepStmtsCacheSize | quote }}
+  tenants_profile_default_prep-stmt-cache-sql-limit: {{ .Values.api_registry.database.config.sqlPrepStmtsCacheSqlLimit | quote }}
   spring_jpa_hibernate_ddl_auto: {{ .Values.api_registry.database.config.ddlAuto | quote }}
   spring_jpa_hibernate_show_sql: {{ .Values.api_registry.database.config.showSql | quote }}
   postgresdb_metrics_enabled: {{ .Values.api_registry.metrics.databaseMetricsEnabled | quote }}
@@ -115,8 +124,14 @@ data:
   api-registry_rate-limit_max-replenish-rate: {{ .Values.gateway_common.rateLimit.maxReplenishRate | quote }}
   api-registry_rate-limit_max-burst-capacity: {{ .Values.gateway_common.rateLimit.maxBurstCapacity | quote }}
   api-registry_rate-limit_max-requested-tokens: {{ .Values.gateway_common.rateLimit.maxRequestedTokens | quote }}
-## virtual threads configuration
+  ## virtual threads configuration
   spring.threads.virtual.enabled: {{ .Values.gateway_common.virtualThreadsEnabled | quote }}
+  # event publishing configuration
+  API_REGISTRY_EVENTS_ENABLED: {{ .Values.api_registry.events.enabled | quote }}
+  API_REGISTRY_DEBOUNCE_DELAY: {{ .Values.api_registry.events.redis.debounceDelayMs | quote }}
+  API_REGISTRY_REDIS_CHANNEL: {{ .Values.gateway_common.redis.routeRefreshChannel | quote }}
+  # redis configuration
+  spring_data_redis_cluster_nodes:  {{ .Values.gateway_common.redis.clusterNodes | quote }}
 {{- if .Values.api_registry.extraParams }}
 {{ toYaml .Values.api_registry.extraParams | indent 2 }}
 {{- end }}

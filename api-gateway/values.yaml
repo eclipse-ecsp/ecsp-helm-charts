@@ -14,15 +14,19 @@ gateway_common:
     maxBurstCapacity: 10000
     maxRequestedTokens: 1000
     keyResolvers: "client-ip, clientIpKeyResolver, header, headerKeyResolver, route-path, routePathKeyResolver, route-name, routeNameKeyResolver" 
+  redis:
+    clusterNodes: "redis:6379" # TO-BE-UPDATED, Change this to your Redis cluster nodes
+    routeRefreshChannel: "api-gateway-updates"  
 
 api_gateway:
-  jvmOpts: "-Xmx2g -Xms2g -XX:+UseG1GC -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35 -XX:+DisableExplicitGC -XX:MetaspaceSize=96m -XX:G1HeapRegionSize=16M -XX:MinMetaspaceFreeRatio=50 -XX:MaxMetaspaceFreeRatio=80 -Dlogback.configurationFile=/api-gateway/conf/logback.xml -DLOG_LEVEL=INFO"
+  jvmOpts: "-Xmx2g -Xms2g -XX:+UseG1GC -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35 -XX:+DisableExplicitGC -XX:MetaspaceSize=96m -XX:G1HeapRegionSize=16M -XX:MinMetaspaceFreeRatio=50 -XX:MaxMetaspaceFreeRatio=80 -Dlogback.configurationFile=/api-gateway/conf/logback.xml -DLOG_LEVEL=INFO -Dsun.net.inetaddr.ttl=6000"
+  javaOpts: ""
   nodeType: "default"
   replicas: 1
-  imageTag: 1.4.0
+  imageTag: 1.5.3
   requestHeaderFilterConfig:
     removeUnknownHeaders: "true"
-    allowHeaders: host, connection, content-type, content-length, accept, user-agent, origin, referer, accept-encoding, accept-language, X-Forwarded-Proto, X-Forwarded-For, X-Forwarded-Port, X-Amzn-Trace-Id, requestId, user-id, scope, override-scope
+    allowHeaders: host, connection, content-type, content-length, accept, user-agent, origin, referer, accept-encoding, accept-language, X-Forwarded-Proto, X-Forwarded-For, X-Forwarded-Port, X-Amzn-Trace-Id, requestId, scope, override-scope, X-Tenant-ID, Authorization
     skipValidationForApis: /api-docs/**,^(\/[a-zA-Z0-9-]+)?\/v3/api-docs/**
     appendHeadersIfMissing: correlationId
     globalHeaders:
@@ -73,7 +77,7 @@ api_gateway:
   cachingEnabled: "false"
   cacheName: "DefaultCache"
   cacheTtl: "5"
-  springdoc_swagger_ui_enable: "true"
+  springdoc_swagger_ui_enable: true
   apiRegistryEnabled: "true"
   appender: "STDOUT"
   serviceLogLevel: info
@@ -83,8 +87,7 @@ api_gateway:
     maxAge: "3600"
     allowedMethods: "*"
     allowedHeaders: "*"
-  redis:
-    clusterNodes: "redis:6379" # TO-BE-UPDATED, Change this to your Redis cluster nodes
+  correlationIdHeaderName: "correlationId"
   uidam_public_key: |-
     <TO-BE-UPDATED>
   metrics:
@@ -211,6 +214,29 @@ api_gateway:
       emptyKeyStatus: 400
       includeHeaders: "true"
       keyResolver: client-ip          
+  routes:
+    refresh:
+      strategy: "EVENT_DRIVEN" # Refresh strategy: EVENT_DRIVEN or POLLING
+      redis:
+        # channel: "route-updates" # Redis channel to subscribe to
+        connectionTimeoutMs: "5000" # Connection timeout in milliseconds
+      retry:
+        maxAttempts: "3"
+        initialIntervalMs: "1000"
+        multiplier: "2.0"
+        maxIntervalMs: "16000"
+      polling:
+        cronExpression: "*/30 * * * * *"      
+  clientAccessControl:
+    enabled: "false"
+    skipPaths: "/v3/api-docs/**"
+    claimNames: "aud,client_id,azp"
+    overrides:
+    - clientId: "test-portal"
+      description: "Allow all access for test-portal client"
+      tenant: "test"
+      active: "true"
+      allow: "*:*"
   extraParams:
 
 
@@ -221,10 +247,11 @@ api_gateway:
     service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: "20"
 
 api_registry:
-  jvmOpts: "-Xmx2g -Xms2g -XX:+UseG1GC -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35 -XX:+DisableExplicitGC -XX:MetaspaceSize=96m -XX:G1HeapRegionSize=16M -XX:MinMetaspaceFreeRatio=50 -XX:MaxMetaspaceFreeRatio=80 -Dlogback.configurationFile=/opt/api-registry/conf/logback.xml -DLOG_LEVEL=INFO"
+  jvmOpts: "-Xmx2g -Xms2g -XX:+UseG1GC -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35 -XX:+DisableExplicitGC -XX:MetaspaceSize=96m -XX:G1HeapRegionSize=16M -XX:MinMetaspaceFreeRatio=50 -XX:MaxMetaspaceFreeRatio=80 -Dlogback.configurationFile=/opt/api-registry/conf/logback.xml -DLOG_LEVEL=INFO -Dsun.net.inetaddr.ttl=6000"
+  javaOpts: ""
   nodeType: "default"
   replicas: 1
-  imageTag: 1.4.0
+  imageTag: 1.5.3
   serviceName: api-registry
   database:
     ## supported types - sql, nosql
@@ -242,6 +269,14 @@ api_registry:
       ddlAuto: 'update'
       showSql: 'false'
       readPreference: primary
+      sqlCachePrepStmts: "false"
+      sqlPrepStmtsCacheSize: "250"
+      sqlPrepStmtsCacheSqlLimit: "2048"
+      sqlConnectionTimeout: "60000"
+      sqlExpected99thPercentileMsValue: "60000"
+      sqlMaxIdleTime: "0"
+      sqlConnPoolName: "defaultPool"
+      sqlCredRefreshEnabled: "false"
   health:
     databaseMonitorEnabled: true
     restartOnDBFailure: true
@@ -279,6 +314,14 @@ api_registry:
       env: ignite-dev
       host: api-registry
       application: api-registry
+  api_health_monitor: "0 */1 * ? * *"
+  events:
+    # Enable/disable event publishing
+    enabled: "true"
+    redis:
+      # Redis channel name for route events
+      # channel: route-updates
+      debounceDelayMs: 2000 
   extraParams:
 
 logging:

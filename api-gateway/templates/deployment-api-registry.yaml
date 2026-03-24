@@ -83,7 +83,7 @@ spec:
               name: {{ .Values.api_registry.database.secretName }}
               key: password          
         - name: CATALINA_OPTS
-          value : "{{ .Values.api_registry.jvmOpts }} {{ .Values.api_registry.javaOpts }}"
+          value : "{{ printf "%s %s" .Values.api_registry.jvmOpts .Values.api_registry.javaOpts | trim }}"
         {{- if and (.Values.api_registry.metrics.enabled) (.Values.api_registry.metrics.datadog.enabled) }}
         - name: management_datadog_metrics_export_api-key
           valueFrom:
@@ -103,7 +103,9 @@ spec:
           - mountPath: /opt/api-registry/logs
             name: logs
       serviceAccountName: {{ include "api-registry.fullname" . }}
+      {{- if .Values.image.imagePullSecrets }}
       imagePullSecrets: {{- toYaml .Values.image.imagePullSecrets | nindent 8 }}
+      {{- end }}
       volumes:
         - name: logs
           emptyDir: {}
