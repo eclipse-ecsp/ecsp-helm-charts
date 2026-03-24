@@ -16,7 +16,7 @@ metadata:
     alb.ingress.kubernetes.io/ssl-redirect: "443"
     alb.ingress.kubernetes.io/scheme: {{ .Values.ingress.scheme }}
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":{{.Values.ingress.port }}}]'
-    alb.ingress.kubernetes.io/inbound-cidrs: {{ join ",/" .Values.ingress.inboundCidrs }}
+    alb.ingress.kubernetes.io/inbound-cidrs: {{ join "," .Values.ingress.inboundCidrs }}
     alb.ingress.kubernetes.io/target-type: {{ .Values.ingress.targetType }}
     alb.ingress.kubernetes.io/actions.response-404: |-
       {

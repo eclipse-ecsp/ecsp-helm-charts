@@ -51,7 +51,7 @@ data:
   spring.cloud.gateway.filter.redis.cache.enabled: "false"
   spring.cloud.gateway.filter.local-response-cache.enabled: {{ .Values.api_gateway.cachingEnabled | quote }}
 {{- end }}
-  spring_data_redis_cluster_nodes: {{ .Values.api_gateway.redis.clusterNodes | quote }}
+  spring_data_redis_cluster_nodes:  {{ .Values.gateway_common.redis.clusterNodes | quote }}
   RATE_LIMIT_REPLENISH_RATE: {{ .Values.api_gateway.rate_limit_replenish_rate | quote }}
   RATE_LIMIT_BURST_CAPACITY: {{ .Values.api_gateway.rate_limit_burst_capacity | quote }}
   api_dynamic_routes_enabled: "true"
@@ -243,6 +243,28 @@ data:
 {{- end }}  
 ## virtual threads configuration
   spring.threads.virtual.enabled: {{ .Values.gateway_common.virtualThreadsEnabled | quote }}
+  # event publishing configuration
+  ROUTE_REFRESH_STRATEGY : {{ .Values.api_gateway.routes.refresh.strategy | quote }}
+  ROUTE_REFRESH_REDIS_CHANNEL: {{ .Values.gateway_common.redis.routeRefreshChannel | quote }}
+  REDIS_CONNECTION_TIMEOUT: {{ .Values.api_gateway.routes.refresh.redis.connectionTimeoutMs | quote }}
+  ROUTE_REFRESH_POLLING_CRON: {{ .Values.api_gateway.routes.refresh.polling.cronExpression | quote }}
+  RETRY_MAX_ATTEMPTS: {{ .Values.api_gateway.routes.refresh.retry.maxAttempts | quote }}
+  RETRY_INITIAL_INTERVAL: {{ .Values.api_gateway.routes.refresh.retry.initialIntervalMs | quote }}
+  RETRY_MULTIPLIER: {{ .Values.api_gateway.routes.refresh.retry.multiplier | quote }}
+  RETRY_MAX_INTERVAL: {{ .Values.api_gateway.routes.refresh.retry.maxIntervalMs | quote }}
+  ## Client access control configuration
+  api_gateway_client-access-control_enabled: {{ .Values.api_gateway.clientAccessControl.enabled | quote }}
+  api_gateway_client-access-control_skip-paths: {{ .Values.api_gateway.clientAccessControl.skipPaths | quote }}
+  api_gateway_client-access-control_claim-names: {{ .Values.api_gateway.clientAccessControl.claimNames | quote }}
+  {{- range $i, $override := .Values.api_gateway.clientAccessControl.overrides }}
+  api_gateway_client-access-control_overrides_{{ $i }}_clientId: {{ $override.clientId | quote }}
+  api_gateway_client-access-control_overrides_{{ $i }}_description: {{ $override.description | quote }}
+  api_gateway_client-access-control_overrides_{{ $i }}_tenant: {{ $override.tenant | quote }}
+  api_gateway_client-access-control_overrides_{{ $i }}_active: {{ $override.active | quote }}
+  api_gateway_client-access-control_overrides_{{ $i }}_allow: {{ $override.allow | quote }}
+  {{- end }}
+  ## correlation id configuration
+  api_gateway_correlation-id-header: {{ .Values.api_gateway.correlationIdHeaderName | quote }}
 # extra params
 {{- if .Values.api_gateway.extraParams }}
 {{ toYaml .Values.api_gateway.extraParams | indent 2 }}

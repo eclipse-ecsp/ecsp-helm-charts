@@ -39,7 +39,7 @@ spec:
           httpGet:
             path: "{{ .Values.api_gateway.metrics.basePath }}{{ .Values.api_gateway.metrics.health.path }}/liveness"
             port: {{ .Values.api_gateway.metrics.port }}
-          initialDelaySeconds: 200
+          initialDelaySeconds: 120
           periodSeconds: 10
           failureThreshold: 10
           successThreshold: 1
@@ -48,7 +48,7 @@ spec:
           httpGet:
             path: "{{ .Values.api_gateway.metrics.basePath }}{{ .Values.api_gateway.metrics.health.path }}/readiness"
             port: {{ .Values.api_gateway.metrics.port }}
-          initialDelaySeconds: 200
+          initialDelaySeconds: 120
           periodSeconds: 10
           failureThreshold: 10
           successThreshold: 1
@@ -69,7 +69,7 @@ spec:
             fieldRef:
               fieldPath: spec.nodeName
         - name: CATALINA_OPTS
-          value : "{{ .Values.api_gateway.jvmOpts }} {{ .Values.api_gateway.javaOpts }}"
+          value : "{{ printf "%s %s" .Values.api_gateway.jvmOpts .Values.api_gateway.javaOpts | trim }}"
         {{- if and (.Values.api_gateway.metrics.enabled) (.Values.api_gateway.metrics.datadog.enabled) }}
         - name: management_datadog_metrics_export_api-key
           valueFrom:
@@ -104,20 +104,46 @@ spec:
           secret:
             optional: true
             secretName: {{ include "api-gateway.fullname" . }}-public-key
-{{- if .Values.api_gateway.customPlugins.enabled }}            
+{{- if or .Values.api_gateway.apiRegistryEnabled .Values.api_gateway.customPlugins.enabled }}
       initContainers:
+      {{- if .Values.api_gateway.apiRegistryEnabled }}
+      - name: wait-for-api-registry
+        image: curlimages/curl:8.18.0
+        command: ["sh", "-c"]
+        args: 
+        - |-
+          echo "[$(date)] Waiting for API Registry to be ready..."
+          until curl -sf {{ .Values.api_gateway.registry_service_name }}:{{ .Values.api_registry.metrics.port }}{{ .Values.api_registry.metrics.basePath }}{{ .Values.api_registry.metrics.health.path }}/readiness > /dev/null 2>&1; do
+            echo "[$(date)] API Registry is not ready yet. Retrying in 5 seconds..."
+            sleep 5
+          done
+          echo ""
+          echo "[$(date)] API Registry is ready. Proceeding with API Gateway startup."
+      {{- end }}
+      {{- if .Values.api_gateway.customPlugins.enabled }} 
       - name: custom-plugins
-        image: curlimages/curl:7.85.0
+        image: curlimages/curl:8.18.0
         command: ["sh", "-c"]
         args: 
         - |-
           {{- $values := .Values }}
-          echo "Downloading Plugins"
+          set -e
+          echo "[$(date)] Starting plugin download..."
           {{- range $plugin := .Values.api_gateway.customPlugins.plugins }}
-          curl -v -X GET "{{- $plugin.url -}}" -u $ARTIFACTORY_USERNAME:$ARTIFACTORY_PASSWORD -o {{- $values.api_gateway.customPlugins.libraryPath -}}/{{- $plugin.name -}}.jar
+          echo "[$(date)] Downloading plugin: {{ $plugin.name }}"
+          if curl -sf -X GET "{{- $plugin.url -}}" -u $ARTIFACTORY_USERNAME:$ARTIFACTORY_PASSWORD -o {{ $values.api_gateway3.customPlugins.libraryPath }}/{{- $plugin.name -}}.jar > /tmp/curl_output.log 2>&1; then
+            echo "[$(date)] Plugin {{ $plugin.name }} download completed."
+          else
+            echo "[$(date)] ERROR: Failed to download plugin {{ $plugin.name }}"
+            cat /tmp/curl_output.log
+            exit 1
+          fi
           {{- end }}
-          ls -ltr {{ $values.api_gateway.customPlugins.libraryPath }}
-          echo "All Plugins are downloaded"
+          echo ""
+          echo "[$(date)] Verifying downloaded plugins:"
+          ls -ltr {{ $values.api_gateway3.customPlugins.libraryPath }}
+          echo ""
+          echo "[$(date)] All plugins downloaded successfully."
         env:
         - name: ARTIFACTORY_USERNAME
           valueFrom:
@@ -132,4 +158,5 @@ spec:
         volumeMounts:
           - name: custom-plugins
             mountPath: "{{ .Values.api_gateway.customPlugins.libraryPath }}"
+{{- end }}
 {{- end }}
