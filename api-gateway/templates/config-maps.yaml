@@ -44,13 +44,13 @@ data:
   api_caching_ttl: {{ .Values.api_gateway.cacheTtl | quote }}
   api_caching_type: {{ .Values.api_gateway.cachingType | quote }}
 {{- if eq .Values.api_gateway.cachingType "redis"}}
-  spring.cloud.gateway.filter.local-response-cache.enabled: "false"
-  spring.cloud.gateway.filter.redis.cache.enabled: {{ .Values.api_gateway.cachingEnabled | quote }}
-{{- end }}
-{{- if eq .Values.api_gateway.cachingType "local"}}
-  spring.cloud.gateway.filter.redis.cache.enabled: "false"
-  spring.cloud.gateway.filter.local-response-cache.enabled: {{ .Values.api_gateway.cachingEnabled | quote }}
-{{- end }}
+  spring.cloud.gateway.server.webflux.filter.local-response-cache.enabled: "false"
+  spring.cloud.gateway.server.webflux.filter.redis.cache.enabled: {{ .Values.api_gateway.cachingEnabled | quote }}
+  {{- end }}
+  {{- if eq .Values.api_gateway.cachingType "local"}}
+  spring.cloud.gateway.server.webflux.filter.redis.cache.enabled: "false"
+  spring.cloud.gateway.server.webflux.filter.local-response-cache.enabled: {{ .Values.api_gateway.cachingEnabled | quote }}
+  {{- end }}
   spring_data_redis_cluster_nodes:  {{ .Values.gateway_common.redis.clusterNodes | quote }}
   RATE_LIMIT_REPLENISH_RATE: {{ .Values.api_gateway.rate_limit_replenish_rate | quote }}
   RATE_LIMIT_BURST_CAPACITY: {{ .Values.api_gateway.rate_limit_burst_capacity | quote }}
@@ -69,14 +69,23 @@ data:
   CACHE_LOG_LEVEL: {{ .Values.logging.cacheLogLevel | quote }}
   KAFKA_LOG_LEVEL: {{ .Values.logging.kafkaLogLevel | quote }}
   STREAM_BASE_LOG_LEVEL: {{ .Values.logging.streamBaseLogLevel | quote }}
+  spring_cloud_gateway_server_webflux_default-filters_0: 'AddResponseHeader=Strict-Transport-Security, max-age=31536000; includeSubDomains'
+  spring_cloud_gateway_server_webflux_default-filters_1_name: 'RequestHeaderFilter'
   api_gateway_request-header-filter_remove_unknown_headers: {{ .Values.api_gateway.requestHeaderFilterConfig.removeUnknownHeaders | quote }}
-  api_gateway_request-header-filter_skip_validation_for_apis: {{ .Values.api_gateway.requestHeaderFilterConfig.skipValidationForApis }}
+  spring_cloud_gateway_server_webflux_default-filters_1_args_remove-unknown-headers: {{ .Values.api_gateway.requestHeaderFilterConfig.removeUnknownHeaders | quote }}
+  api_gateway_request-header-filter_skip_validation_for_apis: {{ .Values.api_gateway.requestHeaderFilterConfig.skipValidationForApis | quote }}
+  spring_cloud_gateway_server_webflux_default-filters_1_args_skip-validation-for-apis: {{ .Values.api_gateway.requestHeaderFilterConfig.skipValidationForApis | quote }}
   api_gateway_request-header-filter_allow_headers: {{ .Values.api_gateway.requestHeaderFilterConfig.allowHeaders }}
+  spring_cloud_gateway_server_webflux_default-filters_1_args_allow-headers: {{ .Values.api_gateway.requestHeaderFilterConfig.allowHeaders }}
   api_gateway_request-header-filter_append_headers_if_missing: {{ .Values.api_gateway.requestHeaderFilterConfig.appendHeadersIfMissing }}
+  spring_cloud_gateway_server_webflux_default-filters_1_args_append-headers-if-missing: {{ .Values.api_gateway.requestHeaderFilterConfig.appendHeadersIfMissing }}
 {{- range $i, $header :=  .Values.api_gateway.requestHeaderFilterConfig.globalHeaders }}
-  api_gateway_request-header-filter_global-headers_{{$i}}_name : {{ $header.name }}
-  api_gateway_request-header-filter_global-headers_{{$i}}_required : {{ $header.required | quote }}
-  api_gateway_request-header-filter_global-headers_{{$i}}_regex : {{ $header.regex }}
+  api_gateway_request-header-filter_global-headers_{{ $i }}_name : {{ $header.name | quote }}
+  spring_cloud_gateway_server_webflux_default-filters_1_args_global-headers_{{ $i }}_name: {{ $header.name | quote }}
+  api_gateway_request-header-filter_global-headers_{{ $i }}_required : {{ $header.required | quote }}
+  spring_cloud_gateway_server_webflux_default-filters_1_args_global-headers_{{ $i }}_required: {{ $header.required | quote }}
+  api_gateway_request-header-filter_global-headers_{{ $i }}_regex : {{ $header.regex | quote }}
+  spring_cloud_gateway_server_webflux_default-filters_1_args_global-headers_{{ $i }}_regex: {{ $header.regex | quote }}
 {{- end }}
   api_gateway_metrics_enabled: {{ .Values.api_gateway.metrics.enabled | quote }}
   api_gateway_metrics_port: {{ .Values.api_gateway.metrics.port | quote }}
