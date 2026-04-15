@@ -23,7 +23,7 @@ api_gateway:
   javaOpts: ""
   nodeType: "default"
   replicas: 1
-  imageTag: 1.5.3
+  imageTag: 1.5.4
   requestHeaderFilterConfig:
     removeUnknownHeaders: "true"
     allowHeaders: host, connection, content-type, content-length, accept, user-agent, origin, referer, accept-encoding, accept-language, X-Forwarded-Proto, X-Forwarded-For, X-Forwarded-Port, X-Amzn-Trace-Id, requestId, scope, user-id, override-scope, X-Tenant-ID, Authorization
@@ -251,7 +251,7 @@ api_registry:
   javaOpts: ""
   nodeType: "default"
   replicas: 1
-  imageTag: 1.5.3
+  imageTag: 1.5.4
   serviceName: api-registry
   database:
     ## supported types - sql, nosql
