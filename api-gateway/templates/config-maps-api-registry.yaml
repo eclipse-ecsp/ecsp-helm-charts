@@ -12,7 +12,8 @@ data:
   LOG_APPENDER: {{ .Values.logging.logAppender| quote }}
   GRAYLOG_HOST: {{ .Values.logging.graylogHost | quote }}
   GRAYLOG_PORT: {{ .Values.logging.graylogPort | quote }}
-  api_security_enabled: "true"
+  api_security_enabled: "false"
+  api_registry_security_enabled: "false"
   api_gatewayUrls: "https://{{ .Values.ingress.host }}.{{ .Values.api_gateway.environmentDomainName }}"
   api_health_monitor: {{ .Values.api_registry.api_health_monitor | quote }}
   health_service_failure_retry_thrshold: "2"
