@@ -145,7 +145,7 @@ data:
   dff_enabled: {{ .Values.ro_api.dffEnabled | quote }}
   dmaEnabled: "false"
   dma_enabled: {{ .Values.ro_api.dmaEnabled | quote }}
-  api_gatewayUrls: "https://oss-api-gateway3.eks-ignite-qa.kqa.ignite.harman.com"
+  api_gatewayUrls: "<api-gateway-url>"
   api_gateway_service_name: {{ .Values.api_gateway.api_gateway_service_name | quote }}
   api_registry_enabled: {{ .Values.api_gateway.api_registry_enabled | quote }}
   api_security_enabled: {{ .Values.api_gateway.api_security_enabled | quote }}
