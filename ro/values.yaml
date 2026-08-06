@@ -106,8 +106,8 @@ ro_sp:
   dmaShoulderTapEnabled: "false"
   shouldertapSmsTransactionStatusUrl: "http://fca-m2m-api-int-svc.default.svc.cluster.local:8080/v1.0/m2m/sim/transaction/"
   dmashouldertapwamsmsvalidityhours: "72"
-  outboudApiAdditionalHeaders: "x-api-key:k2hvag5cxs9NTU5zXqTou6Ge35lNnHkB8UL4CfDJ,content-type:application/json"
-  acvOutboudApiAdditionalHeaders: "x-api-key:0TpKBa8YFd9D7jcy9xdxV74bDTXAuMnV9z7tSQhT,content-type:application/json"
+  outboudApiAdditionalHeaders: "x-api-key:<api-key>,content-type:application/json"
+  acvOutboudApiAdditionalHeaders: "x-api-key:<api-key>,content-type:application/json"
   acvBeforeExecuteTimeMinutes: "15"
   dmaBsrfRetryIntervalEvents: "RemoteOperationEngine"
   dmaBsrfRetryIntervalMillis: "60000"
@@ -473,11 +473,6 @@ mongodb:
   vaultEnabled: "false"
   vaultRefreshIntervalMs: "30000"
   vaultLeaseIntervalMs: "10000"
-  initializer:
-    image:
-      repository: "arti.dev.ignite.harman.com:5061/hctl/mongodb-initializer"
-      tag: "1.0.0-master-1c68cc5"
-    imagePullPolicy: Always
 
 logging:
   logLevel: "DEBUG"
