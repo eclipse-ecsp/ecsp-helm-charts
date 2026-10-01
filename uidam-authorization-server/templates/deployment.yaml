@@ -14,13 +14,8 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
-        {{- if and .Values.multiTenant (contains "ecsp" .Values.multiTenant.tenantIds) }}
-        checksum/config-ecsp: {{ include (print $.Template.BasePath "/configmap-tenant-ecsp.yaml") . | sha256sum }}
-        {{- end }}
-        {{- if and .Values.multiTenant (contains "sdp" .Values.multiTenant.tenantIds) }}
-        checksum/config-sdp: {{ include (print $.Template.BasePath "/configmap-tenant-sdp.yaml") . | sha256sum }}
-        {{- end }}
-        checksum/config-default: {{ include (print $.Template.BasePath "/configmap-tenant-default.yaml") . | sha256sum }}
+        checksum/config-tenants: {{ include (print $.Template.BasePath "/configmap-tenants-config.yaml") . | sha256sum }}
+        checksum/config-default: {{ include (print $.Template.BasePath "/configmap-default-configurations.yaml") . | sha256sum }}
       labels: {{- include "uidam-authorization-server.selectorLabels" . | nindent 8 }}
     spec:
       {{- with .Values.imagePullSecrets }}
@@ -58,13 +53,13 @@ spec:
         envFrom:
         - configMapRef:
             name: {{ include "uidam-authorization-server.fullname" . }}
-        {{- if and .Values.multiTenant (contains "ecsp" .Values.multiTenant.tenantIds) }}
+        {{- range $tenantKey, $tenantConfig := .Values.multiTenant.tenants }}
+        {{- if ne $tenantKey "default" }}
+        {{- if or (contains $tenantKey $.Values.multiTenant.tenantIds) (eq $tenantKey $.Values.multiTenant.defaultTenant) }}
         - configMapRef:
-            name: {{ include "uidam-authorization-server.fullname" . }}-tenant-ecsp
+            name: {{ include "uidam-authorization-server.fullname" $ }}-tenant-{{ $tenantKey }}
         {{- end }}
-        {{- if and .Values.multiTenant (contains "sdp" .Values.multiTenant.tenantIds) }}
-        - configMapRef:
-            name: {{ include "uidam-authorization-server.fullname" . }}-tenant-sdp
+        {{- end }}
         {{- end }}
         - configMapRef:
             name: {{ include "uidam-authorization-server.fullname" . }}-tenant-default
@@ -76,9 +71,7 @@ spec:
         resources: {{- toYaml .Values.resources | nindent 10 }}
         env:
           - name: LOGLEVEL
-            value: DEBUG
-          - name: POSTGRESQL_CONFIG_FILE
-            value: /data/uidam-authorization-server-postgres-config.yml
+            value: {{ .Values.logging.logLevel | quote }}
           - name: POSTGRESQL_HOST
             value: "{{ .Values.postgresql.host }}"
           - name: POSTGRESQL_PORT
@@ -100,113 +93,110 @@ spec:
                 name: "{{ .Values.postgresql.secretName }}"
                 key: keystorePassword
 
-          # ECSP tenant secrets
-          {{- if and .Values.multiTenant (contains "ecsp" .Values.multiTenant.tenantIds) }}
-          - name: ECSP_POSTGRES_USERNAME
-            valueFrom:
-              secretKeyRef:
-                name: {{ include "uidam-authorization-server.fullname" . }}-tenant-ecsp-credentials
-                key: username
-          - name: ECSP_POSTGRES_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: {{ include "uidam-authorization-server.fullname" . }}-tenant-ecsp-credentials
-                key: password
-          - name: ECSP_KEYSTORE_PASS
-            valueFrom:
-              secretKeyRef:
-                name: {{ include "uidam-authorization-server.fullname" . }}-tenant-ecsp-credentials
-                key: keystorePassword
-          - name: ECSP_TENANT_CLIENT_SECRET_ENCRYPTION_KEY
-            valueFrom:
-              secretKeyRef:
-                name: {{ include "uidam-authorization-server.fullname" . }}-tenant-ecsp-credentials
-                key: clientsecretkey
-          - name: ECSP_TENANT_CLIENT_SECRET_ENCRYPTION_SALT
-            valueFrom:
-              secretKeyRef:
-                name: {{ include "uidam-authorization-server.fullname" . }}-tenant-ecsp-credentials
-                key: clientsecretsalt
-          - name: ECSP_TENANT_CAPTCHA_RECAPTCHA_KEY_SECRET
-            valueFrom:
-              secretKeyRef:
-                name: {{ include "uidam-authorization-server.fullname" . }}-tenant-ecsp-credentials
-                key: ignite.recaptcha.key.secret
-          - name: ECSP_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_0_CLIENT_SECRET
-            valueFrom:
-              secretKeyRef:
-                name: {{ include "uidam-authorization-server.fullname" . }}-tenant-ecsp-credentials
-                key: googleIDPSecret
-          {{- end }}
-          # SDP tenant secrets
-          {{- if and .Values.multiTenant (contains "sdp" .Values.multiTenant.tenantIds) }}
-          - name: SDP_POSTGRES_USERNAME
-            valueFrom:
-              secretKeyRef:
-                name: {{ include "uidam-authorization-server.fullname" . }}-tenant-sdp-credentials
-                key: username
-          - name: SDP_POSTGRES_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: {{ include "uidam-authorization-server.fullname" . }}-tenant-sdp-credentials
-                key: password
-          - name: SDP_KEYSTORE_PASS
-            valueFrom:
-              secretKeyRef:
-                name: {{ include "uidam-authorization-server.fullname" . }}-tenant-sdp-credentials
-                key: keystorePassword
-          - name: SDP_TENANT_CLIENT_SECRET_ENCRYPTION_KEY
-            valueFrom:
-              secretKeyRef:
-                name: {{ include "uidam-authorization-server.fullname" . }}-tenant-sdp-credentials
-                key: clientsecretkey
-          - name: SDP_TENANT_CLIENT_SECRET_ENCRYPTION_SALT
-            valueFrom:
-              secretKeyRef:
-                name: {{ include "uidam-authorization-server.fullname" . }}-tenant-sdp-credentials
-                key: clientsecretsalt
-          - name: SDP_TENANT_CAPTCHA_RECAPTCHA_KEY_SECRET
-            valueFrom:
-              secretKeyRef:
-                name: {{ include "uidam-authorization-server.fullname" . }}-tenant-sdp-credentials
-                key: ignite.recaptcha.key.secret
-          - name: SDP_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_0_CLIENT_SECRET
-            valueFrom:
-              secretKeyRef:
-                name: {{ include "uidam-authorization-server.fullname" . }}-tenant-sdp-credentials
-                key: googleIDPSecret
-          {{- end }}
-          # DEFAULT tenant secrets
+          {{- $defaultSecretName := printf "%s-tenant-default-credentials" (include "uidam-authorization-server.fullname" .) }}
+          # DEFAULT tenant secrets (tenant-default.properties placeholders)
           - name: DEFAULT_POSTGRES_USERNAME
             valueFrom:
               secretKeyRef:
-                name: {{ include "uidam-authorization-server.fullname" . }}-tenant-default-credentials
+                name: {{ $defaultSecretName }}
                 key: username
           - name: DEFAULT_POSTGRES_PASSWORD
             valueFrom:
               secretKeyRef:
-                name: {{ include "uidam-authorization-server.fullname" . }}-tenant-default-credentials
+                name: {{ $defaultSecretName }}
                 key: password
           - name: DEFAULT_KEYSTORE_PASS
             valueFrom:
               secretKeyRef:
-                name: {{ include "uidam-authorization-server.fullname" . }}-tenant-default-credentials
+                name: {{ $defaultSecretName }}
                 key: keystorePassword
           - name: DEFAULT_TENANT_CLIENT_SECRET_ENCRYPTION_KEY
             valueFrom:
               secretKeyRef:
-                name: {{ include "uidam-authorization-server.fullname" . }}-tenant-default-credentials
+                name: {{ $defaultSecretName }}
                 key: clientsecretkey
           - name: DEFAULT_TENANT_CLIENT_SECRET_ENCRYPTION_SALT
             valueFrom:
               secretKeyRef:
-                name: {{ include "uidam-authorization-server.fullname" . }}-tenant-default-credentials
+                name: {{ $defaultSecretName }}
                 key: clientsecretsalt
           - name: DEFAULT_TENANT_CAPTCHA_RECAPTCHA_KEY_SECRET
             valueFrom:
               secretKeyRef:
-                name: {{ include "uidam-authorization-server.fullname" . }}-tenant-default-credentials
+                name: {{ $defaultSecretName }}
                 key: ignite.recaptcha.key.secret
+          - name: DEFAULT_MFA_SECRET_ENCRYPTION_KEY
+            valueFrom:
+              secretKeyRef:
+                name: {{ $defaultSecretName }}
+                key: mfaSecretEncryptionKey
+          - name: DEFAULT_MFA_SECRET_ENCRYPTION_SALT
+            valueFrom:
+              secretKeyRef:
+                name: {{ $defaultSecretName }}
+                key: mfaSecretEncryptionSalt
+          {{- range $index, $client := .Values.multiTenant.tenants.default.externalIdpRegisteredClients }}
+          - name: DEFAULT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: {{ $defaultSecretName }}
+                key: {{ printf "%sIDPSecret" (lower $client.clientName) }}
+          {{- end }}
+          {{- range $tenantKey, $tenantConfig := .Values.multiTenant.tenants }}
+          {{- if ne $tenantKey "default" }}
+          {{- if or (contains $tenantKey $.Values.multiTenant.tenantIds) (eq $tenantKey $.Values.multiTenant.defaultTenant) }}
+          {{- $tenantSecretName := printf "%s-tenant-%s-credentials" (include "uidam-authorization-server.fullname" $) $tenantKey }}
+          # {{ $tenantKey | upper }} tenant secrets
+          - name: tenants_profile_{{ $tenantKey }}_user-name
+            valueFrom:
+              secretKeyRef:
+                name: {{ $tenantSecretName }}
+                key: username
+          - name: tenants_profile_{{ $tenantKey }}_password
+            valueFrom:
+              secretKeyRef:
+                name: {{ $tenantSecretName }}
+                key: password
+          - name: tenants_profile_{{ $tenantKey }}_key-store_key-store-password
+            valueFrom:
+              secretKeyRef:
+                name: {{ $tenantSecretName }}
+                key: keystorePassword
+          - name: tenants_profile_{{ $tenantKey }}_client_secret-encryption-key
+            valueFrom:
+              secretKeyRef:
+                name: {{ $tenantSecretName }}
+                key: clientsecretkey
+          - name: tenants_profile_{{ $tenantKey }}_client_secret-encryption-salt
+            valueFrom:
+              secretKeyRef:
+                name: {{ $tenantSecretName }}
+                key: clientsecretsalt
+          - name: tenants_profile_{{ $tenantKey }}_captcha_recaptcha-key-secret
+            valueFrom:
+              secretKeyRef:
+                name: {{ $tenantSecretName }}
+                key: ignite.recaptcha.key.secret
+          - name: tenants_profile_{{ $tenantKey }}_mfa-secret-encryption-key
+            valueFrom:
+              secretKeyRef:
+                name: {{ $tenantSecretName }}
+                key: mfaSecretEncryptionKey
+          - name: tenants_profile_{{ $tenantKey }}_mfa-secret-encryption-salt
+            valueFrom:
+              secretKeyRef:
+                name: {{ $tenantSecretName }}
+                key: mfaSecretEncryptionSalt
+          {{- range $index, $client := $tenantConfig.externalIdpRegisteredClients }}
+          - name: tenants_profile_{{ $tenantKey }}_external-idp-registered-client-list[{{ $index }}]_client-secret
+            valueFrom:
+              secretKeyRef:
+                name: {{ $tenantSecretName }}
+                key: {{ printf "%sIDPSecret" (lower $client.clientName) }}
+          {{- end }}
+          {{- end }}
+          {{- end }}
+          {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector: {{- toYaml . | nindent 8 }}
       {{- end }}

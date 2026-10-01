@@ -7,8 +7,9 @@ data:
   # Global Configuration
   SPRING_AUTH_PROXY_PORT_HTTPS: "9443"
   SPRING_AUTH_PROXY_PORT: "9000"
-  POSTGRES_DATASOURCE: "jdbc:postgresql://{{ .Values.postgresql.host }}:{{ .Values.postgresql.port}}/{{ .Values.postgres.uidam_dbname }}"
+  POSTGRES_DATASOURCE: "jdbc:postgresql://{{ .Values.postgresql.host }}:{{ .Values.postgresql.port }}/{{ .Values.postgres.databaseName }}"
   SPRING_AUTH_PROXY_HOSTNAME: {{ (first .Values.ingress.hosts).hostPrefix }}.{{ .Values.environmentDomainName }}
+  UIDAM_OAUTH2_TOKEN_HASH_ALGORITHM: {{ .Values.uidam.oauth2.tokenHashAlgorithm | quote }}
   UI_TEMPLATE_PATH: {{ .Values.uiTemplatePath  | quote}}
   UI_STATIC_PATH: {{ .Values.uiStaticPath  | quote}}
   GRAYLOG_ENABLED: {{ .Values.graylog.enabled | quote }}
@@ -26,18 +27,22 @@ data:
   # MultiTenant Global Configuration
   {{- if .Values.multiTenant }}
   TENANT_MULTITENANT_ENABLED: {{ .Values.multiTenant.enabled | quote }}
+  {{- if not .Values.configServer.enabled }}
   TENANT_IDS: {{ .Values.multiTenant.tenantIds | quote }}
-  DEFAULT_TENANT: {{ .Values.multiTenant.defaultTenant | quote }}
   {{- end }}
+  TENANT_DEFAULT: {{ .Values.multiTenant.defaultTenant | quote }}
+  {{- end }}
+
+  # Config Server Configuration
+  CONFIG_SERVER_HOST: {{ .Values.configServer.host | quote }}
+  CONFIG_SERVER_ENABLED: {{ .Values.configServer.enabled | quote }}
+  SPRING_CLOUD_CONFIG_ENABLED: {{ .Values.configServer.enabled | quote }}
+  UIDAM_CONFIG_IMPORT: {{ .Values.configServer.springConfigImport | quote }}
 
   # Tenant configuration validation
   TENANT_CONFIG_VALIDATION_ENABLED: {{ .Values.multiTenant.configValidationEnabled | quote }}
   UIDAM_TENANT_CONFIG_DBNAME_VALIDATION: {{ .Values.multiTenant.dbNameValidationStrategy | quote }}
 
-  # Default Tenant Configuration (only properties with "ChangeMe" values in tenant-default.properties)
-  DEFAULT_POSTGRES_DATASOURCE: "jdbc:postgresql://{{ .Values.postgresql.host }}:{{ .Values.postgresql.port}}/{{ .Values.postgres.uidam_dbname }}"
-  DEFAULT_KEYSTORE_JKS_ENCODED_CONTENT: {{ .Values.multiTenant.tenants.sdp.keyStore.jksEncodedContent | quote }}
-  
   # UIDAM Configuration
   UIDAM_DEFAULT_DB_SCHEMA: {{ .Values.uidam.defaultDbSchema | quote }}
 
@@ -64,6 +69,7 @@ data:
 
   # User Management Integration
   USER_MANAGEMENT_BASE_URL: {{ .Values.userManagement.baseUrl | quote }}
+  USER_MANAGEMENT_ENV: {{ .Values.userManagement.baseUrl | quote }}
 
   # Server Configuration
   SERVER_SERVLET_SESSION_TIMEOUT: {{ .Values.server.servlet.sessionTimeout | quote }}
@@ -84,57 +90,8 @@ data:
   # Logout Configuration
   LOGOUT_REDIRECT_WHITELISTED_CUSTOM_HOSTS: {{ .Values.logout.redirect.whitelistedCustomHosts | quote }}
 
-  # Legacy tenant configuration for backward compatibility
-  CACHE_EXPIRE_MINS_LEGACY: {{ .Values.tenant.cache.expiration | quote }}
-  CACHE_MAX_SIZE_LEGACY: {{ .Values.tenant.cache.maxsize | quote }}
-  CACHE_CLIENT_IDS_LEGACY: {{ .Values.tenant.cache.clientids | quote }}  # Legacy tenant configuration for backward compatibility
-  TENANT_ID: {{ .Values.tenant.tenantId | quote }}
-  TENANT_NAME: {{ .Values.tenant.tenantName | quote }}
-  JKS_ENABLED_LEGACY: {{ .Values.tenant.jksEnabled | quote }}
-  TENANT_ALIAS: {{ .Values.tenant.alias | quote }}
-  TENANT_ACCOUNT_ID: {{ .Values.tenant.account.accountId | quote }}
-  TENANT_ACCOUNT_NAME: {{ .Values.tenant.account.accountName | quote }}
-  TENANT_ACCOUNT_TYPE: {{ .Values.tenant.account.accountType | quote }}
-  ACCOUNT_FIELD_ENABLED: {{ .Values.tenant.account.accountFieldEnabled | quote }}
-  TENANT_CLIENT_ACCESS_TOKEN_TTL: {{ .Values.tenant.client.accessTokenTtl | quote }}
-  TENANT_CLIENT_ID_TOKEN_TTL: {{ .Values.tenant.client.idTokenTtl | quote }}
-  TENANT_CLIENT_REFRESH_TOKEN_TTL: {{ .Values.tenant.client.refreshTokenTtl | quote }}
-  TENANT_CLIENT_AUTH_CODE_TTL: {{ .Values.tenant.client.authCodeTtl | quote }}
-  TENANT_OAUTH_SCOPE_CUSTOMIZATION: {{ .Values.tenant.client.oauthScopeCustomization | quote }}
-  TENANT_USER_CAPTCHA_AFTER_INVALID_FAILURES: {{ .Values.tenant.user.captchaAfterInvalidFailures | quote }}
-  TENANT_USER_CAPTCHA_REQUIRED: {{ .Values.tenant.user.captchaRequired | quote }}
-  TENANT_USER_MAX_ALLOWED_LOGIN_ATTEMPTS: {{ .Values.tenant.user.maxAllowedLoginAttempts | quote }}
-  TENANT_USER_DEFAULT_ROLE: {{ .Values.tenant.user.defaultRole | quote }}
-  TENANT_SIGN_UP_ENABLED: {{ .Values.tenant.user.signUpEnabled | quote }}
-  TENANT_CAPTCHA_RECAPTCHA_VERIFY_URL: {{ .Values.tenant.captcha.recaptchaVerifyUrl | quote }}
-  TENANT_CAPTCHA_RECAPTCHA_KEY_SITE: {{ .Values.tenant.captcha.recaptchaKeySite | quote }}
-  TENANT_PASSWORD_RECOVERY_URL: https://{{ (first .Values.ingress.hosts).hostPrefix }}.{{ .Values.environmentDomainName }}/recovery
-  TENANT_EXTERNAL_IDP_ENABLED: {{ .Values.tenant.externalIdpEnabled | quote}}
-  CREATE_FEDRATED_USER_ENDPOINT: {{ .Values.tenant.externalUrls.createFedratedUserEndpoint | quote }}
-  TENANT_INTERNAL_LOGIN_ENABLED: {{ .Values.tenant.internalLoginEnabled | quote}}
-  USER_MANAGEMENT_ENV: {{ .Values.tenant.externalUrls.userManagementUrl | quote}}
-  CLIENT_BY_CLIENT_ID_ENDPOINT: {{ .Values.tenant.externalUrls.clientByClientIdEndpoint | quote}}
-  USER_BY_USERNAME_ENDPOINT: {{ .Values.tenant.externalUrls.userByUsernameEndpoint | quote}}
-  ADD_USER_EVENTS_ENDPOINT: {{ .Values.tenant.externalUrls.addUserEventsEndpoint | quote}}
-  USER_RECOVERY_NOTIFICATION_ENDPOINT: {{ .Values.tenant.externalUrls.recoveryNotificationEndpoint | quote }}
-  USER_UPDATE_PASSWORD_USING_RECOVERY_SECRET_ENDPOINT: {{ .Values.tenant.externalUrls.updatePasswordUsingSecretEndpoint | quote }}
-  CREATE_USER_ENDPOINT: {{ .Values.tenant.externalUrls.selfCreateUserEndpoint | quote }}
-  PASSWORD_POLICY_ENDPOINT: {{ .Values.tenant.externalUrls.passwordPolicyEndpoint | quote }}
-  CREATE_FEDRATED_USER_ENDPOINT: {{ .Values.tenant.externalUrls.createFedratedUserEndpoint | quote }}
-  KEYSTORE_FILE_NAME: {{ .Values.tenant.keyStore.keyStoreFilename | quote}}
-  KEYSTORE_ALIAS: {{ .Values.tenant.keyStore.keyAlias | quote }}
-  KEYSTORE_TYPE: {{ .Values.tenant.keyStore.keyType | quote}}
-  JWT_PUBLIC_KEY: {{ .Values.tenant.cert.jwtPublicKey | quote }}
-  JWT_PRIVATE_KEY: {{ .Values.tenant.cert.jwtPrivateKey | quote }}
-  JWT_KEY_ID: {{ .Values.tenant.cert.jwtKeyId | quote }}
-  JWT_ADDITIONAL_CLAIM_ATTRIBUTES: {{ .Values.tenant.user.jwtAdditionalClaimAttributes | quote }}
-  JWT_PUBLIC_KEY_PEM_PATH: {{ .Values.tenant.keyStore.jwtPubKeyPem | quote }}
-
-  UIDAM_DEFAULT_DB_SCHEMA: {{ .Values.uidam.db_schema }}
-  
   ###Fixed Session Timeout###
   server_servlet_session_timeout: {{ .Values.server_servlet_session_timeout | quote }}
-  session_recreation_policy: {{ .Values.session_recreation_policy | quote }}
   ###Force user to login always in Auth Code/PKCE flow###
   user_session_force_login: {{ .Values.user_session_force_login | quote }}
 

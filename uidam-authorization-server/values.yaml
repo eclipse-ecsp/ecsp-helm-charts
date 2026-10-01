@@ -4,7 +4,7 @@ replicaCount: 1
 image:
   repository: docker.io/eclipseecsp/uidam-authorization-server
   pullPolicy: IfNotPresent
-  tag: 1.2.2
+  tag: 1.6.0
 
 nameOverride: ""
 fullnameOverride: ""
@@ -34,6 +34,12 @@ logging:
 graylog:
   enabled: "false"
 
+# Config Server Configuration
+configServer:
+  host: "http://config-server:8080/config/"
+  enabled: false
+  springConfigImport: "optional:classpath:tenant-default.properties"
+
 # Multi-tenant configuration
 multiTenant:
   # Global tenant settings
@@ -43,146 +49,57 @@ multiTenant:
   # Tenant configuration validation
   configValidationEnabled: false
   dbNameValidationStrategy: "NONE"
+  # Tenant-specific configurations
+  # Note: Only the default tenant carries the full configuration.
+  # Other tenants only override the fields that differ from default.
   tenants:
     ecsp:
       tenantId: "ecsp"
       tenantName: "ECSP"
-      jksEnabled: true
-      externalIdpEnabled: true
-      internalLoginEnabled: true
-      externalIdpClientName: "federated-user-client"
+      externalIdpEnabled: false
+      ui:
+        logoPath: "/images/ecsp-logo.svg"
       account:
         accountId: "TO-BE-UPDATED"
         accountName: "ecsp"
-        accountType: "Root"
-        accountFieldEnabled: true
-      client:
-        accessTokenTtl: 3600
-        idTokenTtl: 3600
-        refreshTokenTtl: 3600
-        authCodeTtl: 300
-        oauthScopeCustomization: false
-        reuseRefreshToken: false
-      user:
-        captchaAfterInvalidFailures: 1
-        captchaRequired: false
-        maxAllowedLoginAttempts: 3
-        defaultRole: "VEHICLE_OWNER"
-        signUpEnabled: true
-        jwtAdditionalClaimAttributes: "accountType, accountName"
-      externalUrls:
-        userManagementUrl: "http://uidam-user-management:8080"
-        clientByClientIdEndpoint: "/v1/oauth2/client/{clientId}"
-        userByUsernameEndpoint: "/v1/users/{userName}/byUserName"
-        recoveryNotificationEndpoint: "/v1/users/{userName}/recovery/forgotpassword"
-        updatePasswordUsingSecretEndpoint: "/v1/users/recovery/set-password"
-        addUserEventsEndpoint: "/v1/users/{id}/events"
-        selfCreateUserEndpoint: "/v1/users/self"
-        passwordPolicyEndpoint: "/v1/users/password-policy"
-        createFedratedUserEndpoint: "/v1/users/federated"
       keyStore:
-        keyStoreFilename: "uidamauthserver.jks"
-        keyAlias: "uidam-auth-server"
-        keyType: "JKS"
-        jwtPubKeyPem: "/app/uidam-pub-key-pem"
+        keyAlias: "ecsp-uidam-auth-server"
         jksEncodedContent: "ChangeMe"
       cert:
-        jwtPublicKey: "app.pub"
-        jwtPrivateKey: "app.key"
         jwtKeyId: "TO-BE-UPDATED"
-      captcha:
-        recaptchaVerifyUrl: "https://www.google.com/recaptcha/api/siteverify"
-        recaptchaKeySite: "ChangeMe"
       database:
         jdbc_url: "jdbc:postgresql://postgresql:5432/ecsp_db"
-      externalIdpRegisteredClients:
-        - clientName: Google
-          registrationId: google
-          clientId: xxx
-          clientAuthenticationMethod: client_secret_basic
-          scope: "openid, profile, email, address, phone"
-          authorizationUri: "https://accounts.google.com/o/oauth2/v2/auth"
-          tokenUri: "https://www.googleapis.com/oauth2/v4/token"
-          userInfoUri: "https://www.googleapis.com/oauth2/v3/userinfo"
-          userNameAttributeName: "sub"
-          jwkSetUri: "https://www.googleapis.com/oauth2/v3/certs"
-          tokenInfoSource: "FETCH_INTERNAL_USER"
-          createUserMode: "CREATE_INTERNAL_USER"
-          defaultUserRoles: "VEHICLE_OWNER"
-          claimMappings: "firstName#given_name,lastName#family_name,email#email"
+      mfa:
+        mode: "DISABLED"
+        skipUsers: "admin,tenantadmin"
     sdp:
       tenantId: "sdp"
       tenantName: "SDP"
-      jksEnabled: true
       externalIdpEnabled: false
-      internalLoginEnabled: true
-      externalIdpClientName: "federated-user-client"
+      ui:
+        logoPath: "/images/sdp-logo.svg"
       account:
         accountId: "TO-BE-UPDATED"
         accountName: "sdp"
-        accountType: "Root"
-        accountFieldEnabled: true
-      client:
-        accessTokenTtl: 3600
-        idTokenTtl: 3600
-        refreshTokenTtl: 3600
-        authCodeTtl: 300
-        oauthScopeCustomization: false
-        reuseRefreshToken: false
-      user:
-        captchaAfterInvalidFailures: 1
-        captchaRequired: false
-        maxAllowedLoginAttempts: 3
-        defaultRole: "VEHICLE_OWNER"
-        signUpEnabled: true
-        jwtAdditionalClaimAttributes: "accountType, accountName"
-      externalUrls:
-        userManagementUrl: "http://uidam-user-management:8080"
-        clientByClientIdEndpoint: "/v1/oauth2/client/{clientId}"
-        userByUsernameEndpoint: "/v1/users/{userName}/byUserName"
-        recoveryNotificationEndpoint: "/v1/users/{userName}/recovery/forgotpassword"
-        updatePasswordUsingSecretEndpoint: "/v1/users/recovery/set-password"
-        addUserEventsEndpoint: "/v1/users/{id}/events"
-        selfCreateUserEndpoint: "/v1/users/self"
-        passwordPolicyEndpoint: "/v1/users/password-policy"
-        createFedratedUserEndpoint: "/v1/users/federated"
       keyStore:
-        keyStoreFilename: "uidamauthserver.jks"
-        keyAlias: "uidam-auth-server"
-        keyType: "JKS"
-        jwtPubKeyPem: "/app/uidam-pub-key-pem"
+        keyAlias: "sdp-uidam-auth-server"
         jksEncodedContent: "ChangeMe"
       cert:
-        jwtPublicKey: "app.pub"
-        jwtPrivateKey: "app.key"
         jwtKeyId: "TO-BE-UPDATED"
-      captcha:
-        recaptchaVerifyUrl: "https://www.google.com/recaptcha/api/siteverify"
-        recaptchaKeySite: "ChangeMe"
       database:
         jdbc_url: "jdbc:postgresql://postgresql:5432/sdp_db"
-      externalIdpRegisteredClients:
-        - clientName: Google
-          registrationId: google
-          clientId: xxx
-          clientAuthenticationMethod: client_secret_basic
-          scope: "openid, profile, email, address, phone"
-          authorizationUri: "https://accounts.google.com/o/oauth2/v2/auth"
-          tokenUri: "https://www.googleapis.com/oauth2/v4/token"
-          userInfoUri: "https://www.googleapis.com/oauth2/v3/userinfo"
-          userNameAttributeName: "sub"
-          jwkSetUri: "https://www.googleapis.com/oauth2/v3/certs"
-          tokenInfoSource: "FETCH_INTERNAL_USER"
-          createUserMode: "CREATE_INTERNAL_USER"
-          defaultUserRoles: "VEHICLE_OWNER"
-          claimMappings: "firstName#given_name,lastName#family_name,email#email"
+      mfa:
+        mode: "DISABLED"
+        skipUsers: "admin,tenantadmin"
     default:
       tenantId: "default"
-      tenantName: "Default Tenant"
+      tenantName: "DEFAULT"
       jksEnabled: true
       externalIdpEnabled: false
       internalLoginEnabled: true
       externalIdpClientName: "federated-user-client"
+      ui:
+        logoPath: "/images/default-logo.svg"
       account:
         accountId: "TO-BE-UPDATED"
         accountName: "default"
@@ -194,7 +111,10 @@ multiTenant:
         refreshTokenTtl: 3600
         authCodeTtl: 300
         oauthScopeCustomization: false
+        authCodeScopelessUserScopes: true
         reuseRefreshToken: false
+        idTokenProperties:
+          additionalClaims: ""
       user:
         captchaAfterInvalidFailures: 1
         captchaRequired: false
@@ -202,6 +122,9 @@ multiTenant:
         defaultRole: "VEHICLE_OWNER"
         signUpEnabled: true
         jwtAdditionalClaimAttributes: "accountType, accountName"
+      signup:
+        additionalAttributesEnabled: false
+      clientSpecificSignupConfigs: []
       externalUrls:
         userManagementUrl: "http://uidam-user-management:8080"
         clientByClientIdEndpoint: "/v1/oauth2/client/{clientId}"
@@ -225,9 +148,35 @@ multiTenant:
       captcha:
         recaptchaVerifyUrl: "https://www.google.com/recaptcha/api/siteverify"
         recaptchaKeySite: "ChangeMe"
+      mfa:
+        mfaAppName: "UIDAM"
+        mode: "DISABLED"
+        stepUpScopes: "UIDAMSystem,ManageUsers,ManageAccounts"
+        skipUsers: "admin,tenantadmin"
+        skipClients: ""
+        skipAccounts: ""
+        stepUpClients: ""
+        stepUpAccounts: ""
       database:
         jdbc_url: "jdbc:postgresql://postgresql:5432/default_db"
-      externalIdpRegisteredClients: []
+      externalIdpRegisteredClients:
+        - clientName: Google
+          registrationId: google
+          enabled: false
+          clientId: xxx
+          clientAuthenticationMethod: client_secret_basic
+          scope: "openid, profile, email, address, phone"
+          authorizationUri: "https://accounts.google.com/o/oauth2/v2/auth"
+          tokenUri: "https://www.googleapis.com/oauth2/v4/token"
+          userInfoUri: "https://www.googleapis.com/oauth2/v3/userinfo"
+          userNameAttributeName: "sub"
+          jwkSetUri: "https://www.googleapis.com/oauth2/v3/certs"
+          tokenInfoSource: "FETCH_INTERNAL_USER"
+          includeIdpIdToken: false
+          createUserMode: "CREATE_INTERNAL_USER"
+          defaultUserRoles: "VEHICLE_OWNER"
+          claimMappings: "firstName#given_name,lastName#family_name,email#email"
+          scopePreference: "INTERNAL"
 
 # Application Configuration
 uidam:
@@ -558,6 +507,8 @@ secrets:
   clientsecretkey: "ChangeMe"
   clientsecretsalt: "ChangeMe"
   clientSecret: "ChangeMe"
+  mfaSecretEncryptionKey: "ChangeMe"
+  mfaSecretEncryptionSalt: "ChangeMe"
 
 # Tenant-specific secrets
 tenantSecrets:
@@ -567,6 +518,8 @@ tenantSecrets:
     clientsecretkey: "ChangeMe"
     clientsecretsalt: "ChangeMe"
     clientSecret: "ChangeMe"
+    mfaSecretEncryptionKey: "ChangeMe"
+    mfaSecretEncryptionSalt: "ChangeMe"
     googleIDPSecret: "ChangeMe"
     githubIDPSecret: "ChangeMe"
     cognitoIDPSecret: "ChangeMe"
@@ -577,6 +530,8 @@ tenantSecrets:
     clientsecretkey: "ChangeMe"
     clientsecretsalt: "ChangeMe"
     clientSecret: "ChangeMe"
+    mfaSecretEncryptionKey: "ChangeMe"
+    mfaSecretEncryptionSalt: "ChangeMe"
     googleIDPSecret: "ChangeMe"
     githubIDPSecret: "ChangeMe"
     cognitoIDPSecret: "ChangeMe"
@@ -587,6 +542,8 @@ tenantSecrets:
     clientsecretkey: "ChangeMe"
     clientsecretsalt: "ChangeMe"
     clientSecret: "ChangeMe"
+    mfaSecretEncryptionKey: "ChangeMe"
+    mfaSecretEncryptionSalt: "ChangeMe"
     googleIDPSecret: "ChangeMe"
     githubIDPSecret: "ChangeMe"
     cognitoIDPSecret: "ChangeMe"

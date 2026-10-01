@@ -7,7 +7,7 @@ replicaCount: 1
 image:
   repository: docker.io/eclipseecsp/uidam-user-management
   pullPolicy: IfNotPresent
-  tag: 1.2.3
+  tag: 1.6.0
 
 nameOverride: ""
 fullnameOverride: ""
@@ -28,6 +28,19 @@ securityContext: {}
 service:
   type: ClusterIP
   port: 8080
+
+# Config Server Configuration
+configServer:
+  host: "http://config-server:8080/config/"
+  enabled: false
+  springConfigImport: "optional:classpath:tenant-default.properties,optional:configserver:{{ .Values.configServer.host }}"
+
+# Data archival CronJob runtime settings
+archival:
+  image:
+    repository: postgres
+    tag: 16-alpine
+    pullPolicy: IfNotPresent
 
 ingress:
   enabled: false
@@ -75,12 +88,51 @@ multiTenant:
   # Tenant configuration validation
   configValidationEnabled: false
   dbNameValidationStrategy: "NONE"
+  # Tenant-specific configurations
+  # Note: Only the default tenant carries the full configuration.
+  # Other tenants only override the fields that differ from default.
   tenants:
     ecsp:
       tenantId: "ecsp"
       tenantName: "ECSP"
       account:
         accountName: "ecsp"
+      emailVerification:
+        url: "https://api-gateway.{{ .Values.environmentDomainName }}/ecsp/v1/emailVerification/%s"
+        authServerResponseUrl: "https://uidam-authorization-server.{{ .Values.environmentDomainName }}/ecsp/emailVerification/verify"
+      authServer:
+        tokenUrl: "/ecsp/oauth2/token"
+        revokeTokenUrl: "/ecsp/revoke/revokeByAdmin"
+      recovery:
+        authServerResetResponseUrl: "https://uidam-authorization-server.{{ .Values.environmentDomainName }}/ecsp/recovery/reset/"
+      database:
+        jdbcUrl: "jdbc:postgresql://postgresql:5432/ecsp_db"
+      archivalJob:
+        enabled: false
+        scheduler: "0 5 * * *"
+    sdp:
+      tenantId: "sdp"
+      tenantName: "SDP"
+      account:
+        accountName: "sdp"
+      emailVerification:
+        url: "https://api-gateway.{{ .Values.environmentDomainName }}/sdp/v1/emailVerification/%s"
+        authServerResponseUrl: "https://uidam-authorization-server.{{ .Values.environmentDomainName }}/sdp/emailVerification/verify"
+      authServer:
+        tokenUrl: "/sdp/oauth2/token"
+        revokeTokenUrl: "/sdp/revoke/revokeByAdmin"
+      recovery:
+        authServerResetResponseUrl: "https://uidam-authorization-server.{{ .Values.environmentDomainName }}/sdp/recovery/reset/"
+      database:
+        jdbcUrl: "jdbc:postgresql://postgresql:5432/sdp_db"
+      archivalJob:
+        enabled: false
+        scheduler: "*/30 * * * *"
+    default:
+      tenantId: "default"
+      tenantName: "DEFAULT"
+      account:
+        accountName: "default"
         accountType: "Root"
       user:
         passwordEncoder: "SHA-256"
@@ -90,22 +142,44 @@ multiTenant:
         externalUserDefaultStatus: ""
         userDefaultAccountName: "userdefaultaccount"
         additionalAttrCheckEnabledForSignUp: false
+        temporaryLockEnabled: true
+        temporaryLockPeriodMinutes: 30
       auth:
         adminScope: "UIDAMSystem"
       emailVerification:
         enabled: false
-        url: "https://api-gateway3.{{ .Values.environmentDomainName }}/ecsp/v1/emailVerification/%s"
+        url: "https://api-gateway.{{ .Values.environmentDomainName }}/default/v1/emailVerification/%s"
         notificationId: "UIDAM_USER_VERIFY_ACCOUNT"
         expDays: 7
         emailRegexPatternExclude: ""
-        authServerResponseUrl: "https://oss-uidam-authorization-server.{{ .Values.environmentDomainName }}/ecsp/emailVerification/verify"
+        authServerResponseUrl: "https://uidam-authorization-server.{{ .Values.environmentDomainName }}/default/emailVerification/verify"
+        emailLogoPath: "images/default-logo.svg"
+        emailCopyright: "Copyright \u00a9 2023 HARMAN International. All Rights Reserved."
       notification:
-        apiUrl: "http://notification-api-int-svc.data-platform:8080/v1/notifications/nonRegisteredUsers"
+        apiUrl: "http://notification-api-int-svc:8080/v1/notifications/nonRegisteredUsers"
         notificationId: "uidamCustomEmailTemplate5"
+        config:
+          resolver: "internal"
+          path: "classpath:/notification/uidam-notification-config.json"
+        template:
+          engine: "thymeleaf"
+          format: "HTML"
+          resolver: "CLASSPATH"
+          prefix: "/notification/"
+          suffix: ".html"
+        email:
+          provider: "internal"
+          host: "TO-BE-UPDATED"
+          port: "587"
+          smtpAuth: "true"
+          smtpStartTls: "true"
+          smtpStartTlsRequired: "true"
+          smtpSSLEnabled: "false"
+          smtpDebug: "false"
       authServer:
-        hostName: "https://oss-uidam-authorization-server"
-        tokenUrl: "/ecsp/oauth2/token"
-        revokeTokenUrl: "/ecsp/revoke/revokeByAdmin"
+        hostName: "https://uidam-authorization-server"
+        tokenUrl: "/default/oauth2/token"
+        revokeTokenUrl: "/default/revoke/revokeByAdmin"
         clientId: "token-mgmt"
       clientRegistration:
         defaultStatus: "approved"
@@ -116,11 +190,15 @@ multiTenant:
       recovery:
         secretExpiresInMinutes: 15
         passwordRecoveryNotificationId: "UIDAM_USER_PASSWORD_RECOVERY"
-        authServerResetResponseUrl: "https://oss-uidam-authorization-server.{{ .Values.environmentDomainName }}/ecsp/recovery/reset/"
+        authServerResetResponseUrl: "https://uidam-authorization-server.{{ .Values.environmentDomainName }}/default/recovery/reset/"
       captcha:
         enforceAfterNoOfFailures: 1
+      mfa:
+        mfaAppName: "UIDAM"
+        backupCodesEnabled: false
+        backupCodesCount: 8
       database:
-        jdbcUrl: "jdbc:postgresql://postgresql.ignite-core:5432/oss_ecsp"
+        jdbcUrl: "jdbc:postgresql://postgresql:5432/default_db"
         maxPoolSize: 30
         maxIdleTime: 0
         connectionTimeoutMs: 60000
@@ -132,84 +210,18 @@ multiTenant:
         changeLog: "classpath:database.schema/master.xml"
         defaultSchema: "uidam"
         parametersSchema: "uidam"
-    sdp:
-      tenantId: "sdp"
-      tenantName: "SDP"
-      account:
-        accountName: "sdp"
-        accountType: "Root"
-      user:
-        passwordEncoder: "SHA-256"
-        maxAllowedLoginAttempts: 3
-        isUserStatusLifeCycleEnabled: false
-        externalUserPermittedRoles: "VEHICLE_OWNER"
-        externalUserDefaultStatus: ""
-        userDefaultAccountName: "userdefaultaccount"
-        additionalAttrCheckEnabledForSignUp: false
-      auth:
-        adminScope: "UIDAMSystem"
-      emailVerification:
+      # Data archival CronJob defaults, overridable per tenant
+      archivalJob:
         enabled: false
-        authServerResponseUrl: "https://oss-uidam-authorization-server.{{ .Values.environmentDomainName }}/sdp/emailVerification/verify"
-      notification:
-        apiUrl: "http://notification-api-int-svc.data-platform:8080/v1/notifications/nonRegisteredUsers"
-        notificationId: "uidamCustomEmailTemplate5"
-      authServer:
-        hostName: "https://oss-uidam-authorization-server"
-        clientId: "token-mgmt"
-      clientRegistration:
-        defaultStatus: "approved"
-        hashAlgorithm: "SHA-256"
-      recovery:
-        secretExpiresInMinutes: 15
-        authServerResetResponseUrl: "https://oss-uidam-authorization-server.{{ .Values.environmentDomainName }}/sdp/recovery/reset/"
-      captcha:
-        enforceAfterNoOfFailures: 1
-      database:
-        jdbcUrl: "jdbc:postgresql://postgresql.ignite-core:5432/oss_sdp"
-        prepStmtCacheSqlLimit: 2048
-      liquibase:
-        changeLog: "classpath:database.schema/master.xml"
-        parametersSchema: "uidam"
-    default:
-      tenantId: "default"
-      tenantName: "DEFAULT"
-      account:
-        accountName: "default"
-        accountType: "Root"
-      user:
-        passwordEncoder: "SHA-256"
-        additionalAttrCheckEnabledForSignUp: false
-      auth:
-        adminScope: "UIDAMSystem"
-      emailVerification:
-        enabled: false
-        emailCopyright: "Copyright © 2023 HARMAN International. All Rights Reserved."
-      notification:
-        apiUrl: "http://notification-api-int-svc.data-platform:8080/v1/notifications/nonRegisteredUsers"
-      authServer:
-        hostName: "https://uidam-authorization-server"
-        clientId: "token-mgmt"
-      clientRegistration:
-        defaultStatus: "approved"
-        hashAlgorithm: "SHA-256"
-      recovery:
-        secretExpiresInMinutes: 15
-        authServerResetResponseUrl: "https://uidam-authorization-server.{{ .Values.environmentDomainName }}/default/recovery/reset/"
-      captcha:
-        enforceAfterNoOfFailures: 1
-      database:
-        jdbcUrl: "jdbc:postgresql://postgresql.ignite-core:5432/uidam_management"
-        prepStmtCacheSqlLimit: 2048
-      liquibase:
-        changeLog: "classpath:database.schema/master.xml"
-        parametersSchema: "uidam"
+        scheduler: "*/30 * * * *"
 
 # Global secrets - These are shared across all tenants
 secrets:
   liquibase_clientsecret: "ChangeMe"
   liquibase_userpwd: "ChangeMe"
   liquibase_usersalt: "ChangeMe"
+  mfaSecretEncryptionKey: "ChangeMe"
+  mfaSecretEncryptionSalt: "ChangeMe"
 
 # Tenant-specific secrets
 tenantSecrets:
@@ -217,6 +229,8 @@ tenantSecrets:
     revokeTokenClientSecret: "ChangeMe"
     clientSecretKey: "ChangeMe"
     clientSecretSalt: "ChangeMe"
+    mfaSecretEncryptionKey: "ChangeMe"
+    mfaSecretEncryptionSalt: "ChangeMe"
     liquibase_clientsecret: "ChangeMe"
     liquibase_userpwd: "ChangeMe"
     liquibase_usersalt: "ChangeMe"
@@ -224,6 +238,8 @@ tenantSecrets:
     revokeTokenClientSecret: "ChangeMe"
     clientSecretKey: "ChangeMe"
     clientSecretSalt: "ChangeMe"
+    mfaSecretEncryptionKey: "ChangeMe"
+    mfaSecretEncryptionSalt: "ChangeMe"
     liquibase_clientsecret: "ChangeMe"
     liquibase_userpwd: "ChangeMe"
     liquibase_usersalt: "ChangeMe"
@@ -231,6 +247,8 @@ tenantSecrets:
     revokeTokenClientSecret: "ChangeMe"
     clientSecretKey: "ChangeMe"
     clientSecretSalt: "ChangeMe"
+    mfaSecretEncryptionKey: "ChangeMe"
+    mfaSecretEncryptionSalt: "ChangeMe"
     liquibase_clientsecret: "ChangeMe"
     liquibase_userpwd: "ChangeMe"
     liquibase_usersalt: "ChangeMe"

@@ -1,0 +1,159 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "uidam-authorization-server.fullname" . }}-tenant-default
+  labels: {{- include "uidam-authorization-server.labels" . | nindent 4 }}
+data:
+  # DEFAULT Tenant Specific Configuration
+  DEFAULT_TENANT_ID: {{ .Values.multiTenant.tenants.default.tenantId | quote }}
+  DEFAULT_TENANT_NAME: {{ .Values.multiTenant.tenants.default.tenantName | quote }}
+  DEFAULT_JKS_ENABLED: {{ .Values.multiTenant.tenants.default.jksEnabled | quote }}
+  DEFAULT_TENANT_EXTERNAL_IDP_ENABLED: {{ .Values.multiTenant.tenants.default.externalIdpEnabled | quote }}
+  DEFAULT_TENANT_INTERNAL_LOGIN_ENABLED: {{ .Values.multiTenant.tenants.default.internalLoginEnabled | quote }}
+  DEFAULT_TENANT_EXTERNAL_IDP_CLIENT_NAME: {{ .Values.multiTenant.tenants.default.externalIdpClientName | quote }}
+
+  # DEFAULT UI Configuration
+  DEFAULT_TENANT_UI_LOGO_PATH: {{ .Values.multiTenant.tenants.default.ui.logoPath | default "/images/default-logo.svg" | quote }}
+
+  # DEFAULT Account Configuration
+  DEFAULT_TENANT_ACCOUNT_ID: {{ .Values.multiTenant.tenants.default.account.accountId | quote }}
+  DEFAULT_TENANT_ACCOUNT_NAME: {{ .Values.multiTenant.tenants.default.account.accountName | quote }}
+  DEFAULT_TENANT_ACCOUNT_TYPE: {{ .Values.multiTenant.tenants.default.account.accountType | quote }}
+  DEFAULT_ACCOUNT_FIELD_ENABLED: {{ .Values.multiTenant.tenants.default.account.accountFieldEnabled | quote }}
+
+  # DEFAULT Client Configuration
+  DEFAULT_TENANT_CLIENT_ACCESS_TOKEN_TTL: {{ .Values.multiTenant.tenants.default.client.accessTokenTtl | quote }}
+  DEFAULT_TENANT_CLIENT_ID_TOKEN_TTL: {{ .Values.multiTenant.tenants.default.client.idTokenTtl | quote }}
+  DEFAULT_TENANT_CLIENT_REFRESH_TOKEN_TTL: {{ .Values.multiTenant.tenants.default.client.refreshTokenTtl | quote }}
+  DEFAULT_TENANT_CLIENT_AUTH_CODE_TTL: {{ .Values.multiTenant.tenants.default.client.authCodeTtl | quote }}
+  DEFAULT_TENANT_OAUTH_SCOPE_CUSTOMIZATION: {{ .Values.multiTenant.tenants.default.client.oauthScopeCustomization | quote }}
+  DEFAULT_TENANT_AUTH_CODE_SCOPELESS_USER_SCOPES: {{ .Values.multiTenant.tenants.default.client.authCodeScopelessUserScopes | quote }}
+  DEFAULT_TENANT_CLIENT_REUSE_REFRESH_TOKEN: {{ .Values.multiTenant.tenants.default.client.reuseRefreshToken | quote }}
+
+  {{- if .Values.multiTenant.tenants.default.client.idTokenProperties }}
+  # DEFAULT ID Token Configuration
+  DEFAULT_ID_TOKEN_ADDITIONAL_CLAIMS: {{ .Values.multiTenant.tenants.default.client.idTokenProperties.additionalClaims | quote }}
+  {{- end }}
+
+  # DEFAULT User Configuration
+  DEFAULT_TENANT_USER_CAPTCHA_AFTER_INVALID_FAILURES: {{ .Values.multiTenant.tenants.default.user.captchaAfterInvalidFailures | quote }}
+  DEFAULT_TENANT_USER_CAPTCHA_REQUIRED: {{ .Values.multiTenant.tenants.default.user.captchaRequired | quote }}
+  DEFAULT_TENANT_USER_MAX_ALLOWED_LOGIN_ATTEMPTS: {{ .Values.multiTenant.tenants.default.user.maxAllowedLoginAttempts | quote }}
+  DEFAULT_TENANT_USER_DEFAULT_ROLE: {{ .Values.multiTenant.tenants.default.user.defaultRole | quote }}
+  DEFAULT_TENANT_SIGN_UP_ENABLED: {{ .Values.multiTenant.tenants.default.user.signUpEnabled | quote }}
+  DEFAULT_JWT_ADDITIONAL_CLAIM_ATTRIBUTES: {{ .Values.multiTenant.tenants.default.user.jwtAdditionalClaimAttributes | quote }}
+
+  # DEFAULT Keystore Configuration
+  DEFAULT_KEYSTORE_FILE_NAME: {{ .Values.multiTenant.tenants.default.keyStore.keyStoreFilename | quote }}
+  DEFAULT_KEYSTORE_ALIAS: {{ .Values.multiTenant.tenants.default.keyStore.keyAlias | quote }}
+  DEFAULT_KEYSTORE_TYPE: {{ .Values.multiTenant.tenants.default.keyStore.keyType | quote }}
+  DEFAULT_JWT_PUBLIC_KEY_PEM_PATH: {{ .Values.multiTenant.tenants.default.keyStore.jwtPubKeyPem | quote }}
+  DEFAULT_KEYSTORE_JKS_ENCODED_CONTENT: {{ .Values.multiTenant.tenants.default.keyStore.jksEncodedContent | quote }}
+
+  # DEFAULT Certificate Configuration
+  DEFAULT_JWT_PUBLIC_KEY: {{ .Values.multiTenant.tenants.default.cert.jwtPublicKey | quote }}
+  DEFAULT_JWT_PRIVATE_KEY: {{ .Values.multiTenant.tenants.default.cert.jwtPrivateKey | quote }}
+  DEFAULT_JWT_KEY_ID: {{ .Values.multiTenant.tenants.default.cert.jwtKeyId | quote }}
+
+  # DEFAULT Captcha Configuration
+  DEFAULT_TENANT_CAPTCHA_RECAPTCHA_VERIFY_URL: {{ .Values.multiTenant.tenants.default.captcha.recaptchaVerifyUrl | quote }}
+  DEFAULT_TENANT_CAPTCHA_RECAPTCHA_KEY_SITE: {{ .Values.multiTenant.tenants.default.captcha.recaptchaKeySite | quote }}
+
+  {{- if .Values.multiTenant.tenants.default.mfa }}
+  # DEFAULT MFA Configuration
+  DEFAULT_MFA-APP-NAME: {{ .Values.multiTenant.tenants.default.mfa.mfaAppName | quote }}
+  DEFAULT_MFA_MODE: {{ .Values.multiTenant.tenants.default.mfa.mode | quote }}
+  DEFAULT_MFA_STEP-UP-SCOPES: {{ .Values.multiTenant.tenants.default.mfa.stepUpScopes | quote }}
+  DEFAULT_MFA_SKIP-USERS: {{ .Values.multiTenant.tenants.default.mfa.skipUsers | quote }}
+  DEFAULT_MFA_SKIP_CLIENTS: {{ .Values.multiTenant.tenants.default.mfa.skipClients | quote }}
+  DEFAULT_MFA_SKIP_ACCOUNTS: {{ .Values.multiTenant.tenants.default.mfa.skipAccounts | quote }}
+  DEFAULT_MFA_STEP_UP_CLIENTS: {{ .Values.multiTenant.tenants.default.mfa.stepUpClients | quote }}
+  DEFAULT_MFA_STEP_UP_ACCOUNTS: {{ .Values.multiTenant.tenants.default.mfa.stepUpAccounts | quote }}
+  {{- end }}
+
+  # DEFAULT Database Configuration
+  DEFAULT_POSTGRES_DATASOURCE: {{ .Values.multiTenant.tenants.default.database.jdbc_url | quote }}
+
+  # DEFAULT Contact Information
+  DEFAULT_TENANT_PASSWORD_RECOVERY_URL: https://{{ (first .Values.ingress.hosts).hostPrefix }}.{{ .Values.environmentDomainName }}/default/recovery
+  DEFAULT_TENANT_CONTACT_NAME: ""
+  DEFAULT_TENANT_PHONE_NUMBER: ""
+  DEFAULT_TENANT_EMAIL: ""
+
+  # DEFAULT External URLs
+  DEFAULT_USER_MANAGEMENT_ENV: {{ .Values.multiTenant.tenants.default.externalUrls.userManagementUrl | quote }}
+  DEFAULT_CLIENT_BY_CLIENT_ID_ENDPOINT: {{ .Values.multiTenant.tenants.default.externalUrls.clientByClientIdEndpoint | quote }}
+  DEFAULT_USER_BY_USERNAME_ENDPOINT: {{ .Values.multiTenant.tenants.default.externalUrls.userByUsernameEndpoint | quote }}
+  DEFAULT_ADD_USER_EVENTS_ENDPOINT: {{ .Values.multiTenant.tenants.default.externalUrls.addUserEventsEndpoint | quote }}
+  DEFAULT_USER_RECOVERY_NOTIFICATION_ENDPOINT: {{ .Values.multiTenant.tenants.default.externalUrls.recoveryNotificationEndpoint | quote }}
+  DEFAULT_USER_UPDATE_PASSWORD_USING_RECOVERY_SECRET_ENDPOINT: {{ .Values.multiTenant.tenants.default.externalUrls.updatePasswordUsingSecretEndpoint | quote }}
+  DEFAULT_CREATE_USER_ENDPOINT: {{ .Values.multiTenant.tenants.default.externalUrls.selfCreateUserEndpoint | quote }}
+  DEFAULT_PASSWORD_POLICY_ENDPOINT: {{ .Values.multiTenant.tenants.default.externalUrls.passwordPolicyEndpoint | quote }}
+  DEFAULT_CREATE_FEDRATED_USER_ENDPOINT: {{ .Values.multiTenant.tenants.default.externalUrls.createFedratedUserEndpoint | quote }}
+
+  {{- if .Values.multiTenant.tenants.default.externalIdpRegisteredClients }}
+  # DEFAULT External IDP Registered Clients
+  {{- range $index, $client := .Values.multiTenant.tenants.default.externalIdpRegisteredClients }}
+  DEFAULT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_CLIENT_NAME: {{ $client.clientName | quote }}
+  DEFAULT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_REGISTRATION_ID: {{ $client.registrationId | quote }}
+  {{- if hasKey $client "enabled" }}
+  DEFAULT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_ENABLED: {{ $client.enabled | quote }}
+  {{- end }}
+  DEFAULT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_CLIENT_ID: {{ $client.clientId | quote }}
+  DEFAULT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_CLIENT_AUTHENTICATION_METHOD: {{ $client.clientAuthenticationMethod | quote }}
+  DEFAULT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_SCOPE: {{ $client.scope | quote }}
+  DEFAULT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_AUTHORIZATION_URI: {{ $client.authorizationUri | quote }}
+  DEFAULT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_TOKEN_URI: {{ $client.tokenUri | quote }}
+  DEFAULT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_USER_INFO_URI: {{ $client.userInfoUri | quote }}
+  DEFAULT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_USER_NAME_ATTRIBUTE_NAME: {{ $client.userNameAttributeName | quote }}
+  {{- if $client.jwkSetUri }}
+  DEFAULT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_JWK_SET_URI: {{ $client.jwkSetUri | quote }}
+  {{- end }}
+  {{- if $client.tokenInfoSource }}
+  DEFAULT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_TOKEN_INFO_SOURCE: {{ $client.tokenInfoSource | quote }}
+  {{- end }}
+  {{- if hasKey $client "includeIdpIdToken" }}
+  DEFAULT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_INCLUDE_IDP_ID_TOKEN: {{ $client.includeIdpIdToken | quote }}
+  {{- end }}
+  {{- if $client.createUserMode }}
+  DEFAULT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_CREATE_USER_MODE: {{ $client.createUserMode | quote }}
+  {{- end }}
+  {{- if $client.defaultUserRoles }}
+  DEFAULT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_DEFAULT_USER_ROLES: {{ $client.defaultUserRoles | quote }}
+  {{- end }}
+  {{- if $client.claimMappings }}
+  DEFAULT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_CLAIM_MAPPINGS: {{ $client.claimMappings | quote }}
+  {{- end }}
+  {{- if $client.scopePreference }}
+  DEFAULT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_SCOPE_PREFERENCE: {{ $client.scopePreference | quote }}
+  {{- end }}
+  {{- if $client.roleClaimKey }}
+  DEFAULT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_ROLE_CLAIM_KEY: {{ $client.roleClaimKey | quote }}
+  {{- end }}
+  {{- range $mappingIndex, $mapping := $client.scopeRoleMappings }}
+  {{- if $mapping.externalRoles }}
+  DEFAULT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_SCOPE_ROLE_MAPPINGS_{{ $mappingIndex }}_EXTERNAL_ROLES: {{ $mapping.externalRoles | quote }}
+  {{- end }}
+  {{- if $mapping.internalScopes }}
+  DEFAULT_EXTERNAL_IDP_REGISTERED_CLIENT_LIST_{{ $index }}_SCOPE_ROLE_MAPPINGS_{{ $mappingIndex }}_INTERNAL_SCOPES: {{ $mapping.internalScopes | quote }}
+  {{- end }}
+  {{- end }}
+  {{- end }}
+  {{- end }}
+
+  {{- if .Values.multiTenant.tenants.default.signup }}
+  DEFAULT_SIGNUP_ADDITIONAL_ATTRIBUTES_ENABLED: {{ .Values.multiTenant.tenants.default.signup.additionalAttributesEnabled | quote }}
+  {{- end }}
+
+  {{- if .Values.multiTenant.tenants.default.clientSpecificSignupConfigs }}
+  # DEFAULT Client Specific Signup Configurations
+  {{- range $index, $clientConfig := .Values.multiTenant.tenants.default.clientSpecificSignupConfigs }}
+  DEFAULT_CLIENT_SPECIFIC_SIGNUP_CONFIG_LIST_{{ $index }}_CLIENT_ID: {{ $clientConfig.clientId | quote }}
+  DEFAULT_CLIENT_SPECIFIC_SIGNUP_CONFIG_LIST_{{ $index }}_SKIP_ATTRIBUTES: {{ $clientConfig.skipAttributes | quote }}
+  DEFAULT_CLIENT_SPECIFIC_SIGNUP_CONFIG_LIST_{{ $index }}_DEFAULT_ROLES: {{ $clientConfig.defaultRoles | quote }}
+  DEFAULT_CLIENT_SPECIFIC_SIGNUP_CONFIG_LIST_{{ $index }}_DEFAULT_ACCOUNT: {{ $clientConfig.defaultAccount | quote }}
+  DEFAULT_CLIENT_SPECIFIC_SIGNUP_CONFIG_LIST_{{ $index }}_USER_STATUS: {{ $clientConfig.userStatus | quote }}
+  DEFAULT_CLIENT_SPECIFIC_SIGNUP_CONFIG_LIST_{{ $index }}_CUSTOM_ATTRIBUTES_FOR_CLAIMS: {{ $clientConfig.customAttributesForClaims | quote }}
+  DEFAULT_CLIENT_SPECIFIC_SIGNUP_CONFIG_LIST_{{ $index }}_CUSTOM_ATTRIBUTE_LIST_MAP: {{ $clientConfig.customAttributeListMap | quote }}
+  {{- end }}
+  {{- end }}

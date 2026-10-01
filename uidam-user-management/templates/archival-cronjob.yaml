@@ -1,0 +1,121 @@
+{{- $defaultTenant := index .Values.multiTenant.tenants "default" }}
+{{- $defaultArchival := default dict $defaultTenant.archivalJob }}
+{{- $defaultDb := $defaultTenant.database }}
+{{- $tenantKeys := list }}
+{{- if .Values.multiTenant.enabled }}
+{{- range $tenantKey, $tenantConfig := .Values.multiTenant.tenants }}
+{{- if ne $tenantKey "default" }}
+{{- if has $tenantKey (splitList "," ($.Values.multiTenant.tenantIds | replace " " "")) }}
+{{- $tenantKeys = append $tenantKeys $tenantKey }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- else }}
+{{- $tenantKeys = list .Values.multiTenant.defaultTenant }}
+{{- end }}
+{{- range $tenantKey := $tenantKeys }}
+{{- $tenantConfig := index $.Values.multiTenant.tenants $tenantKey }}
+{{- $archival := mergeOverwrite (deepCopy $defaultArchival) (default dict $tenantConfig.archivalJob) }}
+{{- if $archival.enabled }}
+{{- $db := default dict $tenantConfig.database }}
+{{- $jdbcUrl := required (printf "archivalJob: database.jdbcUrl missing for tenant %s" $tenantKey) (default $defaultDb.jdbcUrl $db.jdbcUrl) }}
+{{- $target := trimPrefix "jdbc:postgresql://" $jdbcUrl | splitList "/" }}
+{{- $hostPort := splitList ":" (index $target 0) }}
+{{- $port := "5432" }}
+{{- if gt (len $hostPort) 1 }}{{- $port = index $hostPort 1 }}{{- end }}
+{{- $tenantSecretName := printf "%s-tenant-%s-credentials" (include "uidam-user-management.fullname" $) $tenantKey }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "uidam-user-management.fullname" $ }}-archival-{{ $tenantKey }}
+  labels: {{- include "uidam-user-management.labels" $ | nindent 4 }}
+spec:
+  schedule: {{ $archival.scheduler | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  startingDeadlineSeconds: 300
+  jobTemplate:
+    spec:
+      backoffLimit: 3
+      activeDeadlineSeconds: 1800
+      template:
+        metadata:
+          labels: {{- include "uidam-user-management.selectorLabels" $ | nindent 12 }}
+        spec:
+          {{- with $.Values.imagePullSecrets }}
+          imagePullSecrets: {{- toYaml . | nindent 10 }}
+          {{- end }}
+          serviceAccountName: {{ include "uidam-user-management.fullname" $ }}
+          restartPolicy: OnFailure
+          containers:
+          - name: archival-{{ $tenantKey }}
+            image: "{{ $.Values.archival.image.repository }}:{{ $.Values.archival.image.tag }}"
+            imagePullPolicy: {{ $.Values.archival.image.pullPolicy }}
+            command: ["/bin/sh", "-c"]
+            args:
+            - |
+              echo "=================================================="
+              echo "Starting archival job"
+              echo "Tenant: {{ default $tenantKey $tenantConfig.tenantId | lower }}"
+              echo "Database: ${PGDATABASE}"
+              echo "Host: ${PGHOST}:${PGPORT}"
+              echo "Start Time: $(date -u)"
+              echo "=================================================="
+
+              echo "Validating PostgreSQL connectivity..."
+
+              psql -v ON_ERROR_STOP=1 -tAc "SELECT 1;" >/dev/null
+
+              if [ $? -ne 0 ]; then
+                echo "ERROR: Unable to connect to PostgreSQL."
+                exit 1
+              fi
+
+              echo "PostgreSQL connectivity validation successful."
+
+              echo "Invoking archival procedure..."
+              psql -v ON_ERROR_STOP=1 \
+                   --command="CALL run_archival_job('{{ default $tenantKey $tenantConfig.tenantId | lower }}');"
+
+              RC=$?
+
+              if [ $RC -ne 0 ]; then
+                echo "ERROR: Archival procedure failed with exit code ${RC}"
+                exit $RC
+              fi
+
+              echo "Archival procedure completed successfully."
+              echo "End Time: $(date -u)"
+              echo "=================================================="
+            env:
+            - name: PGHOST
+              value: {{ index $hostPort 0 | quote }}
+            - name: PGPORT
+              value: {{ $port | quote }}
+            - name: PGDATABASE
+              value: {{ index $target 1 | quote }}
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $tenantSecretName }}
+                  key: username
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $tenantSecretName }}
+                  key: password
+            - name: PGOPTIONS
+              value: "-c search_path={{ default $defaultDb.defaultSchema $db.defaultSchema }}"
+          {{- with $.Values.nodeSelector }}
+          nodeSelector: {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $.Values.affinity }}
+          affinity: {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $.Values.tolerations }}
+          tolerations: {{- toYaml . | nindent 12 }}
+          {{- end }}
+{{- end }}
+{{- end }}

@@ -14,13 +14,8 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
-        {{- if and .Values.multiTenant (contains "ecsp" .Values.multiTenant.tenantIds) }}
-        checksum/config-ecsp: {{ include (print $.Template.BasePath "/configmap-tenant-ecsp.yaml") . | sha256sum }}
-        {{- end }}
-        {{- if and .Values.multiTenant (contains "sdp" .Values.multiTenant.tenantIds) }}
-        checksum/config-sdp: {{ include (print $.Template.BasePath "/configmap-tenant-sdp.yaml") . | sha256sum }}
-        {{- end }}
-        checksum/config-default: {{ include (print $.Template.BasePath "/configmap-tenant-default.yaml") . | sha256sum }}
+        checksum/config-tenants: {{ include (print $.Template.BasePath "/configmap-tenants-config.yaml") . | sha256sum }}
+        checksum/config-default: {{ include (print $.Template.BasePath "/configmap-default-configurations.yaml") . | sha256sum }}
       labels: {{- include "uidam-user-management.selectorLabels" . | nindent 8 }}
     spec:
       {{- with .Values.imagePullSecrets }}
@@ -40,25 +35,23 @@ spec:
         envFrom:
         - configMapRef:
             name: {{ include "uidam-user-management.fullname" . }}
-        {{- if and .Values.multiTenant (contains "ecsp" .Values.multiTenant.tenantIds) }}
-        - configMapRef:
-            name: {{ include "uidam-user-management.fullname" . }}-tenant-ecsp
-        {{- end }}
-        {{- if and .Values.multiTenant (contains "sdp" .Values.multiTenant.tenantIds) }}
-        - configMapRef:
-            name: {{ include "uidam-user-management.fullname" . }}-tenant-sdp
-        {{- end }}
         - configMapRef:
             name: {{ include "uidam-user-management.fullname" . }}-tenant-default
+        {{- range $tenantKey, $tenantConfig := .Values.multiTenant.tenants }}
+        {{- if ne $tenantKey "default" }}
+        {{- if or (contains $tenantKey $.Values.multiTenant.tenantIds) (eq $tenantKey $.Values.multiTenant.defaultTenant) }}
+        - configMapRef:
+            name: {{ include "uidam-user-management.fullname" $ }}-tenant-{{ $tenantKey }}
+        {{- end }}
+        {{- end }}
+        {{- end }}
         resources: {{- toYaml .Values.resources | nindent 10 }}
         volumeMounts:
         - mountPath: /notification
           name: {{ .Values.notification.config.configName }}
         env:
           - name: LOGLEVEL
-            value: DEBUG
-          - name: POSTGRESQL_CONFIG_FILE
-            value: /data/uidam-user-management-postgres-config.yml
+            value: {{ .Values.logging.level | quote }}
           - name: POSTGRESQL_HOST
             value: "{{ .Values.postgresql.host }}"
           - name: POSTGRESQL_PORT
@@ -114,134 +107,136 @@ spec:
               secretKeyRef:
                 name: "{{ .Values.postgresql.secretName }}"
                 key: smtp_passwd
-          # ECSP tenant secrets
-          {{- if and .Values.multiTenant (contains "ecsp" .Values.multiTenant.tenantIds) }}
-          - name: ECSP_POSTGRES_USERNAME
-            valueFrom:
-              secretKeyRef:
-                name: {{ include "uidam-user-management.fullname" . }}-tenant-ecsp-credentials
-                key: username
-          - name: ECSP_POSTGRES_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: {{ include "uidam-user-management.fullname" . }}-tenant-ecsp-credentials
-                key: password
-          - name: ECSP_CLIENT_REGISTRATION_SECRET_KEY
-            valueFrom:
-              secretKeyRef:
-                name: {{ include "uidam-user-management.fullname" . }}-tenant-ecsp-credentials
-                key: clientsecretkey
-          - name: ECSP_CLIENT_REGISTRATION_SECRET_SALT
-            valueFrom:
-              secretKeyRef:
-                name: {{ include "uidam-user-management.fullname" . }}-tenant-ecsp-credentials
-                key: clientsecretsalt
-          - name: ECSP_CLIENT_SECRET
-            valueFrom:
-              secretKeyRef:
-                name: {{ include "uidam-user-management.fullname" . }}-tenant-ecsp-credentials
-                key: revokeTokenClientSecret
-          - name: ECSP_LIQUIBASE_INITIAL_DATA_CLIENT_SECRET
-            valueFrom:
-              secretKeyRef:
-                name: {{ include "uidam-user-management.fullname" . }}-tenant-ecsp-credentials
-                key: liquibase_clientsecret
-          - name: ECSP_LIQUIBASE_INITIAL_DATA_USER_SALT
-            valueFrom:
-              secretKeyRef:
-                name: {{ include "uidam-user-management.fullname" . }}-tenant-ecsp-credentials
-                key: liquibase_usersalt
-          - name: ECSP_LIQUIBASE_INITIAL_DATA_USER_PWD
-            valueFrom:
-              secretKeyRef:
-                name: {{ include "uidam-user-management.fullname" . }}-tenant-ecsp-credentials
-                key: liquibase_userpwd
-          {{- end }}
-          # SDP tenant secrets
-          {{- if and .Values.multiTenant (contains "sdp" .Values.multiTenant.tenantIds) }}
-          - name: SDP_POSTGRES_USERNAME
-            valueFrom:
-              secretKeyRef:
-                name: {{ include "uidam-user-management.fullname" . }}-tenant-sdp-credentials
-                key: username
-          - name: SDP_POSTGRES_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: {{ include "uidam-user-management.fullname" . }}-tenant-sdp-credentials
-                key: password
-          - name: SDP_CLIENT_REGISTRATION_SECRET_KEY
-            valueFrom:
-              secretKeyRef:
-                name: {{ include "uidam-user-management.fullname" . }}-tenant-sdp-credentials
-                key: clientsecretkey
-          - name: SDP_CLIENT_REGISTRATION_SECRET_SALT
-            valueFrom:
-              secretKeyRef:
-                name: {{ include "uidam-user-management.fullname" . }}-tenant-sdp-credentials
-                key: clientsecretsalt
-          - name: SDP_CLIENT_SECRET
-            valueFrom:
-              secretKeyRef:
-                name: {{ include "uidam-user-management.fullname" . }}-tenant-sdp-credentials
-                key: revokeTokenClientSecret
-          - name: SDP_LIQUIBASE_INITIAL_DATA_CLIENT_SECRET
-            valueFrom:
-              secretKeyRef:
-                name: {{ include "uidam-user-management.fullname" . }}-tenant-sdp-credentials
-                key: liquibase_clientsecret
-          - name: SDP_LIQUIBASE_INITIAL_DATA_USER_SALT
-            valueFrom:
-              secretKeyRef:
-                name: {{ include "uidam-user-management.fullname" . }}-tenant-sdp-credentials
-                key: liquibase_usersalt
-          - name: SDP_LIQUIBASE_INITIAL_DATA_USER_PWD
-            valueFrom:
-              secretKeyRef:
-                name: {{ include "uidam-user-management.fullname" . }}-tenant-sdp-credentials
-                key: liquibase_userpwd
-          {{- end }}
-          # SDP tenant secrets
+          {{- $defaultSecretName := printf "%s-tenant-default-credentials" (include "uidam-user-management.fullname" .) }}
+          # DEFAULT tenant secrets (tenant-default.properties placeholders)
           - name: DEFAULT_POSTGRES_USERNAME
             valueFrom:
               secretKeyRef:
-                name: {{ include "uidam-user-management.fullname" . }}-tenant-default-credentials
+                name: {{ $defaultSecretName }}
                 key: username
           - name: DEFAULT_POSTGRES_PASSWORD
             valueFrom:
               secretKeyRef:
-                name: {{ include "uidam-user-management.fullname" . }}-tenant-default-credentials
+                name: {{ $defaultSecretName }}
                 key: password
+          - name: DEFAULT_CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: {{ $defaultSecretName }}
+                key: revokeTokenClientSecret
           - name: DEFAULT_CLIENT_REGISTRATION_SECRET_KEY
             valueFrom:
               secretKeyRef:
-                name: {{ include "uidam-user-management.fullname" . }}-tenant-default-credentials
+                name: {{ $defaultSecretName }}
                 key: clientsecretkey
           - name: DEFAULT_CLIENT_REGISTRATION_SECRET_SALT
             valueFrom:
               secretKeyRef:
-                name: {{ include "uidam-user-management.fullname" . }}-tenant-default-credentials
+                name: {{ $defaultSecretName }}
                 key: clientsecretsalt
-          - name: DEFAULT_CLIENT_SECRET
+          - name: DEFAULT_MFA_SECRET_ENCRYPTION_KEY
             valueFrom:
               secretKeyRef:
-                name: {{ include "uidam-user-management.fullname" . }}-tenant-default-credentials
-                key: revokeTokenClientSecret
-          - name: DEFAULT_INTITIAL_DATA_CLIENT_SECRET
+                name: {{ $defaultSecretName }}
+                key: mfaSecretEncryptionKey
+          - name: DEFAULT_MFA_SECRET_ENCRYPTION_SALT
             valueFrom:
               secretKeyRef:
-                name: {{ include "uidam-user-management.fullname" . }}-tenant-default-credentials
+                name: {{ $defaultSecretName }}
+                key: mfaSecretEncryptionSalt
+          - name: DEFAULT_LIQUIBASE_INITIAL_DATA_CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: {{ $defaultSecretName }}
                 key: liquibase_clientsecret
-          - name: DEFAULT_INTITIAL_DATA_USER_SALT
+          - name: DEFAULT_LIQUIBASE_INITIAL_DATA_USER_SALT
             valueFrom:
               secretKeyRef:
-                name: {{ include "uidam-user-management.fullname" . }}-tenant-default-credentials
+                name: {{ $defaultSecretName }}
                 key: liquibase_usersalt
-          - name: DEFAULT_INTITIAL_DATA_USER_PWD
+          - name: DEFAULT_LIQUIBASE_INITIAL_DATA_USER_PWD
             valueFrom:
               secretKeyRef:
-                name: {{ include "uidam-user-management.fullname" . }}-tenant-default-credentials
+                name: {{ $defaultSecretName }}
                 key: liquibase_userpwd
-
+          - name: DEFAULT_NOTIFICATION_EMAIL_PROVIDER_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: {{ $defaultSecretName }}
+                key: smtp_username
+          - name: DEFAULT_NOTIFICATION_EMAIL_PROVIDER_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: {{ $defaultSecretName }}
+                key: smtp_passwd
+          {{- range $tenantKey, $tenantConfig := .Values.multiTenant.tenants }}
+          {{- if ne $tenantKey "default" }}
+          {{- if or (contains $tenantKey $.Values.multiTenant.tenantIds) (eq $tenantKey $.Values.multiTenant.defaultTenant) }}
+          {{- $tenantSecretName := printf "%s-tenant-%s-credentials" (include "uidam-user-management.fullname" $) $tenantKey }}
+          # {{ $tenantKey | upper }} tenant secrets
+          - name: tenants_profile_{{ $tenantKey }}_user-name
+            valueFrom:
+              secretKeyRef:
+                name: {{ $tenantSecretName }}
+                key: username
+          - name: tenants_profile_{{ $tenantKey }}_password
+            valueFrom:
+              secretKeyRef:
+                name: {{ $tenantSecretName }}
+                key: password
+          - name: tenants_profile_{{ $tenantKey }}_auth-server_client-secret
+            valueFrom:
+              secretKeyRef:
+                name: {{ $tenantSecretName }}
+                key: revokeTokenClientSecret
+          - name: tenants_profile_{{ $tenantKey }}_client-registration_secret-key
+            valueFrom:
+              secretKeyRef:
+                name: {{ $tenantSecretName }}
+                key: clientsecretkey
+          - name: tenants_profile_{{ $tenantKey }}_client-registration_secret-salt
+            valueFrom:
+              secretKeyRef:
+                name: {{ $tenantSecretName }}
+                key: clientsecretsalt
+          - name: tenants_profile_{{ $tenantKey }}_mfa-secret-encryption-key
+            valueFrom:
+              secretKeyRef:
+                name: {{ $tenantSecretName }}
+                key: mfaSecretEncryptionKey
+          - name: tenants_profile_{{ $tenantKey }}_mfa-secret-encryption-salt
+            valueFrom:
+              secretKeyRef:
+                name: {{ $tenantSecretName }}
+                key: mfaSecretEncryptionSalt
+          - name: tenants_profile_{{ $tenantKey }}_liquibase_parameters_initial-data-client-secret
+            valueFrom:
+              secretKeyRef:
+                name: {{ $tenantSecretName }}
+                key: liquibase_clientsecret
+          - name: tenants_profile_{{ $tenantKey }}_liquibase_parameters_initial-data-user-salt
+            valueFrom:
+              secretKeyRef:
+                name: {{ $tenantSecretName }}
+                key: liquibase_usersalt
+          - name: tenants_profile_{{ $tenantKey }}_liquibase_parameters_initial-data-user-pwd
+            valueFrom:
+              secretKeyRef:
+                name: {{ $tenantSecretName }}
+                key: liquibase_userpwd
+          - name: tenants_profile_{{ $tenantKey }}_notification_email_username
+            valueFrom:
+              secretKeyRef:
+                name: {{ $tenantSecretName }}
+                key: smtp_username
+          - name: tenants_profile_{{ $tenantKey }}_notification_email_password
+            valueFrom:
+              secretKeyRef:
+                name: {{ $tenantSecretName }}
+                key: smtp_passwd
+          {{- end }}
+          {{- end }}
+          {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector: {{- toYaml . | nindent 8 }}
       {{- end }}
@@ -254,5 +249,5 @@ spec:
       volumes:
         - name: {{ .Values.notification.config.configName }}
           configMap:
-            name: oss-uidam-user-management-notification-config
+            name: {{ include "uidam-user-management.fullname" . }}-notification-config
             optional: true

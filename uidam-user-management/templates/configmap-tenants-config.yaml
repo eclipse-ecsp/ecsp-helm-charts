@@ -1,0 +1,270 @@
+{{/*
+One ConfigMap per active tenant. Only keys the tenant overrides are emitted;
+everything else falls back to the tenant-default ConfigMap.
+*/}}
+{{- range $tenantKey, $tenantConfig := .Values.multiTenant.tenants }}
+{{- if ne $tenantKey "default" }}
+{{- if or (contains $tenantKey $.Values.multiTenant.tenantIds) (eq $tenantKey $.Values.multiTenant.defaultTenant) }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "uidam-user-management.fullname" $ }}-tenant-{{ $tenantKey }}
+  labels: {{- include "uidam-user-management.labels" $ | nindent 4 }}
+data:
+  # {{ $tenantKey | upper }} Tenant Specific Configuration
+  tenants_profile_{{ $tenantKey }}_tenant-id: {{ $tenantConfig.tenantId | quote }}
+  tenants_profile_{{ $tenantKey }}_tenant-name: {{ $tenantConfig.tenantName | quote }}
+
+  {{- if $tenantConfig.account }}
+  # {{ $tenantKey | upper }} Account Configuration
+  {{- if $tenantConfig.account.accountName }}
+  tenants_profile_{{ $tenantKey }}_account-name: {{ $tenantConfig.account.accountName | quote }}
+  {{- end }}
+  {{- if $tenantConfig.account.accountType }}
+  tenants_profile_{{ $tenantKey }}_account-type: {{ $tenantConfig.account.accountType | quote }}
+  {{- end }}
+  {{- end }}
+
+  {{- if $tenantConfig.user }}
+  # {{ $tenantKey | upper }} User Management Configuration
+  {{- if $tenantConfig.user.passwordEncoder }}
+  tenants_profile_{{ $tenantKey }}_password-encoder: {{ $tenantConfig.user.passwordEncoder | quote }}
+  {{- end }}
+  {{- if $tenantConfig.user.maxAllowedLoginAttempts }}
+  tenants_profile_{{ $tenantKey }}_max-allowed-login-attempts: {{ $tenantConfig.user.maxAllowedLoginAttempts | quote }}
+  {{- end }}
+  {{- if hasKey $tenantConfig.user "isUserStatusLifeCycleEnabled" }}
+  tenants_profile_{{ $tenantKey }}_is-user-status-life-cycle-enabled: {{ $tenantConfig.user.isUserStatusLifeCycleEnabled | quote }}
+  {{- end }}
+  {{- if $tenantConfig.user.externalUserPermittedRoles }}
+  tenants_profile_{{ $tenantKey }}_external-user-permitted-roles: {{ $tenantConfig.user.externalUserPermittedRoles | quote }}
+  {{- end }}
+  {{- if $tenantConfig.user.externalUserDefaultStatus }}
+  tenants_profile_{{ $tenantKey }}_external-user-default-status: {{ $tenantConfig.user.externalUserDefaultStatus | quote }}
+  {{- end }}
+  {{- if $tenantConfig.user.userDefaultAccountName }}
+  tenants_profile_{{ $tenantKey }}_user-default-account-name: {{ $tenantConfig.user.userDefaultAccountName | quote }}
+  {{- end }}
+  {{- if hasKey $tenantConfig.user "additionalAttrCheckEnabledForSignUp" }}
+  tenants_profile_{{ $tenantKey }}_additional-attr-check-enabled-for-sign-up: {{ $tenantConfig.user.additionalAttrCheckEnabledForSignUp | quote }}
+  {{- end }}
+  {{- if hasKey $tenantConfig.user "temporaryLockEnabled" }}
+  tenants_profile_{{ $tenantKey }}_temporary-lock-enabled: {{ $tenantConfig.user.temporaryLockEnabled | quote }}
+  {{- end }}
+  {{- if $tenantConfig.user.temporaryLockPeriodMinutes }}
+  tenants_profile_{{ $tenantKey }}_temporary-lock-period-minutes: {{ $tenantConfig.user.temporaryLockPeriodMinutes | quote }}
+  {{- end }}
+  {{- end }}
+
+  {{- if $tenantConfig.auth }}
+  # {{ $tenantKey | upper }} Authentication Configuration
+  {{- if $tenantConfig.auth.adminScope }}
+  tenants_profile_{{ $tenantKey }}_auth-admin-scope: {{ $tenantConfig.auth.adminScope | quote }}
+  {{- end }}
+  {{- end }}
+
+  {{- if $tenantConfig.emailVerification }}
+  # {{ $tenantKey | upper }} Email Verification Configuration
+  {{- if hasKey $tenantConfig.emailVerification "enabled" }}
+  tenants_profile_{{ $tenantKey }}_is-email-verification-enabled: {{ $tenantConfig.emailVerification.enabled | quote }}
+  {{- end }}
+  {{- if $tenantConfig.emailVerification.url }}
+  tenants_profile_{{ $tenantKey }}_email-verification-url: {{ tpl $tenantConfig.emailVerification.url $ | quote }}
+  {{- end }}
+  {{- if $tenantConfig.emailVerification.notificationId }}
+  tenants_profile_{{ $tenantKey }}_email-verification-notification-id: {{ $tenantConfig.emailVerification.notificationId | quote }}
+  {{- end }}
+  {{- if $tenantConfig.emailVerification.expDays }}
+  tenants_profile_{{ $tenantKey }}_email-verification-exp-days: {{ $tenantConfig.emailVerification.expDays | quote }}
+  {{- end }}
+  {{- if $tenantConfig.emailVerification.emailRegexPatternExclude }}
+  tenants_profile_{{ $tenantKey }}_email-regex-pattern-exclude: {{ $tenantConfig.emailVerification.emailRegexPatternExclude | quote }}
+  {{- end }}
+  {{- if $tenantConfig.emailVerification.authServerResponseUrl }}
+  tenants_profile_{{ $tenantKey }}_auth-server-email-verification-response-url: {{ tpl $tenantConfig.emailVerification.authServerResponseUrl $ | quote }}
+  {{- end }}
+  {{- if $tenantConfig.emailVerification.emailLogoPath }}
+  tenants_profile_{{ $tenantKey }}_email-logo-path: {{ $tenantConfig.emailVerification.emailLogoPath | quote }}
+  {{- end }}
+  {{- if $tenantConfig.emailVerification.emailCopyright }}
+  tenants_profile_{{ $tenantKey }}_email-copyright: {{ $tenantConfig.emailVerification.emailCopyright | quote }}
+  {{- end }}
+  {{- end }}
+
+  {{- if $tenantConfig.notification }}
+  # {{ $tenantKey | upper }} Notification Configuration
+  {{- if $tenantConfig.notification.apiUrl }}
+  tenants_profile_{{ $tenantKey }}_notification-api-url: {{ $tenantConfig.notification.apiUrl | quote }}
+  tenants_profile_{{ $tenantKey }}_notification_notification-api-url: {{ $tenantConfig.notification.apiUrl | quote }}
+  {{- end }}
+  {{- if $tenantConfig.notification.notificationId }}
+  tenants_profile_{{ $tenantKey }}_notification-id: {{ $tenantConfig.notification.notificationId | quote }}
+  tenants_profile_{{ $tenantKey }}_notification_notification-id: {{ $tenantConfig.notification.notificationId | quote }}
+  {{- end }}
+  {{- if $tenantConfig.notification.config }}
+  {{- if $tenantConfig.notification.config.resolver }}
+  tenants_profile_{{ $tenantKey }}_notification-config-resolver: {{ $tenantConfig.notification.config.resolver | quote }}
+  {{- end }}
+  {{- if $tenantConfig.notification.config.path }}
+  tenants_profile_{{ $tenantKey }}_notification-config-path: {{ $tenantConfig.notification.config.path | quote }}
+  {{- end }}
+  {{- end }}
+  {{- if $tenantConfig.notification.template }}
+  {{- if $tenantConfig.notification.template.engine }}
+  tenants_profile_{{ $tenantKey }}_notification-template-engine: {{ $tenantConfig.notification.template.engine | quote }}
+  {{- end }}
+  {{- if $tenantConfig.notification.template.format }}
+  tenants_profile_{{ $tenantKey }}_notification-template-format: {{ $tenantConfig.notification.template.format | quote }}
+  {{- end }}
+  {{- if $tenantConfig.notification.template.resolver }}
+  tenants_profile_{{ $tenantKey }}_notification-template-resolver: {{ $tenantConfig.notification.template.resolver | quote }}
+  {{- end }}
+  {{- if $tenantConfig.notification.template.prefix }}
+  tenants_profile_{{ $tenantKey }}_notification-template-prefix: {{ $tenantConfig.notification.template.prefix | quote }}
+  {{- end }}
+  {{- if $tenantConfig.notification.template.suffix }}
+  tenants_profile_{{ $tenantKey }}_notification-template-suffix: {{ $tenantConfig.notification.template.suffix | quote }}
+  {{- end }}
+  {{- end }}
+  {{- if $tenantConfig.notification.email }}
+  {{- if $tenantConfig.notification.email.provider }}
+  tenants_profile_{{ $tenantKey }}_notification-email-provider: {{ $tenantConfig.notification.email.provider | quote }}
+  {{- end }}
+  {{- if $tenantConfig.notification.email.host }}
+  tenants_profile_{{ $tenantKey }}_notification-email-provider-host: {{ $tenantConfig.notification.email.host | quote }}
+  {{- end }}
+  {{- if $tenantConfig.notification.email.port }}
+  tenants_profile_{{ $tenantKey }}_notification-email-provider-port: {{ $tenantConfig.notification.email.port | quote }}
+  {{- end }}
+  {{- if $tenantConfig.notification.email.smtpAuth }}
+  tenants_profile_{{ $tenantKey }}_notification-email-properties-mail-smtp-auth: {{ $tenantConfig.notification.email.smtpAuth | quote }}
+  {{- end }}
+  {{- if $tenantConfig.notification.email.smtpStartTls }}
+  tenants_profile_{{ $tenantKey }}_notification-email-properties-mail-smtp-starttls-enable: {{ $tenantConfig.notification.email.smtpStartTls | quote }}
+  {{- end }}
+  {{- if $tenantConfig.notification.email.smtpStartTlsRequired }}
+  tenants_profile_{{ $tenantKey }}_notification-email-properties-mail-smtp-starttls-required: {{ $tenantConfig.notification.email.smtpStartTlsRequired | quote }}
+  {{- end }}
+  {{- if $tenantConfig.notification.email.smtpSSLEnabled }}
+  tenants_profile_{{ $tenantKey }}_notification-email-properties-mail-smtp-ssl-enable: {{ $tenantConfig.notification.email.smtpSSLEnabled | quote }}
+  {{- end }}
+  {{- if $tenantConfig.notification.email.smtpDebug }}
+  tenants_profile_{{ $tenantKey }}_notification-email-properties-mail-debug: {{ $tenantConfig.notification.email.smtpDebug | quote }}
+  {{- end }}
+  {{- end }}
+  {{- end }}
+
+  {{- if $tenantConfig.authServer }}
+  # {{ $tenantKey | upper }} Authorization Server Configuration
+  {{- if $tenantConfig.authServer.hostName }}
+  tenants_profile_{{ $tenantKey }}_authorization-server_host-name: {{ $tenantConfig.authServer.hostName }}.{{ $.Values.environmentDomainName }}
+  tenants_profile_{{ $tenantKey }}_auth-server_host-name: {{ $tenantConfig.authServer.hostName }}.{{ $.Values.environmentDomainName }}
+  {{- end }}
+  {{- if $tenantConfig.authServer.tokenUrl }}
+  tenants_profile_{{ $tenantKey }}_auth-server_token-url: {{ $tenantConfig.authServer.tokenUrl | quote }}
+  {{- end }}
+  {{- if $tenantConfig.authServer.revokeTokenUrl }}
+  tenants_profile_{{ $tenantKey }}_auth-server_revoke-token-url: {{ $tenantConfig.authServer.revokeTokenUrl | quote }}
+  {{- end }}
+  {{- if $tenantConfig.authServer.clientId }}
+  tenants_profile_{{ $tenantKey }}_auth-server_client-id: {{ $tenantConfig.authServer.clientId | quote }}
+  {{- end }}
+  {{- end }}
+
+  {{- if $tenantConfig.clientRegistration }}
+  # {{ $tenantKey | upper }} Client Registration Configuration
+  {{- if $tenantConfig.clientRegistration.defaultStatus }}
+  tenants_profile_{{ $tenantKey }}_client-registration_default-status: {{ $tenantConfig.clientRegistration.defaultStatus | quote }}
+  {{- end }}
+  {{- if $tenantConfig.clientRegistration.refreshTokenValidity }}
+  tenants_profile_{{ $tenantKey }}_client-registration_refresh-token-validity: {{ $tenantConfig.clientRegistration.refreshTokenValidity | quote }}
+  {{- end }}
+  {{- if $tenantConfig.clientRegistration.accessTokenValidity }}
+  tenants_profile_{{ $tenantKey }}_client-registration_access-token-validity: {{ $tenantConfig.clientRegistration.accessTokenValidity | quote }}
+  {{- end }}
+  {{- if $tenantConfig.clientRegistration.authorizationCodeValidity }}
+  tenants_profile_{{ $tenantKey }}_client-registration_authorization-code-validity: {{ $tenantConfig.clientRegistration.authorizationCodeValidity | quote }}
+  {{- end }}
+  {{- if $tenantConfig.clientRegistration.hashAlgorithm }}
+  tenants_profile_{{ $tenantKey }}_client-registration_hash-algorithm: {{ $tenantConfig.clientRegistration.hashAlgorithm | quote }}
+  {{- end }}
+  {{- end }}
+
+  {{- if $tenantConfig.recovery }}
+  # {{ $tenantKey | upper }} Password Recovery Configuration
+  {{- if $tenantConfig.recovery.secretExpiresInMinutes }}
+  tenants_profile_{{ $tenantKey }}_recovery-secret-expires-in-minutes: {{ $tenantConfig.recovery.secretExpiresInMinutes | quote }}
+  {{- end }}
+  {{- if $tenantConfig.recovery.passwordRecoveryNotificationId }}
+  tenants_profile_{{ $tenantKey }}_password-recovery-notification-id: {{ $tenantConfig.recovery.passwordRecoveryNotificationId | quote }}
+  {{- end }}
+  {{- if $tenantConfig.recovery.authServerResetResponseUrl }}
+  tenants_profile_{{ $tenantKey }}_auth-server-reset-response-url: {{ tpl $tenantConfig.recovery.authServerResetResponseUrl $ | quote }}
+  {{- end }}
+  {{- end }}
+
+  {{- if $tenantConfig.captcha }}
+  # {{ $tenantKey | upper }} Captcha Configuration
+  {{- if $tenantConfig.captcha.enforceAfterNoOfFailures }}
+  tenants_profile_{{ $tenantKey }}_captcha-enforce-after-no-of-failures: {{ $tenantConfig.captcha.enforceAfterNoOfFailures | quote }}
+  {{- end }}
+  {{- end }}
+
+  {{- if $tenantConfig.mfa }}
+  # {{ $tenantKey | upper }} MFA Configuration
+  {{- if $tenantConfig.mfa.mfaAppName }}
+  tenants_profile_{{ $tenantKey }}_mfa-app-name: {{ $tenantConfig.mfa.mfaAppName | quote }}
+  {{- end }}
+  {{- if hasKey $tenantConfig.mfa "backupCodesEnabled" }}
+  tenants_profile_{{ $tenantKey }}_mfa-backup-codes-enabled: {{ $tenantConfig.mfa.backupCodesEnabled | quote }}
+  {{- end }}
+  {{- if $tenantConfig.mfa.backupCodesCount }}
+  tenants_profile_{{ $tenantKey }}_mfa-backup-codes-count: {{ $tenantConfig.mfa.backupCodesCount | quote }}
+  {{- end }}
+  {{- end }}
+
+  {{- if $tenantConfig.database }}
+  # {{ $tenantKey | upper }} Database Configuration
+  {{- if $tenantConfig.database.jdbcUrl }}
+  tenants_profile_{{ $tenantKey }}_jdbc-url: {{ $tenantConfig.database.jdbcUrl | quote }}
+  {{- end }}
+  tenants_profile_{{ $tenantKey }}_driver-class-name: "org.postgresql.Driver"
+  {{- if $tenantConfig.database.maxPoolSize }}
+  tenants_profile_{{ $tenantKey }}_max-pool-size: {{ $tenantConfig.database.maxPoolSize | quote }}
+  {{- end }}
+  {{- if $tenantConfig.database.maxIdleTime }}
+  tenants_profile_{{ $tenantKey }}_max-idle-time: {{ $tenantConfig.database.maxIdleTime | quote }}
+  {{- end }}
+  {{- if $tenantConfig.database.connectionTimeoutMs }}
+  tenants_profile_{{ $tenantKey }}_connection-timeout-ms: {{ $tenantConfig.database.connectionTimeoutMs | quote }}
+  {{- end }}
+  {{- if $tenantConfig.database.defaultSchema }}
+  tenants_profile_{{ $tenantKey }}_default-schema: {{ $tenantConfig.database.defaultSchema | quote }}
+  {{- end }}
+  {{- if hasKey $tenantConfig.database "cachePrepStmts" }}
+  tenants_profile_{{ $tenantKey }}_cache-prep-stmts: {{ $tenantConfig.database.cachePrepStmts | quote }}
+  {{- end }}
+  {{- if $tenantConfig.database.prepStmtCacheSize }}
+  tenants_profile_{{ $tenantKey }}_prep-stmt-cache-size: {{ $tenantConfig.database.prepStmtCacheSize | quote }}
+  {{- end }}
+  {{- if $tenantConfig.database.prepStmtCacheSqlLimit }}
+  tenants_profile_{{ $tenantKey }}_prep-stmt-cache-sql-limit: {{ $tenantConfig.database.prepStmtCacheSqlLimit | quote }}
+  {{- end }}
+  {{- end }}
+
+  {{- if $tenantConfig.liquibase }}
+  # {{ $tenantKey | upper }} Liquibase Configuration
+  {{- if $tenantConfig.liquibase.changeLog }}
+  tenants_profile_{{ $tenantKey }}_liquibase_change-log: {{ $tenantConfig.liquibase.changeLog | quote }}
+  {{- end }}
+  {{- if $tenantConfig.liquibase.defaultSchema }}
+  tenants_profile_{{ $tenantKey }}_liquibase_default-schema: {{ $tenantConfig.liquibase.defaultSchema | quote }}
+  {{- end }}
+  {{- if $tenantConfig.liquibase.parametersSchema }}
+  tenants_profile_{{ $tenantKey }}_liquibase_parameters_schema: {{ $tenantConfig.liquibase.parametersSchema | quote }}
+  {{- end }}
+  {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

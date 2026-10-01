@@ -1,0 +1,282 @@
+{{/*
+One ConfigMap per active tenant. Only keys the tenant overrides are emitted;
+everything else falls back to the tenant-default ConfigMap.
+*/}}
+{{- range $tenantKey, $tenantConfig := .Values.multiTenant.tenants }}
+{{- if ne $tenantKey "default" }}
+{{- if or (contains $tenantKey $.Values.multiTenant.tenantIds) (eq $tenantKey $.Values.multiTenant.defaultTenant) }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "uidam-authorization-server.fullname" $ }}-tenant-{{ $tenantKey }}
+  labels: {{- include "uidam-authorization-server.labels" $ | nindent 4 }}
+data:
+  {{- if $tenantConfig.database }}
+  # {{ $tenantKey | upper }} Database Configuration
+  {{- if $tenantConfig.database.jdbc_url }}
+  tenants_profile_{{ $tenantKey }}_jdbc-url: {{ $tenantConfig.database.jdbc_url | quote }}
+  {{- end }}
+  tenants_profile_{{ $tenantKey }}_driver-class-name: "org.postgresql.Driver"
+  {{- end }}
+
+  # {{ $tenantKey | upper }} Basic Tenant Information
+  tenants_profile_{{ $tenantKey }}_tenant-id: {{ $tenantConfig.tenantId | quote }}
+  tenants_profile_{{ $tenantKey }}_tenant-name: {{ $tenantConfig.tenantName | quote }}
+  {{- if hasKey $tenantConfig "jksEnabled" }}
+  tenants_profile_{{ $tenantKey }}_jks-enabled: {{ $tenantConfig.jksEnabled | quote }}
+  {{- end }}
+
+  {{- if $tenantConfig.account }}
+  # {{ $tenantKey | upper }} Account Configuration
+  {{- if $tenantConfig.account.accountId }}
+  tenants_profile_{{ $tenantKey }}_account_account-id: {{ $tenantConfig.account.accountId | quote }}
+  {{- end }}
+  {{- if $tenantConfig.account.accountName }}
+  tenants_profile_{{ $tenantKey }}_account_account-name: {{ $tenantConfig.account.accountName | quote }}
+  {{- end }}
+  {{- if $tenantConfig.account.accountType }}
+  tenants_profile_{{ $tenantKey }}_account_account-type: {{ $tenantConfig.account.accountType | quote }}
+  {{- end }}
+  {{- if hasKey $tenantConfig.account "accountFieldEnabled" }}
+  tenants_profile_{{ $tenantKey }}_account_account-field-enabled: {{ $tenantConfig.account.accountFieldEnabled | quote }}
+  {{- end }}
+  {{- end }}
+
+  {{- if $tenantConfig.client }}
+  # {{ $tenantKey | upper }} OAuth Client Configuration
+  {{- if $tenantConfig.client.accessTokenTtl }}
+  tenants_profile_{{ $tenantKey }}_client_access-token-ttl: {{ $tenantConfig.client.accessTokenTtl | quote }}
+  {{- end }}
+  {{- if $tenantConfig.client.idTokenTtl }}
+  tenants_profile_{{ $tenantKey }}_client_id-token-ttl: {{ $tenantConfig.client.idTokenTtl | quote }}
+  {{- end }}
+  {{- if $tenantConfig.client.refreshTokenTtl }}
+  tenants_profile_{{ $tenantKey }}_client_refresh-token-ttl: {{ $tenantConfig.client.refreshTokenTtl | quote }}
+  {{- end }}
+  {{- if $tenantConfig.client.authCodeTtl }}
+  tenants_profile_{{ $tenantKey }}_client_auth-code-ttl: {{ $tenantConfig.client.authCodeTtl | quote }}
+  {{- end }}
+  {{- if hasKey $tenantConfig.client "oauthScopeCustomization" }}
+  tenants_profile_{{ $tenantKey }}_client_oauth-scope-customization: {{ $tenantConfig.client.oauthScopeCustomization | quote }}
+  {{- end }}
+  {{- if hasKey $tenantConfig.client "authCodeScopelessUserScopes" }}
+  tenants_profile_{{ $tenantKey }}_client_auth-code-scopeless-user-scopes: {{ $tenantConfig.client.authCodeScopelessUserScopes | quote }}
+  {{- end }}
+  {{- if hasKey $tenantConfig.client "reuseRefreshToken" }}
+  tenants_profile_{{ $tenantKey }}_client_reuse-refresh-token: {{ $tenantConfig.client.reuseRefreshToken | quote }}
+  {{- end }}
+  {{- if $tenantConfig.client.idTokenProperties }}
+  {{- if hasKey $tenantConfig.client.idTokenProperties "additionalClaims" }}
+  tenants_profile_{{ $tenantKey }}_client_id-token-properties_additional-claims: {{ $tenantConfig.client.idTokenProperties.additionalClaims | quote }}
+  {{- end }}
+  {{- end }}
+  {{- end }}
+
+  {{- if $tenantConfig.user }}
+  # {{ $tenantKey | upper }} User Configuration
+  {{- if $tenantConfig.user.captchaAfterInvalidFailures }}
+  tenants_profile_{{ $tenantKey }}_user_captcha-after-invalid-failures: {{ $tenantConfig.user.captchaAfterInvalidFailures | quote }}
+  {{- end }}
+  {{- if hasKey $tenantConfig.user "captchaRequired" }}
+  tenants_profile_{{ $tenantKey }}_user_captcha-required: {{ $tenantConfig.user.captchaRequired | quote }}
+  {{- end }}
+  {{- if $tenantConfig.user.maxAllowedLoginAttempts }}
+  tenants_profile_{{ $tenantKey }}_user_max-allowed-login-attempts: {{ $tenantConfig.user.maxAllowedLoginAttempts | quote }}
+  {{- end }}
+  {{- if $tenantConfig.user.defaultRole }}
+  tenants_profile_{{ $tenantKey }}_user_default-role: {{ $tenantConfig.user.defaultRole | quote }}
+  {{- end }}
+  {{- if $tenantConfig.user.jwtAdditionalClaimAttributes }}
+  tenants_profile_{{ $tenantKey }}_user_jwt-additional-claim-attributes: {{ $tenantConfig.user.jwtAdditionalClaimAttributes | quote }}
+  {{- end }}
+  {{- end }}
+
+  {{- if $tenantConfig.externalUrls }}
+  # {{ $tenantKey | upper }} External URLs
+  {{- if $tenantConfig.externalUrls.userManagementUrl }}
+  tenants_profile_{{ $tenantKey }}_external-urls_user-management-base-url: {{ $tenantConfig.externalUrls.userManagementUrl | quote }}
+  {{- end }}
+  {{- if $tenantConfig.externalUrls.userByUsernameEndpoint }}
+  tenants_profile_{{ $tenantKey }}_external-urls_user-by-username-endpoint: {{ $tenantConfig.externalUrls.userByUsernameEndpoint | quote }}
+  {{- end }}
+  {{- if $tenantConfig.externalUrls.clientByClientIdEndpoint }}
+  tenants_profile_{{ $tenantKey }}_external-urls_client-by-client-id-endpoint: {{ $tenantConfig.externalUrls.clientByClientIdEndpoint | quote }}
+  {{- end }}
+  {{- if $tenantConfig.externalUrls.addUserEventsEndpoint }}
+  tenants_profile_{{ $tenantKey }}_external-urls_add-user-events-endpoint: {{ $tenantConfig.externalUrls.addUserEventsEndpoint | quote }}
+  {{- end }}
+  {{- if $tenantConfig.externalUrls.recoveryNotificationEndpoint }}
+  tenants_profile_{{ $tenantKey }}_external-urls_user-recovery-notif-endpoint: {{ $tenantConfig.externalUrls.recoveryNotificationEndpoint | quote }}
+  {{- end }}
+  {{- if $tenantConfig.externalUrls.updatePasswordUsingSecretEndpoint }}
+  tenants_profile_{{ $tenantKey }}_external-urls_reset-password-endpoint: {{ $tenantConfig.externalUrls.updatePasswordUsingSecretEndpoint | quote }}
+  {{- end }}
+  {{- if $tenantConfig.externalUrls.selfCreateUserEndpoint }}
+  tenants_profile_{{ $tenantKey }}_external-urls_self-create-user-endpoint: {{ $tenantConfig.externalUrls.selfCreateUserEndpoint | quote }}
+  {{- end }}
+  {{- if $tenantConfig.externalUrls.passwordPolicyEndpoint }}
+  tenants_profile_{{ $tenantKey }}_external-urls_password-policy-endpoint: {{ $tenantConfig.externalUrls.passwordPolicyEndpoint | quote }}
+  {{- end }}
+  {{- if $tenantConfig.externalUrls.createFedratedUserEndpoint }}
+  tenants_profile_{{ $tenantKey }}_external-urls_create-fedrated-user-endpoint: {{ $tenantConfig.externalUrls.createFedratedUserEndpoint | quote }}
+  {{- end }}
+  {{- end }}
+
+  # {{ $tenantKey | upper }} Feature Flags
+  {{- if and $tenantConfig.user (hasKey $tenantConfig.user "signUpEnabled") }}
+  tenants_profile_{{ $tenantKey }}_sign-up-enabled: {{ $tenantConfig.user.signUpEnabled | quote }}
+  {{- end }}
+  {{- if hasKey $tenantConfig "externalIdpEnabled" }}
+  tenants_profile_{{ $tenantKey }}_external-idp-enabled: {{ $tenantConfig.externalIdpEnabled | quote }}
+  {{- end }}
+  {{- if hasKey $tenantConfig "internalLoginEnabled" }}
+  tenants_profile_{{ $tenantKey }}_internal-login-enabled: {{ $tenantConfig.internalLoginEnabled | quote }}
+  {{- end }}
+  {{- if $tenantConfig.externalIdpClientName }}
+  tenants_profile_{{ $tenantKey }}_external-idp-client-name: {{ $tenantConfig.externalIdpClientName | quote }}
+  {{- end }}
+
+  {{- if $tenantConfig.ui }}
+  # {{ $tenantKey | upper }} UI Configuration
+  {{- if $tenantConfig.ui.logoPath }}
+  tenants_profile_{{ $tenantKey }}_ui_logo-path: {{ $tenantConfig.ui.logoPath | quote }}
+  {{- end }}
+  {{- end }}
+
+  {{- if $tenantConfig.keyStore }}
+  # {{ $tenantKey | upper }} Keystore Configuration
+  {{- if $tenantConfig.keyStore.keyStoreFilename }}
+  tenants_profile_{{ $tenantKey }}_key-store_key-store-filename: {{ $tenantConfig.keyStore.keyStoreFilename | quote }}
+  {{- end }}
+  {{- if $tenantConfig.keyStore.jksEncodedContent }}
+  tenants_profile_{{ $tenantKey }}_key-store_key-store-jks-encoded-content: {{ $tenantConfig.keyStore.jksEncodedContent | quote }}
+  {{- end }}
+  {{- if $tenantConfig.keyStore.keyAlias }}
+  tenants_profile_{{ $tenantKey }}_key-store_key-alias: {{ $tenantConfig.keyStore.keyAlias | quote }}
+  {{- end }}
+  {{- if $tenantConfig.keyStore.keyType }}
+  tenants_profile_{{ $tenantKey }}_key-store_key-type: {{ $tenantConfig.keyStore.keyType | quote }}
+  {{- end }}
+  {{- if $tenantConfig.keyStore.jwtPubKeyPem }}
+  tenants_profile_{{ $tenantKey }}_key-store_jwt-public-key-path: {{ $tenantConfig.keyStore.jwtPubKeyPem | quote }}
+  {{- end }}
+  {{- if $tenantConfig.keyStore.jwtKeyId }}
+  tenants_profile_{{ $tenantKey }}_key-store_jwt-key-id: {{ $tenantConfig.keyStore.jwtKeyId | quote }}
+  {{- end }}
+  {{- end }}
+
+  {{- if $tenantConfig.cert }}
+  # {{ $tenantKey | upper }} Certificate Configuration
+  {{- if $tenantConfig.cert.jwtPublicKey }}
+  tenants_profile_{{ $tenantKey }}_cert_jwt-public-key: {{ $tenantConfig.cert.jwtPublicKey | quote }}
+  {{- end }}
+  {{- if $tenantConfig.cert.jwtPrivateKey }}
+  tenants_profile_{{ $tenantKey }}_cert_jwt-private-key: {{ $tenantConfig.cert.jwtPrivateKey | quote }}
+  {{- end }}
+  {{- if $tenantConfig.cert.jwtKeyId }}
+  tenants_profile_{{ $tenantKey }}_cert_jwt-key-id: {{ $tenantConfig.cert.jwtKeyId | quote }}
+  {{- end }}
+  {{- end }}
+
+  {{- if $tenantConfig.captcha }}
+  # {{ $tenantKey | upper }} Captcha Configuration
+  {{- if $tenantConfig.captcha.recaptchaKeySite }}
+  tenants_profile_{{ $tenantKey }}_captcha_recaptcha-key-site: {{ $tenantConfig.captcha.recaptchaKeySite | quote }}
+  {{- end }}
+  {{- if $tenantConfig.captcha.recaptchaVerifyUrl }}
+  tenants_profile_{{ $tenantKey }}_captcha_recaptcha-verify-url: {{ $tenantConfig.captcha.recaptchaVerifyUrl | quote }}
+  {{- end }}
+  {{- end }}
+
+  {{- if $tenantConfig.mfa }}
+  # {{ $tenantKey | upper }} MFA Configuration
+  {{- if $tenantConfig.mfa.mfaAppName }}
+  tenants_profile_{{ $tenantKey }}_mfa-app-name: {{ $tenantConfig.mfa.mfaAppName | quote }}
+  {{- end }}
+  {{- if $tenantConfig.mfa.mode }}
+  tenants_profile_{{ $tenantKey }}_mfa_mode: {{ $tenantConfig.mfa.mode | quote }}
+  {{- end }}
+  {{- if hasKey $tenantConfig.mfa "stepUpScopes" }}
+  tenants_profile_{{ $tenantKey }}_mfa_step-up-scopes: {{ $tenantConfig.mfa.stepUpScopes | quote }}
+  {{- end }}
+  {{- if hasKey $tenantConfig.mfa "skipUsers" }}
+  tenants_profile_{{ $tenantKey }}_mfa_skip-users: {{ $tenantConfig.mfa.skipUsers | quote }}
+  {{- end }}
+  {{- if hasKey $tenantConfig.mfa "skipClients" }}
+  tenants_profile_{{ $tenantKey }}_mfa_skip-clients: {{ $tenantConfig.mfa.skipClients | quote }}
+  {{- end }}
+  {{- if hasKey $tenantConfig.mfa "skipAccounts" }}
+  tenants_profile_{{ $tenantKey }}_mfa_skip-accounts: {{ $tenantConfig.mfa.skipAccounts | quote }}
+  {{- end }}
+  {{- if hasKey $tenantConfig.mfa "stepUpClients" }}
+  tenants_profile_{{ $tenantKey }}_mfa_step-up-clients: {{ $tenantConfig.mfa.stepUpClients | quote }}
+  {{- end }}
+  {{- if hasKey $tenantConfig.mfa "stepUpAccounts" }}
+  tenants_profile_{{ $tenantKey }}_mfa_step-up-accounts: {{ $tenantConfig.mfa.stepUpAccounts | quote }}
+  {{- end }}
+  {{- end }}
+
+  {{- if $tenantConfig.externalIdpRegisteredClients }}
+  # {{ $tenantKey | upper }} External IDP Registered Clients
+  {{- range $index, $client := $tenantConfig.externalIdpRegisteredClients }}
+  tenants_profile_{{ $tenantKey }}_external-idp-registered-client-list[{{ $index }}]_client-name: {{ $client.clientName | quote }}
+  tenants_profile_{{ $tenantKey }}_external-idp-registered-client-list[{{ $index }}]_registration-id: {{ $client.registrationId | quote }}
+  {{- if hasKey $client "enabled" }}
+  tenants_profile_{{ $tenantKey }}_external-idp-registered-client-list[{{ $index }}]_enabled: {{ $client.enabled | quote }}
+  {{- end }}
+  tenants_profile_{{ $tenantKey }}_external-idp-registered-client-list[{{ $index }}]_client-id: {{ $client.clientId | quote }}
+  tenants_profile_{{ $tenantKey }}_external-idp-registered-client-list[{{ $index }}]_client-authentication-method: {{ $client.clientAuthenticationMethod | quote }}
+  tenants_profile_{{ $tenantKey }}_external-idp-registered-client-list[{{ $index }}]_scope: {{ $client.scope | quote }}
+  tenants_profile_{{ $tenantKey }}_external-idp-registered-client-list[{{ $index }}]_authorization-uri: {{ $client.authorizationUri | quote }}
+  tenants_profile_{{ $tenantKey }}_external-idp-registered-client-list[{{ $index }}]_token-uri: {{ $client.tokenUri | quote }}
+  tenants_profile_{{ $tenantKey }}_external-idp-registered-client-list[{{ $index }}]_user-info-uri: {{ $client.userInfoUri | quote }}
+  tenants_profile_{{ $tenantKey }}_external-idp-registered-client-list[{{ $index }}]_user-name-attribute-name: {{ $client.userNameAttributeName | quote }}
+  {{- if $client.jwkSetUri }}
+  tenants_profile_{{ $tenantKey }}_external-idp-registered-client-list[{{ $index }}]_jwk-set-uri: {{ $client.jwkSetUri | quote }}
+  {{- end }}
+  {{- if $client.tokenInfoSource }}
+  tenants_profile_{{ $tenantKey }}_external-idp-registered-client-list[{{ $index }}]_token-info-source: {{ $client.tokenInfoSource | quote }}
+  {{- end }}
+  {{- if hasKey $client "includeIdpIdToken" }}
+  tenants_profile_{{ $tenantKey }}_external-idp-registered-client-list[{{ $index }}]_include-idp-id-token: {{ $client.includeIdpIdToken | quote }}
+  {{- end }}
+  {{- if $client.createUserMode }}
+  tenants_profile_{{ $tenantKey }}_external-idp-registered-client-list[{{ $index }}]_create-user-mode: {{ $client.createUserMode | quote }}
+  {{- end }}
+  {{- if $client.defaultUserRoles }}
+  tenants_profile_{{ $tenantKey }}_external-idp-registered-client-list[{{ $index }}]_default-user-roles: {{ $client.defaultUserRoles | quote }}
+  {{- end }}
+  {{- if $client.claimMappings }}
+  tenants_profile_{{ $tenantKey }}_external-idp-registered-client-list[{{ $index }}]_claim-mappings: {{ $client.claimMappings | quote }}
+  {{- end }}
+  {{- if $client.scopePreference }}
+  tenants_profile_{{ $tenantKey }}_external-idp-registered-client-list[{{ $index }}]_scope-preference: {{ $client.scopePreference | quote }}
+  {{- end }}
+  {{- if $client.roleClaimKey }}
+  tenants_profile_{{ $tenantKey }}_external-idp-registered-client-list[{{ $index }}]_role-claim-key: {{ $client.roleClaimKey | quote }}
+  {{- end }}
+  {{- range $mappingIndex, $mapping := $client.scopeRoleMappings }}
+  {{- if $mapping.externalRoles }}
+  tenants_profile_{{ $tenantKey }}_external-idp-registered-client-list[{{ $index }}]_scope-role-mappings[{{ $mappingIndex }}]_external-roles: {{ $mapping.externalRoles | quote }}
+  {{- end }}
+  {{- if $mapping.internalScopes }}
+  tenants_profile_{{ $tenantKey }}_external-idp-registered-client-list[{{ $index }}]_scope-role-mappings[{{ $mappingIndex }}]_internal-scopes: {{ $mapping.internalScopes | quote }}
+  {{- end }}
+  {{- end }}
+  {{- if $client.conditions }}
+  {{- if $client.conditions.claimKey }}
+  tenants_profile_{{ $tenantKey }}_external-idp-registered-client-list[{{ $index }}]_conditions_claim-key: {{ $client.conditions.claimKey | quote }}
+  {{- end }}
+  {{- if $client.conditions.expectedValue }}
+  tenants_profile_{{ $tenantKey }}_external-idp-registered-client-list[{{ $index }}]_conditions_expected-value: {{ $client.conditions.expectedValue | quote }}
+  {{- end }}
+  {{- if $client.conditions.operator }}
+  tenants_profile_{{ $tenantKey }}_external-idp-registered-client-list[{{ $index }}]_conditions_operator: {{ $client.conditions.operator | quote }}
+  {{- end }}
+  {{- end }}
+  {{- end }}
+  {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

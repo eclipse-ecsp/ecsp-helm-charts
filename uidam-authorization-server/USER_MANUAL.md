@@ -3,14 +3,18 @@
 ## Table of Contents
 1. [Overview](#overview)
 2. [Prerequisites](#prerequisites)
-3. [Configuration Guide](#configuration-guide)
-4. [Multi-Tenant Configuration](#multi-tenant-configuration)
-5. [Security & Secrets Management](#security--secrets-management)
-6. [Database Configuration](#database-configuration)
-7. [External IDP Integration](#external-idp-integration)
-8. [Monitoring & Metrics](#monitoring--metrics)
-9. [Deployment](#deployment)
-10. [Troubleshooting](#troubleshooting)
+3. [Chart Structure](#chart-structure)
+4. [Configuration Guide](#configuration-guide)
+5. [Multi-Tenant Configuration](#multi-tenant-configuration)
+6. [Multi-Factor Authentication](#multi-factor-authentication)
+7. [Sign-Up Configuration](#sign-up-configuration)
+8. [Security & Secrets Management](#security--secrets-management)
+9. [Database Configuration](#database-configuration)
+10. [External IDP Integration](#external-idp-integration)
+11. [Monitoring & Metrics](#monitoring--metrics)
+12. [Deployment](#deployment)
+13. [Upgrading From Chart 1.2.x](#upgrading-from-chart-12x)
+14. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -27,6 +31,8 @@ The UIDAM Authorization Server is an OAuth2/OIDC compliant authorization server 
 - Password policy management
 - User self-registration with CAPTCHA
 - Token lifecycle management
+- Multi-factor authentication with step-up policies
+- Per-client sign-up customisation
 
 ---
 
@@ -43,6 +49,39 @@ Before deploying the UIDAM Authorization Server, ensure you have:
 
 ---
 
+## Chart Structure
+
+The chart renders one ConfigMap for global settings, one ConfigMap holding the
+**default tenant** configuration, and one ConfigMap **per active tenant** that only
+contains the keys that tenant overrides. Secrets follow the same pattern.
+
+| Template | Renders | Notes |
+|----------|---------|-------|
+| `templates/configmap.yaml` | `<release>-uidam-authorization-server` | Global, tenant-independent settings |
+| `templates/configmap-default-configurations.yaml` | `<release>-uidam-authorization-server-tenant-default` | Full `DEFAULT_*` baseline, always rendered |
+| `templates/configmap-tenants-config.yaml` | `<release>-uidam-authorization-server-tenant-<id>` | One per active tenant, generated dynamically |
+| `templates/secret.yaml` | `<release>-uidam-authorization-server-credentials` | Global credentials |
+| `templates/secret-tenants.yaml` | `<release>-uidam-authorization-server-tenant-<id>-credentials` | One per active tenant **plus** `default` |
+| `templates/uidam-jks.yaml` | `<release>-uidam-authorization-server-jks` | Fallback keystore file |
+| `templates/app-keys.yaml` | `<release>-uidam-authorization-server-app` | JWT key pair and public PEM |
+
+### How tenant resolution works
+
+1. `configmap-default-configurations.yaml` publishes the complete configuration as
+   `DEFAULT_*` environment variables. These back the `tenant-default.properties`
+   placeholders inside the application image.
+2. `configmap-tenants-config.yaml` iterates over `multiTenant.tenants` and emits
+   `tenants_profile_<tenant>_*` keys **only for the fields a tenant actually defines**.
+3. The Deployment mounts the global ConfigMap first, then each tenant ConfigMap, then
+   the default ConfigMap, so anything a tenant does not override falls back to the
+   default tenant values.
+
+A tenant is considered active when its key appears in `multiTenant.tenantIds` or
+equals `multiTenant.defaultTenant`. Adding a tenant is therefore a values-only
+change - no new template files are needed.
+
+---
+
 ## Configuration Guide
 
 ### Basic Configuration (`values.yaml`)
@@ -53,12 +92,13 @@ Before deploying the UIDAM Authorization Server, ensure you have:
 image:
   repository: docker.io/eclipseecsp/uidam-authorization-server
   pullPolicy: IfNotPresent
-  tag: 1.2.2
+  tag: 1.6.0
 ```
 
 **Action Required:**
 - Update `repository` to your container registry if there is any customization done and generated image in your custom repository.
 - Update `tag` to the desired version
+- Keep this in step with the `uidam-user-management` image tag
 
 #### 2. Environment Domain Configuration
 
@@ -100,6 +140,21 @@ javaOpts: -Xms128m -Xmx512m -XX:+UseG1GC -XX:+UseStringDeduplication -XX:MaxMeta
 - Ensure `-Xmx` is less than container memory limit
 - Recommended: Set `-Xmx` to 70-80% of container memory
 
+#### 5. Config Server (optional)
+
+```yaml
+configServer:
+  host: "http://config-server:8080/config/"
+  enabled: false
+  springConfigImport: "optional:classpath:tenant-default.properties"
+```
+
+**Action Required:**
+- Leave `enabled: false` to source all tenant configuration from the chart's ConfigMaps (default).
+- Set `enabled: true` only when a Spring Cloud Config Server owns the tenant
+  configuration. In that mode the chart stops emitting `TENANT_IDS`, so the tenant
+  list is resolved from the config server instead.
+
 ---
 
 ## Multi-Tenant Configuration
@@ -118,20 +173,60 @@ multiTenant:
 2. Update `tenantIds` with comma-separated tenant identifiers
 3. Set `defaultTenant` to the primary tenant which will be root tenant when mulit-tenant is disabled
 
-### Tenant-Specific Configuration
+### Configuration Inheritance Model
 
-Each tenant requires a complete configuration block:
+> **Changed in chart 1.6.0.** Tenants no longer repeat the full configuration.
+
+The `default` tenant holds the **complete** configuration. Every other tenant lists
+**only the fields that differ**. Anything omitted is inherited from `default`.
 
 ```yaml
 multiTenant:
   tenants:
-    ecsp:  # Tenant ID (must match tenantIds list)
+    # Overrides only - everything else comes from `default`
+    ecsp:
       tenantId: "ecsp"
       tenantName: "ECSP"
-      jksEnabled: true
-      externalIdpEnabled: true
-      internalLoginEnabled: true
+      externalIdpEnabled: false
+      ui:
+        logoPath: "/images/ecsp-logo.svg"
+      account:
+        accountId: "TO-BE-UPDATED"
+        accountName: "ecsp"
+      keyStore:
+        keyAlias: "ecsp-uidam-auth-server"
+        jksEncodedContent: "ChangeMe"
+      cert:
+        jwtKeyId: "TO-BE-UPDATED"
+      database:
+        jdbc_url: "jdbc:postgresql://postgresql:5432/ecsp_db"
+      mfa:
+        mode: "DISABLED"
+        skipUsers: "admin,tenantadmin"
+
+    # The full baseline
+    default:
+      tenantId: "default"
+      tenantName: "DEFAULT"
+      # ... every section below ...
 ```
+
+**Benefits:**
+- Adding a tenant is typically 15-20 lines instead of ~70.
+- Shared settings are changed in exactly one place.
+- The tenant ConfigMap becomes an accurate diff of what is genuinely custom.
+
+**Caveat:** because omission means inheritance, you cannot "unset" a value by
+removing it. To blank a field, set it explicitly to `""`.
+
+**Per-tenant items that must always be set:** `tenantId`, `tenantName`,
+`database.jdbc_url`, `keyStore.keyAlias`, `keyStore.jksEncodedContent` and
+`cert.jwtKeyId`. Sharing a keystore alias or JWT key ID across tenants breaks token
+isolation.
+
+### Tenant Configuration Reference
+
+The sections below are valid for the `default` tenant and for any tenant override.
 
 #### Account Configuration
 
@@ -157,13 +252,34 @@ client:
   refreshTokenTtl: 3600       # Refresh token lifetime (seconds)
   authCodeTtl: 300            # Authorization code lifetime (seconds)
   oauthScopeCustomization: false
+  authCodeScopelessUserScopes: true   # New in 1.6.0
   reuseRefreshToken: false
+  idTokenProperties:                  # New in 1.6.0
+    additionalClaims: ""
 ```
 
 **Action Required:**
 - Adjust TTL values based on security requirements
 - Shorter TTLs = more secure but more frequent token refreshes
 - Recommended: accessTokenTtl: 3600, refreshTokenTtl: 86400
+
+**New in 1.6.0:**
+
+| Key | Purpose |
+|-----|---------|
+| `authCodeScopelessUserScopes` | When `true`, an authorization-code request that asks for no scopes receives the user's full scope set. When `false`, a scopeless request yields a token with no scopes. |
+| `idTokenProperties.additionalClaims` | Comma-separated user attributes to copy into the **ID token** (separate from `user.jwtAdditionalClaimAttributes`, which targets the access token). Leave empty to add none. |
+
+#### UI Configuration
+
+```yaml
+ui:
+  logoPath: "/images/default-logo.svg"
+```
+
+Path to the logo shown on that tenant's login and consent pages. Set a distinct value
+per tenant so users can tell branded login pages apart. The file must exist in the
+image's static resources or in the custom UI volume.
 
 #### User Configuration
 
@@ -288,14 +404,139 @@ database:
 - Create separate database for each tenant
 - Update JDBC URL with correct host, port, and database name
 - Format: `jdbc:postgresql://HOST:PORT/DATABASE_NAME`
+- The driver class is set by the chart; you do not need to configure it
+- Credentials come from the tenant Secret (`username` / `password`), not from this block
+
+---
+
+## Multi-Factor Authentication
+
+> **New in chart 1.6.0.**
+
+MFA policy is decided here; enrolment data is stored and encrypted by the
+`uidam-user-management` service.
+
+```yaml
+multiTenant:
+  tenants:
+    default:
+      mfa:
+        mfaAppName: "UIDAM"
+        mode: "DISABLED"                                  # DISABLED | CONDITIONAL | REQUIRED
+        stepUpScopes: "UIDAMSystem,ManageUsers,ManageAccounts"
+        skipUsers: "admin,tenantadmin"
+        skipClients: ""
+        skipAccounts: ""
+        stepUpClients: ""
+        stepUpAccounts: ""
+```
+
+### Modes
+
+| Mode | Behaviour |
+|------|-----------|
+| `DISABLED` | MFA is never challenged. Safe default. |
+| `CONDITIONAL` | MFA is challenged only for step-up situations - a request for a scope in `stepUpScopes`, or a client/account listed in `stepUpClients` / `stepUpAccounts`. |
+| `REQUIRED` | Every interactive login requires MFA, except the exclusions below. |
+
+### Exclusions
+
+| Key | Effect |
+|-----|--------|
+| `skipUsers` | Comma-separated usernames that never get an MFA challenge. Keep at least one break-glass admin here. |
+| `skipClients` | Client IDs exempt from MFA, e.g. machine-to-machine clients. |
+| `skipAccounts` | Account names exempt from MFA. |
+
+### Step-up triggers (CONDITIONAL mode)
+
+| Key | Effect |
+|-----|--------|
+| `stepUpScopes` | Requesting any of these scopes forces a fresh MFA challenge. |
+| `stepUpClients` | These client IDs always trigger a challenge. |
+| `stepUpAccounts` | These account names always trigger a challenge. |
+
+### Rollout guidance
+
+1. Deploy with `mode: "DISABLED"` and let users enrol voluntarily.
+2. Move to `CONDITIONAL` and list your privileged scopes in `stepUpScopes`.
+3. Only move to `REQUIRED` once enrolment coverage is high, and keep
+   `skipUsers` populated so you cannot lock yourself out.
+
+**Required companion configuration:** set `mfaSecretEncryptionKey` and
+`mfaSecretEncryptionSalt` in this chart's `tenantSecrets` **and** in the matching
+`uidam-user-management` tenant secrets. The enrolment app name shown in authenticator
+apps comes from `mfa.mfaAppName`.
+
+---
+
+## Sign-Up Configuration
+
+> **New in chart 1.6.0.**
+
+```yaml
+multiTenant:
+  tenants:
+    default:
+      user:
+        signUpEnabled: true
+      signup:
+        additionalAttributesEnabled: false
+      clientSpecificSignupConfigs: []
+```
+
+`signup.additionalAttributesEnabled` turns on collection of custom attributes during
+self-registration.
+
+### Per-client sign-up customisation
+
+`clientSpecificSignupConfigs` lets a single tenant present different sign-up rules
+depending on which OAuth2 client started the flow:
+
+```yaml
+clientSpecificSignupConfigs:
+  - clientId: "partner-portal"
+    skipAttributes: "hasValidPassport"
+    defaultRoles: "VEHICLE_OWNER"
+    defaultAccount: "userdefaultaccount"
+    customAttributeListMap: "custom:companyName#VW,signupSourceClientId#partner-portal"
+    userStatus: ""
+    customAttributesForClaims: "ATTR_custom:companyName"
+```
+
+| Key | Purpose |
+|-----|---------|
+| `clientId` | The OAuth2 client this configuration applies to. |
+| `skipAttributes` | Comma-separated attributes to omit from the sign-up form. |
+| `defaultRoles` | Roles assigned to users who register through this client. |
+| `defaultAccount` | Account the new user is attached to. |
+| `customAttributeListMap` | `attribute#value` pairs pre-filled on the created user. |
+| `userStatus` | Initial status; empty means the tenant default. |
+| `customAttributesForClaims` | Attributes promoted into token claims, prefixed `ATTR_`. |
+
+Leave the list empty (`[]`) to apply the same sign-up rules to every client.
 
 ---
 
 ## Security & Secrets Management
 
+> **Changed in chart 1.6.0.** The three hand-maintained `secret-tenant-<id>.yaml`
+> templates were replaced by a single `secret-tenants.yaml` that generates one Secret
+> per active tenant. Secrets are declared in `values.yaml` only.
+
+### Rendered Secrets
+
+| Secret | Source | Consumed as |
+|--------|--------|-------------|
+| `<release>-uidam-authorization-server-credentials` | `secrets`, `postgresql` | Global env vars (`POSTGRES_USERNAME`, `KEYSTORE_PASS`, ...) |
+| `<release>-uidam-authorization-server-tenant-default-credentials` | `tenantSecrets.default` | `DEFAULT_*` env vars |
+| `<release>-uidam-authorization-server-tenant-<id>-credentials` | `tenantSecrets.<id>` merged over `tenantSecrets.default` | `tenants_profile_<id>_*` env vars |
+
+Any key a tenant omits is inherited from `tenantSecrets.default`, mirroring the
+configuration inheritance model.
+
 ### Global Secrets
 
-These secrets are shared across all tenants:
+These back the non-tenant-scoped environment variables:
 
 ```yaml
 secrets:
@@ -304,114 +545,106 @@ secrets:
   clientsecretkey: "ChangeMe"
   clientsecretsalt: "ChangeMe"
   clientSecret: "ChangeMe"
+  mfaSecretEncryptionKey: "ChangeMe"
+  mfaSecretEncryptionSalt: "ChangeMe"
 ```
-
-**Action Required:**
-
-1. **keystorePassword:**
-   - Password for the Java KeyStore
-   - Must match the password used when creating JKS file
-   - Minimum 8 characters, use strong password
-
-2. **igniteRecaptchaKeySecret:**
-   - Google reCAPTCHA secret key
-   - Obtained from Google reCAPTCHA admin console
-   - Keep this secret and never commit to version control
-
-3. **clientsecretkey:**
-   - Key used for encrypting OAuth2 client secrets
-   - Generate strong random string (32+ characters)
-   ```bash
-   openssl rand -base64 32
-   ```
-
-4. **clientsecretsalt:**
-   - Salt for client secret hashing
-   - Generate strong random string (16+ characters)
-   ```bash
-   openssl rand -base64 16
-   ```
-
-5. **clientSecret:**
-   - Default client secret for internal clients
-   - Generate strong random string
-   ```bash
-   openssl rand -base64 24
-   ```
 
 ### Tenant-Specific Secrets
 
-Each tenant has its own set of secrets:
-
 ```yaml
 tenantSecrets:
-  ecsp:
+  default:
     keystorePassword: "ChangeMe"
     igniteRecaptchaKeySecret: "ChangeMe"
     clientsecretkey: "ChangeMe"
     clientsecretsalt: "ChangeMe"
     clientSecret: "ChangeMe"
+    mfaSecretEncryptionKey: "ChangeMe"
+    mfaSecretEncryptionSalt: "ChangeMe"
     googleIDPSecret: "ChangeMe"
     githubIDPSecret: "ChangeMe"
     cognitoIDPSecret: "ChangeMe"
     azureIDPSecret: "ChangeMe"
+  ecsp:
+    # only the keys that differ from `default`
+    keystorePassword: "ChangeMe"
+    clientsecretkey: "ChangeMe"
+    clientsecretsalt: "ChangeMe"
+    mfaSecretEncryptionKey: "ChangeMe"
+    mfaSecretEncryptionSalt: "ChangeMe"
 ```
 
-**Action Required:**
+### Key Reference
 
-1. **Tenant-specific basic secrets:**
-   - Follow same generation process as global secrets
-   - Use different values for each tenant for isolation
+| Key | Purpose | Suggested generation |
+|-----|---------|----------------------|
+| `keystorePassword` | Password of the JKS holding the token signing key. Must match the password used with `keytool`. | Strong passphrase |
+| `igniteRecaptchaKeySecret` | Google reCAPTCHA **secret** key (the site key is `captcha.recaptchaKeySite`). | From the reCAPTCHA console |
+| `clientsecretkey` | Encrypts OAuth2 client secrets at rest. **Must match `uidam-user-management`.** | `openssl rand -base64 32` |
+| `clientsecretsalt` | Salt for client secret hashing. **Must match `uidam-user-management`.** | `openssl rand -base64 16` |
+| `clientSecret` | Default secret for internally provisioned clients. | `openssl rand -base64 24` |
+| `mfaSecretEncryptionKey` | Encrypts stored TOTP seeds. **Must match `uidam-user-management`.** | `openssl rand -base64 32` |
+| `mfaSecretEncryptionSalt` | Salt for TOTP seed encryption. **Must match `uidam-user-management`.** | `openssl rand -base64 16` |
+| `googleIDPSecret` | OAuth2 client secret from Google Cloud Console | Provider console |
+| `githubIDPSecret` | OAuth App secret from GitHub | Provider console |
+| `cognitoIDPSecret` | App client secret from AWS Cognito | Provider console |
+| `azureIDPSecret` | Client secret from Azure AD app registration | Provider console |
 
-2. **External IDP Secrets:**
-   
-   **googleIDPSecret:**
-   - OAuth2 client secret from Google Cloud Console
-   - Navigate to: Console → APIs & Services → Credentials
-   - Create OAuth 2.0 Client ID
-   - Copy client secret
+> **Important:** changing `mfaSecretEncryptionKey` or `mfaSecretEncryptionSalt` after
+> users have enrolled invalidates every existing enrolment. Users must re-enrol.
 
-   **githubIDPSecret:**
-   - OAuth App secret from GitHub
-   - Navigate to: Settings → Developer settings → OAuth Apps
-   - Create OAuth App
-   - Copy client secret
+### How external IDP secrets are wired
 
-   **cognitoIDPSecret:**
-   - App client secret from AWS Cognito
-   - Navigate to: Cognito → User Pools → App clients
-   - Create app client with client secret
-   - Copy client secret
+`templates/deployment.yaml` walks each tenant's `externalIdpRegisteredClients` list
+and maps entry *N* to the Secret key `<clientName in lowercase>IDPSecret`:
 
-   **azureIDPSecret:**
-   - Client secret from Azure AD
-   - Navigate to: Azure Portal → App registrations
-   - Create app registration
-   - Generate client secret in Certificates & secrets
-
-### Secret Templates
-
-The chart creates Kubernetes secrets automatically. For each tenant:
-
-**File:** `templates/secret-tenant-ecsp.yaml`
-```yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: {{ include "uidam-authorization-server.fullname" . }}-ecsp
-data:
-  keystorePassword: {{ .Values.tenantSecrets.ecsp.keystorePassword | b64enc | quote }}
-  # ... other secrets
 ```
+externalIdpRegisteredClients[0].clientName: Google
+  -> env tenants_profile_<tenant>_external-idp-registered-client-list[0]_client-secret
+  -> secret key  googleIDPSecret
+```
+
+This means **`clientName` must be one of `Google`, `Github`, `Cognito` or `Azure`**
+unless you also add the matching `<name>IDPSecret` key to
+`templates/secret-tenants.yaml`. The index is positional, so reordering the list
+reorders which secret each client receives - always append new providers at the end.
+
+### Cross-Chart Consistency
+
+These values **must be identical** in the `uidam-user-management` chart for the same
+tenant, otherwise client secrets and MFA enrolments written by one service cannot be
+read by the other:
+
+| uidam-authorization-server | uidam-user-management |
+|----------------------------|-----------------------|
+| `tenantSecrets.<id>.clientsecretkey` | `tenantSecrets.<id>.clientSecretKey` |
+| `tenantSecrets.<id>.clientsecretsalt` | `tenantSecrets.<id>.clientSecretSalt` |
+| `tenantSecrets.<id>.mfaSecretEncryptionKey` | `tenantSecrets.<id>.mfaSecretEncryptionKey` |
+| `tenantSecrets.<id>.mfaSecretEncryptionSalt` | `tenantSecrets.<id>.mfaSecretEncryptionSalt` |
+
+Note the capitalisation differs between the two charts - this is intentional and
+matches each chart's existing key names.
+
+### Using an External Secret Manager
+
+The chart writes Secrets from `values.yaml`, which is convenient for evaluation but
+unsuitable for production. To source them externally:
+
+1. Create the Secrets out-of-band with the exact names listed in
+   [Rendered Secrets](#rendered-secrets) and the key names from the table above.
+2. Delete `templates/secret.yaml` and `templates/secret-tenants.yaml`, or guard them
+   behind a values flag in your fork.
+3. Keep `postgresql.secretName` pointing at your externally managed Secret.
+
+Tools that work well here: External Secrets Operator, Sealed Secrets, or the
+Vault Agent Injector.
 
 **Important Notes:**
-- Secrets are base64-encoded automatically by Helm
-- Never commit unencrypted secrets to git
-- Use sealed-secrets, external-secrets, or vault for production
-- Rotate secrets regularly (every 90 days recommended)
+- Secrets are base64-encoded automatically by Helm - the values in `values.yaml` are plaintext
+- Never commit real secrets to git
+- Rotate secrets regularly (every 90 days recommended), except the MFA keys
 
 ---
-
 ## Database Configuration
 
 ### PostgreSQL Connection
@@ -474,7 +707,7 @@ postgres:
 - For 100 concurrent users: 30-50 connections
 - For 500 concurrent users: 100-150 connections
 
-### PostgreSQL Credentials (Separate Section)
+### PostgreSQL Credentials
 
 ```yaml
 postgresql:
@@ -487,9 +720,23 @@ postgresql:
 ```
 
 **Action Required:**
-- Replace `userName` and `password` with actual database credentials
-- These are used in the secret template for environment variables
-- Store credentials securely using secrets management tools
+- `userName` / `password` populate the `username` / `password` keys of **every**
+  Secret the chart renders (global and per tenant).
+- `secretName` must resolve to the rendered global Secret,
+  i.e. `<release>-uidam-authorization-server-credentials`. Change it only if you
+  manage that Secret yourself.
+- `postgresql.host` / `postgresql.port` plus `postgres.databaseName` build the global
+  `POSTGRES_DATASOURCE`. Per-tenant datasources come from each tenant's
+  `database.jdbc_url`.
+
+> If different tenants use different database users, set the credentials per tenant
+> in `tenantSecrets.<tenant>` and extend `templates/secret-tenants.yaml` accordingly.
+> Out of the box every tenant Secret reuses `postgresql.userName` / `postgresql.password`.
+
+> The legacy top-level `tenant:` block in `values.yaml` is no longer read by any
+> template. Its single-tenant environment variables were removed in 1.6.0 because
+> they duplicated - and sometimes blanked - the multi-tenant values. It is retained
+> only for backward compatibility with older overrides and can be deleted.
 
 ---
 
@@ -503,6 +750,7 @@ Each tenant can integrate with multiple external IDPs:
 externalIdpRegisteredClients:
   - clientName: Google
     registrationId: google
+    enabled: false                     # New in 1.6.0 - per-provider on/off switch
     clientId: xxx
     clientAuthenticationMethod: client_secret_basic
     scope: "openid, profile, email, address, phone"
@@ -512,10 +760,47 @@ externalIdpRegisteredClients:
     userNameAttributeName: "sub"
     jwkSetUri: "https://www.googleapis.com/oauth2/v3/certs"
     tokenInfoSource: "FETCH_INTERNAL_USER" # user details fetch from user-management API.
+    includeIdpIdToken: false           # New in 1.6.0
     createUserMode: "CREATE_INTERNAL_USER" # create user in user-management if not exists (first time login)
     defaultUserRoles: "VEHICLE_OWNER" # can be updated as needed.
     claimMappings: "firstName#given_name,lastName#family_name,email#email"  # mapping external IDP client with Usermanagement user creation payload attribute
+    scopePreference: "INTERNAL"        # New in 1.6.0 - INTERNAL | EXTERNAL
 ```
+
+> `externalIdpRegisteredClients` is only consulted when the tenant also sets
+> `externalIdpEnabled: true`.
+
+### New Fields in 1.6.0
+
+| Field | Values | Purpose |
+|-------|--------|---------|
+| `enabled` | `true` / `false` | Turn an individual provider on or off without deleting its configuration. Ship providers disabled and enable them once credentials are in place. |
+| `includeIdpIdToken` | `true` / `false` | When `true`, the original IdP ID token is passed through in the UIDAM response. Only enable if a downstream client genuinely needs the upstream token. |
+| `scopePreference` | `INTERNAL` / `EXTERNAL` | `INTERNAL` (default) issues the scopes UIDAM holds for the user. `EXTERNAL` derives scopes from IdP roles using `roleClaimKey` and `scopeRoleMappings`. |
+| `roleClaimKey` | claim name | Which IdP claim carries the user's roles, e.g. `cognito:roles`. Required when `scopePreference: EXTERNAL`. |
+| `scopeRoleMappings` | list | Maps external role values onto internal UIDAM scopes. |
+| `conditions` | object | Optional gate - only apply this provider when a claim matches. Keys: `claimKey`, `expectedValue`, `operator`. |
+
+**Mapping external roles to internal scopes:**
+
+```yaml
+  - clientName: Cognito
+    registrationId: cognito
+    enabled: true
+    scopePreference: "EXTERNAL"
+    roleClaimKey: "cognito:roles"
+    scopeRoleMappings:
+      - externalRoles: "arn:aws:iam::123456789012:role/ReadOnly"
+        internalScopes: "IgniteStoreSeller"
+      - externalRoles: "arn:aws:iam::123456789012:role/Admin"
+        internalScopes: "UIDAMSystem,ManageUsers"
+    claimMappings: "firstName#cognito:username,email#email,externalIdpRoles#cognito:roles"
+```
+
+> **Ordering matters.** The Deployment binds client secrets positionally -
+> `externalIdpRegisteredClients[0]` receives the secret named after its `clientName`.
+> Append new providers to the end of the list rather than inserting them, and see
+> [How external IDP secrets are wired](#how-external-idp-secrets-are-wired).
 
 ### Google OAuth2 Setup
 
@@ -751,14 +1036,172 @@ postgresdb:
 
 ### Pre-Deployment Checklist
 
-- [ ] Tenants Database created and accessible
-- [ ] All placeholder values replaced with actual values
-- [ ] Secrets generated and configured
+- [ ] Tenant databases created and accessible
+- [ ] All `ChangeMe` / `TO-BE-UPDATED` placeholders replaced
+- [ ] Per-tenant `keyStore.keyAlias`, `keyStore.jksEncodedContent` and `cert.jwtKeyId` are unique
+- [ ] `clientsecretkey` / `clientsecretsalt` match `uidam-user-management` per tenant
+- [ ] `mfaSecretEncryptionKey` / `mfaSecretEncryptionSalt` match `uidam-user-management` per tenant
 - [ ] Domain name and DNS configured
-- [ ] External IDP credentials obtained (if using)
+- [ ] External IDP credentials obtained, and unused providers left `enabled: false`
 - [ ] KeyStore and certificates generated
 - [ ] Network policies configured
 - [ ] Resource limits set appropriately
+
+### Install
+
+```bash
+helm install uidam-authorization-server ./uidam-authorization-server \
+  -n uidam --create-namespace \
+  -f my-values.yaml
+```
+
+The release name matters: the chart's fullname helper produces
+`<release>-uidam-authorization-server` unless the release name already contains the
+chart name. Using `uidam-authorization-server` as the release name keeps resource
+names short and makes `postgresql.secretName` line up with the rendered Secret.
+
+### Verify the rendered output before installing
+
+```bash
+# Full render
+helm template uidam-authorization-server ./uidam-authorization-server -f my-values.yaml
+
+# Confirm the expected tenant ConfigMaps and Secrets appear
+helm template uidam-authorization-server ./uidam-authorization-server -f my-values.yaml \
+  | grep -E '^kind:|^  name:'
+
+# Confirm no placeholder survived
+helm template uidam-authorization-server ./uidam-authorization-server -f my-values.yaml \
+  | grep -E 'ChangeMe|TO-BE-UPDATED'
+```
+
+### Post-install checks
+
+```bash
+kubectl get configmap -n uidam | grep uidam-authorization-server
+kubectl get secret    -n uidam | grep uidam-authorization-server
+kubectl rollout status deployment/uidam-authorization-server -n uidam
+curl -s https://auth-server.<your-domain>/<tenant>/.well-known/openid-configuration | jq .
+```
+
+You should see one `...-tenant-<id>` ConfigMap and one `...-tenant-<id>-credentials`
+Secret for every entry in `multiTenant.tenantIds`, plus the `default` pair.
+
+### Upgrade
+
+```bash
+helm upgrade uidam-authorization-server ./uidam-authorization-server \
+  -n uidam -f my-values.yaml
+```
+
+ConfigMap changes trigger a pod restart automatically - the Deployment carries
+`checksum/config`, `checksum/config-default` and `checksum/config-tenants` annotations.
+
+### Deployment Order
+
+1. Deploy or upgrade `uidam-authorization-server` **first**.
+2. Then deploy or upgrade `uidam-user-management`.
+3. Confirm both charts share the same `clientsecretkey` / `clientsecretsalt` and MFA
+   keys for every tenant.
+
+---
+
+## Upgrading From Chart 1.2.x
+
+Chart 1.6.0 changes the template layout and the tenant configuration model. The
+application image must be upgraded to `1.6.0` at the same time.
+
+### 1. Templates that were replaced
+
+| Removed | Replaced by |
+|---------|-------------|
+| `configmap-tenant-default.yaml` | `configmap-default-configurations.yaml` |
+| `configmap-tenant-ecsp.yaml`, `configmap-tenant-sdp.yaml` | `configmap-tenants-config.yaml` (dynamic) |
+| `secret-tenant-default.yaml`, `secret-tenant-ecsp.yaml`, `secret-tenant-sdp.yaml` | `secret-tenants.yaml` (dynamic) |
+
+Helm removes the old objects automatically on upgrade, because the generated
+resources keep the same names.
+
+### 2. Environment variable naming changed
+
+Tenant settings are now published as `tenants_profile_<tenant>_*` instead of
+`ECSP_*` / `SDP_*`. This matches what UIDAM 2.x binds. No action is needed unless
+you referenced the old names in external tooling.
+
+### 3. Restructure your tenant values
+
+Move everything that is common into `multiTenant.tenants.default` and reduce each
+other tenant to its overrides - see
+[Configuration Inheritance Model](#configuration-inheritance-model). Leaving the full
+block in place still works, so this step can be done gradually.
+
+### 4. New values to set
+
+```yaml
+multiTenant:
+  tenants:
+    default:
+      ui:
+        logoPath: "/images/default-logo.svg"
+      client:
+        authCodeScopelessUserScopes: true
+        idTokenProperties:
+          additionalClaims: ""
+      signup:
+        additionalAttributesEnabled: false
+      clientSpecificSignupConfigs: []
+      mfa:
+        mfaAppName: "UIDAM"
+        mode: "DISABLED"
+        stepUpScopes: "UIDAMSystem,ManageUsers,ManageAccounts"
+        skipUsers: "admin,tenantadmin"
+        skipClients: ""
+        skipAccounts: ""
+        stepUpClients: ""
+        stepUpAccounts: ""
+      externalIdpRegisteredClients:
+        - clientName: Google
+          enabled: false            # new
+          includeIdpIdToken: false  # new
+          scopePreference: "INTERNAL"  # new
+          # ...existing fields...
+
+secrets:
+  mfaSecretEncryptionKey: "ChangeMe"
+  mfaSecretEncryptionSalt: "ChangeMe"
+
+tenantSecrets:
+  <tenant>:
+    mfaSecretEncryptionKey: "ChangeMe"
+    mfaSecretEncryptionSalt: "ChangeMe"
+```
+
+### 5. Configuration that was removed
+
+The global ConfigMap no longer emits the legacy single-tenant block
+(`TENANT_ID`, `TENANT_NAME`, `TENANT_ALIAS`, `TENANT_ACCOUNT_*`, `KEYSTORE_*`,
+`JWT_*`, `USER_MANAGEMENT_ENV`, `CLIENT_BY_CLIENT_ID_ENDPOINT`, ...). Several of
+those keys were bound to `values.yaml` entries that no longer existed and were being
+rendered as empty strings, which silently overrode the multi-tenant values.
+
+Their functional equivalents now live under `multiTenant.tenants.<id>`. The
+top-level `tenant:` block in `values.yaml` is inert and can be deleted.
+
+Two further fixes worth knowing about:
+- `POSTGRES_DATASOURCE` previously referenced `postgres.uidam_dbname`, which does not
+  exist, producing a datasource URL with no database name. It now uses
+  `postgres.databaseName`.
+- `UIDAM_DEFAULT_DB_SCHEMA` was emitted twice; the second occurrence read a missing
+  value and blanked the first. Only `uidam.defaultDbSchema` is used now.
+
+### 6. Rollback
+
+```bash
+helm rollback uidam-authorization-server -n uidam
+```
+
+Liquibase migrations applied by 1.6.0 are **not** reverted by a Helm rollback. Take a
+database backup before upgrading.
 
 ---
 
@@ -806,11 +1249,24 @@ psql -h postgresql -U uidam_user -d uidam_db
 **Symptoms:** Redirect to IDP works but callback fails
 
 **Solutions:**
+- Verify the tenant has `externalIdpEnabled: true`
+- Verify the provider entry has `enabled: true`
 - Verify redirect URI matches exactly in IDP configuration
 - Check IDP client ID and secret are correct
 - Verify IDP secret is in tenant-specific secret
 - Check network connectivity to IDP endpoints
 - Review IDP-specific logs in authorization server
+
+**Wrong secret being used:** client secrets are bound by list position. Confirm the
+index-to-secret mapping is what you expect:
+
+```bash
+kubectl get deploy -n uidam uidam-authorization-server -o yaml \
+  | grep -A3 'external-idp-registered-client-list'
+```
+
+If you inserted a provider in the middle of `externalIdpRegisteredClients`, every
+later provider shifted onto the wrong secret. Append instead of inserting.
 
 #### 4. Token Generation Fails
 
@@ -818,8 +1274,9 @@ psql -h postgresql -U uidam_user -d uidam_db
 
 **Solutions:**
 - Verify JKS encodeString is valid and properly base64-encoded
-- Check keystore password  and alias matches
+- Check keystore password and alias matches
 - Verify JWT key ID is configured
+- Confirm the tenant does not share `keyStore.keyAlias` or `cert.jwtKeyId` with another tenant
 
 
 #### 5. Multi-Tenant Issues
@@ -828,10 +1285,50 @@ psql -h postgresql -U uidam_user -d uidam_db
 
 **Solutions:**
 - Verify tenant ID is in `multiTenant.tenantIds` list
-- Check tenant-specific configmap exists
-- Verify tenant-specific secret exists
-- Check `DEFAULT_TENANT` environment variable
+- Check the tenant ConfigMap exists
+- Verify the tenant Secret exists
+- Check the `TENANT_DEFAULT` environment variable
 - Review tenant selection logic in application logs
+
+```bash
+# One ConfigMap per active tenant, plus -tenant-default
+kubectl get configmap -n uidam | grep tenant
+
+# Inspect what a tenant actually overrides
+kubectl get configmap -n uidam uidam-authorization-server-tenant-ecsp -o yaml
+
+# Confirm the baseline the tenant inherits from
+kubectl get configmap -n uidam uidam-authorization-server-tenant-default -o yaml
+```
+
+**A setting is not taking effect for one tenant:** because a tenant ConfigMap only
+carries overrides, a missing key means the value is inherited from `-tenant-default`.
+Check the default ConfigMap before assuming the value is lost. Omitting a key means
+"inherit"; to blank a value, set it explicitly to `""`.
+
+**ConfigMap ordering:** the Deployment loads the global ConfigMap, then each tenant
+ConfigMap, then `-tenant-default`. Later entries win, which is why `DEFAULT_*` keys
+are never shadowed by the global ConfigMap.
+
+#### 6. MFA Problems
+
+**Symptoms:** Users are not challenged, or previously working codes are rejected
+
+```bash
+# What mode is the tenant in?
+kubectl get configmap -n uidam uidam-authorization-server-tenant-ecsp -o yaml \
+  | grep -i mfa
+
+# Confirm the MFA keys reached the pod
+kubectl exec -n uidam deploy/uidam-authorization-server -- printenv | grep -i MFA
+```
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| Never challenged | `mfa.mode` is `DISABLED`, or the user/client/account is in a `skip*` list | Set `CONDITIONAL` or `REQUIRED`, and review the exclusions |
+| Challenged unexpectedly | Requested scope is in `stepUpScopes` | Expected behaviour in `CONDITIONAL` mode |
+| All enrolments suddenly invalid | `mfaSecretEncryptionKey` or `...Salt` changed, or differs from `uidam-user-management` | Restore the previous values, or have every user re-enrol |
+| Codes always rejected | Clock skew between the device and the cluster | Verify NTP on the nodes |
 
 ### Debugging Commands
 
@@ -886,20 +1383,41 @@ Failed to load JWT keys - Verify certificate configuration
 ### Configuration Files Reference
 
 - `values.yaml` - Main configuration file
-- `templates/configmap.yaml` - Environment variables and application config
-- `templates/secret.yaml` - Global secrets
-- `templates/secret-tenant-*.yaml` - Tenant-specific secrets
+- `templates/configmap.yaml` - Global environment variables and application config
+- `templates/configmap-default-configurations.yaml` - Default tenant baseline (`DEFAULT_*`)
+- `templates/configmap-tenants-config.yaml` - Per-tenant overrides, generated dynamically
+- `templates/secret.yaml` - Global credentials Secret
+- `templates/secret-tenants.yaml` - Per-tenant Secrets, generated dynamically
+- `templates/uidam-jks.yaml` - Fallback keystore ConfigMap
+- `templates/app-keys.yaml` - JWT key pair and public PEM
 - `templates/deployment.yaml` - Deployment specification
+- `templates/service.yaml` - Service configuration
 - `templates/ingress.yaml` - Ingress configuration
+
+### Adding a New Tenant
+
+No template changes are required - edit `values.yaml` only:
+
+1. Append the tenant ID to `multiTenant.tenantIds`, e.g. `"ecsp,sdp,acme"`.
+2. Add an override block under `multiTenant.tenants.acme` containing at minimum
+   `tenantId`, `tenantName`, `database.jdbc_url`, `keyStore.keyAlias`,
+   `keyStore.jksEncodedContent` and `cert.jwtKeyId`.
+3. Add `tenantSecrets.acme` with that tenant's secrets. Any key you omit is
+   inherited from `tenantSecrets.default`.
+4. Create the tenant database and schema.
+5. Mirror steps 1-4 in the `uidam-user-management` chart, keeping
+   `clientsecretkey` / `clientsecretsalt` and the MFA keys identical.
+6. `helm upgrade`. A new ConfigMap and Secret pair appear automatically.
 
 ### Best Practices
 
 1. **Security:**
    - Never commit secrets to version control
    - Use strong, randomly generated passwords
-   - Rotate secrets regularly
+   - Rotate secrets regularly, except the MFA encryption key and salt
    - Use network policies to restrict access
    - Enable TLS for all external communication
+   - Ship external IDP providers with `enabled: false` until credentials are verified
 
 2. **Performance:**
    - Adjust database connection pool based on load
@@ -916,66 +1434,12 @@ Failed to load JWT keys - Verify certificate configuration
 4. **Multi-Tenancy:**
    - Keep tenant configurations isolated
    - Use separate databases per tenant if possible
+   - Keep shared settings in the `default` tenant and override only deltas
+   - Give every tenant its own keystore alias and JWT key ID
    - Monitor tenant-specific metrics
 
 ---
 
-**Document Version:** 1.0  
-**Last Updated:** October 27, 2025  
-**Component Version:** 1.2.2
-
----
-
-## Helm Chart Structure Updates (v1.2.3)
-
-### New and Updated Template Files
-
-The following files have been added or updated in the Helm chart to support improved multi-tenant secret and config management:
-
-- `templates/configmap-tenant-default.yaml`: Default ConfigMap for tenant-specific configuration. Used as a template for new tenants.
-- `templates/secret-tenant-default.yaml`: Default Secret for tenant-specific secrets. All values are set to `"ChangeMe"` by default and must be updated for production use.
-- `templates/configmap.yaml`: Updated to match the latest structure and logic from the reference implementation.
-- `templates/deployment.yaml`: Updated to match the latest structure and logic from the reference implementation.
-
-### values.yaml Changes
-
-- The `tenantSecrets` section now includes all required secrets for each tenant, with all values set to `"ChangeMe"` by default. **You must update these to secure values before deploying to production.**
-- The global `secrets` section is also initialized with `"ChangeMe"` values for all keys.
-
-#### Example (values.yaml):
-
-```yaml
-secrets:
-  keystorePassword: "ChangeMe"
-  igniteRecaptchaKeySecret: "ChangeMe"
-  clientsecretkey: "ChangeMe"
-  clientsecretsalt: "ChangeMe"
-  clientSecret: "ChangeMe"
-
-tenantSecrets:
-  ecsp:
-    keystorePassword: "ChangeMe"
-    igniteRecaptchaKeySecret: "ChangeMe"
-    clientsecretkey: "ChangeMe"
-    clientsecretsalt: "ChangeMe"
-    clientSecret: "ChangeMe"
-    googleIDPSecret: "ChangeMe"
-    githubIDPSecret: "ChangeMe"
-    cognitoIDPSecret: "ChangeMe"
-    azureIDPSecret: "ChangeMe"
-  sdp:
-    keystorePassword: "ChangeMe"
-    igniteRecaptchaKeySecret: "ChangeMe"
-    clientsecretkey: "ChangeMe"
-    clientsecretsalt: "ChangeMe"
-    clientSecret: "ChangeMe"
-    googleIDPSecret: "ChangeMe"
-    githubIDPSecret: "ChangeMe"
-    cognitoIDPSecret: "ChangeMe"
-    azureIDPSecret: "ChangeMe"
-```
-
-> **Important:**
-> - All `"ChangeMe"` values are placeholders. Replace them with strong, unique secrets for each environment and tenant.
-> - The new `configmap-tenant-default.yaml` and `secret-tenant-default.yaml` templates are used to bootstrap tenant-specific resources.
-> - The main `configmap.yaml` and `deployment.yaml` have been updated for improved multi-tenant support and to match the latest reference implementation.
+**Document Version:** 2.0  
+**Last Updated:** September 30, 2026  
+**Component Version:** 1.6.0

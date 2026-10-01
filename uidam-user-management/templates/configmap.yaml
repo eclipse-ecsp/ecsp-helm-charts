@@ -26,19 +26,20 @@ data:
   # MultiTenant Global Configuration
   {{- if .Values.multiTenant }}
   TENANT_MULTITENANT_ENABLED: {{ .Values.multiTenant.enabled | quote }}
+  {{- if not .Values.configServer.enabled }}
   TENANT_IDS: {{ .Values.multiTenant.tenantIds | quote }}
-  DEFAULT_TENANT: {{ .Values.multiTenant.defaultTenant | quote }}
   {{- end }}
+  TENANT_DEFAULT: {{ .Values.multiTenant.defaultTenant | quote }}
+  {{- end }}
+
+  # Config Server Configuration
+  CONFIG_SERVER_HOST: {{ .Values.configServer.host | quote }}
+  CONFIG_SERVER_ENABLED: {{ .Values.configServer.enabled | quote }}
+  UIDAM_CONFIG_IMPORT: {{ .Values.configServer.springConfigImport | quote }}
 
     # Tenant configuration validation
   TENANT_CONFIG_VALIDATION_ENABLED: {{ .Values.multiTenant.configValidationEnabled | quote }}
   UIDAM_TENANT_CONFIG_DBNAME_VALIDATION: {{ .Values.multiTenant.dbNameValidationStrategy | quote }}
-  
-  ###AUTHORIZATION_SERVER_SERVICE_CONF
-  CLIENT_ID: {{ .Values.revoke_token_client_id | quote }}
-  AUTH_SERVER_TOKEN_URL: {{ .Values.auth.server.host }}.{{ .Values.environmentDomainName }}{{ .Values.auth.server.token_url }}
-  AUTH_SERVER_REVOKE_TOKEN_URL: {{ .Values.auth.server.host }}.{{ .Values.environmentDomainName }}{{ .Values.auth.server.revoke_token_url }}
-  AUTHORIZATION_SERVER_URL: {{ .Values.auth.server.host }}.{{ .Values.environmentDomainName }}
 
   ###API_GATEWAY_PROPERTIES###
   api_registry_enabled: "true"
@@ -54,35 +55,17 @@ data:
   api_gateway_cachesize: "50"
   
   ####Users Domain Configuration####
-  account_id: {{ .Values.uidam.account_id | quote }}
-  account_name: {{ .Values.uidam.account_name | quote }}
-  account_type: {{ .Values.uidam.account_type | quote }}
   password_encoder: "SHA-256"
-  recovery_secret_expires_in_minutes: "15"
-  max_allowed_login_attempts: {{ .Values.maxAllowedLoginAttempts | quote }}
-  min_password_length: {{ .Values.minPasswordLength | quote }}
-  max_password_length: {{ .Values.maxPasswordLength | quote }}
-  password_update_time_interval: {{ .Values.passwordUpdateTimeInterval | quote }}  
-  is_user_status_life_cycle_enabled: {{ .Values.user_status_life_cycle_enabled | quote }}
-  user_default_account_name: {{ .Values.userDefaultAccountName | quote }}
-  EXTERNAL_USER_PERMITTED_ROLES: {{ .Values.external_user_permitted_roles | quote }}
-  EXTERNAL_USER_DEFAULT_STATUS: {{ .Values.external_user_default_status | quote }}
-  
+
   ###Notification Configs###
-  notification_api_url: "http://notification-api-int-svc:8080/v1/notifications/nonRegisteredUsers"
+  notification_api_url: {{ .Values.multiTenant.tenants.default.notification.apiUrl | quote }}
   notification_id: "uidamCustomEmailTemplate6"
 
   ####Email Verification Configuration ####
-  is_email_verification_enabled: "false"
-  email_verification_url: {{ .Values.api_gateway.uri}}/v1/emailVerification/%s
-  email_regex_pattern_exclude: ""
   email_verification_subject: "UIDAM Email Verification"
   email_verification_content: "Please verify your UIDAM account that is associated with 
   this email address.<br/><a href=%s>Verify My Email</a><br/>If clicking the button doesn't seem to work, you can copy 
   and paste the following link into your browser.<br/>%s"
-  email_verification_exp_days: "7"
-  auth_server_email_verification_response_url: "{{ .Values.auth.server.host }}.{{ .Values.environmentDomainName }}/emailVerification/verify"
-  auth_server_reset_response_url: "{{ .Values.auth.server.host }}.{{ .Values.environmentDomainName }}/recovery/reset/"
 
   ### Configuration###
   USER_MANAGEMENT_FILTER_URL: http://{{ include "uidam-user-management.fullname" . }}:8080
@@ -92,9 +75,6 @@ data:
   database.default.dbname: {{ .Values.postgres.databaseName | quote }}
   database.uidam.dbname: {{ .Values.postgres.databaseName }}
 
-  ###Password Policy Configuration
-  additional_attr_check_enabled_for_sign_up: {{ .Values.additional_attr_check_enabled_for_sign_up | quote }}
-                       
   ###DAO Configuration###
   health_postgresdb_monitor_enabled: {{ .Values.health.postgresdb.monitor.enabled | quote }}
   health_postgresdb_monitor_restart_on_failure: {{ .Values.health.postgresdb.monitor.restart_on_failure | quote}}
