@@ -213,6 +213,9 @@ data:
 {{- range $i, $tokenHeader := .Values.api_gateway.jwt.claimToHeaderMapping }}
   jwt_token-claim-to-header-mapping_{{ $i }}: {{ $tokenHeader | quote }}
 {{- end }}
+  jwt_scope-prefixes: {{ .Values.api_gateway3.jwt.scopePrefixes | quote }}
+  jwt_jwks-refresh-on-unknown-kid_enabled: {{ .Values.api_gateway3.jwt.jwksRefreshOnUnknownKid.enabled | quote }}
+  jwt_jwks-refresh-on-unknown-kid_cooldown-ms: {{ .Values.api_gateway3.jwt.jwksRefreshOnUnknownKid.cooldownMs | quote }}
 # rate limit configuration
   api_gateway_rate-limit_enabled: {{ .Values.api_gateway.rateLimit.enabled | quote }}
   api_gateway_rate-limit_key-resolvers: {{ .Values.gateway_common.rateLimit.keyResolvers | quote }}

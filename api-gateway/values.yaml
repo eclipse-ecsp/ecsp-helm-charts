@@ -23,7 +23,7 @@ api_gateway:
   javaOpts: ""
   nodeType: "default"
   replicas: 1
-  imageTag: 1.6.2
+  imageTag: 1.7.3
   requestHeaderFilterConfig:
     removeUnknownHeaders: "true"
     allowHeaders: host, connection, content-type, content-length, accept, user-agent, origin, referer, accept-encoding, accept-language, X-Forwarded-Proto, X-Forwarded-For, X-Forwarded-Port, X-Amzn-Trace-Id, requestId, scope, user-id, override-scope, X-Tenant-ID, Authorization
@@ -179,6 +179,9 @@ api_gateway:
       skipForRoutes: "<routeId1>, <routeid2>"
   jwt:
     scopePrefixes: "<token_scope_prefix>"
+    jwksRefreshOnUnknownKid:
+      enabled: "true"
+      cooldownMs: "60000"
     keySources:
     - id: "UIDAM"
       issuer: "https://uidam-authorization-server:9443"
@@ -251,7 +254,7 @@ api_registry:
   javaOpts: ""
   nodeType: "default"
   replicas: 1
-  imageTag: 1.6.2
+  imageTag: 1.7.3
   serviceName: api-registry
   database:
     ## supported types - sql, nosql
@@ -315,6 +318,11 @@ api_registry:
       host: api-registry
       application: api-registry
   api_health_monitor: "0 */1 * ? * *"
+  changeDetection:
+    enabled: "false"
+    checksum:
+      algorithm: "SHA-256"
+      includeFields: ""
   events:
     # Enable/disable event publishing
     enabled: "true"

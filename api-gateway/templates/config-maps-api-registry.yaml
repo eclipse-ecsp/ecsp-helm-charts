@@ -133,6 +133,9 @@ data:
   API_REGISTRY_REDIS_CHANNEL: {{ .Values.gateway_common.redis.routeRefreshChannel | quote }}
   # redis configuration
   spring_data_redis_cluster_nodes:  {{ .Values.gateway_common.redis.clusterNodes | quote }}
+  api_registry_change-detection_enabled: {{ .Values.api_registry.changeDetection.enabled | quote }}
+  api_registry_change-detection_checksum_algorithm: {{ .Values.api_registry.changeDetection.checksum.algorithm | quote }}
+  api_registry_change-detection_checksum_include-fields: {{ .Values.api_registry.changeDetection.checksum.includeFields | quote }}
 {{- if .Values.api_registry.extraParams }}
 {{ toYaml .Values.api_registry.extraParams | indent 2 }}
 {{- end }}
